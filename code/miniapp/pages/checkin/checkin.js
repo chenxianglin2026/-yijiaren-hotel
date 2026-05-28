@@ -6,25 +6,33 @@ Page({
     order: null,
     loading: true,
     hasActiveOrder: false,
+    checkinStatus: 'active',
 
-    // 入住状态
-    checkinStatus: 'pending', // pending | active | completed
-    // 门锁
-    lockStatus: 'locked', // locked | unlocking | unlocked
+    // 开锁方式: ble | code | qr
+    unlockMethod: 'ble',
+
+    // 门锁状态
+    lockStatus: 'locked',
     lockCode: '',
     showCode: false,
-    // 倒计时
-    codeTimer: 0,
-    codeTimerText: '',
 
-    // 蓝牙状态
+    // 蓝牙
     bleAvailable: false,
     bleConnecting: false,
-    bleConnected: false,
 
-    // 房间信息
-    roomNumber: '',
-    floor: '',
+    // 二维码倒计时
+    qrTimer: 0,
+    qrInterval: null,
+
+    // 身份证
+    idCardFront: '',
+    idCardBack: '',
+    idCardUploaded: false,
+
+    // 人脸识别
+    faceVerified: false,
+
+    // WiFi
     wifiName: '',
     wifiPassword: '',
 
@@ -45,23 +53,27 @@ Page({
   },
 
   onLoad(options) {
-    // 可以从订单列表传过来的订单id
     const orderId = options.orderId || ''
     this.loadActiveOrder(orderId)
   },
 
   onShow() {
-    // 检查蓝牙
     this.checkBluetooth()
+  },
+
+  onUnload() {
+    if (this.data.qrInterval) {
+      clearInterval(this.data.qrInterval)
+    }
   },
 
   loadActiveOrder(orderId) {
     const that = this
     this.setData({ loading: true })
 
-    // TODO: app.request({ url: '/orders/active' })
-    // 模拟有效订单数据
     setTimeout(() => {
+      const lockCode = String(Math.floor(100000 + Math.random() * 900000))
+
       const mockOrder = {
         id: orderId || 'YD20240528001',
         roomName: '雅致大床房',
@@ -73,29 +85,92 @@ Page({
         guestName: '陈先生',
         price: 298,
         status: 'paid',
-        // 门锁密码（6位）
-        lockCode: '',
-        // WiFi信息
+        lockCode,
         wifiName: 'YJR-Hotel',
         wifiPassword: 'yijiaren2024',
-        // 酒店电话
         hotelPhone: '0571-88886666'
       }
 
-      // 生成动态密码（模拟）
-      const lockCode = String(Math.floor(100000 + Math.random() * 900000))
-
       that.setData({
-        order: { ...mockOrder, lockCode },
+        order: mockOrder,
         roomNumber: mockOrder.roomNumber,
         floor: mockOrder.floor,
         wifiName: mockOrder.wifiName,
         wifiPassword: mockOrder.wifiPassword,
+        lockCode,
         hasActiveOrder: true,
         loading: false,
         checkinStatus: 'active'
       })
+
+      // Start QR timer when QR tab is active
+      that.startQrTimer()
     }, 800)
+  },
+
+  // ========== 开锁方式切换 ==========
+  switchUnlockMethod(e) {
+    const method = e.currentTarget.dataset.method
+    this.setData({ unlockMethod: method })
+
+    if (method === 'qr') {
+      this.startQrTimer()
+    } else {
+      this.stopQrTimer()
+    }
+  },
+
+  // ========== 身份证上传 ==========
+  uploadIdCard(e) {
+    const side = e.currentTarget.dataset.side
+    const that = this
+
+    wx.chooseImage({
+      count: 1,
+      sizeType: ['compressed'],
+      sourceType: ['camera', 'album'],
+      success(res) {
+        const tempFilePath = res.tempFilePaths[0]
+        if (side === 'front') {
+          that.setData({ idCardFront: tempFilePath })
+        } else {
+          that.setData({ idCardBack: tempFilePath })
+        }
+
+        // 检查是否都已上传
+        const { idCardFront, idCardBack } = that.data
+        if (idCardFront && idCardBack) {
+          that.setData({ idCardUploaded: true })
+          wx.showToast({ title: '身份证上传完成', icon: 'success' })
+        } else {
+          wx.showToast({ title: `${side === 'front' ? '正面' : '反面'}上传成功`, icon: 'success' })
+        }
+      },
+      fail() {
+        wx.showToast({ title: '取消上传', icon: 'none' })
+      }
+    })
+  },
+
+  // ========== 人脸识别 ==========
+  startFaceVerify() {
+    const that = this
+    wx.showModal({
+      title: '人脸识别验证',
+      content: '即将开始人脸识别，请将面部对准屏幕框内，根据提示完成眨眼、张嘴等动作。',
+      confirmText: '开始验证',
+      success(res) {
+        if (res.confirm) {
+          wx.showLoading({ title: '验证中...', mask: true })
+          // 模拟人脸识别过程
+          setTimeout(() => {
+            wx.hideLoading()
+            that.setData({ faceVerified: true })
+            wx.showToast({ title: '身份验证通过 ✅', icon: 'success' })
+          }, 2000)
+        }
+      }
+    })
   },
 
   // ========== 蓝牙 ==========
@@ -111,20 +186,27 @@ Page({
     })
   },
 
-  connectBluetooth() {
-    this.setData({ bleConnecting: true })
-    // TODO: 实际蓝牙连接逻辑
+  bleUnlock() {
+    const that = this
+    this.setData({ lockStatus: 'unlocking', bleConnecting: true })
+
+    // 模拟蓝牙连接开锁过程
     setTimeout(() => {
-      this.setData({
-        bleConnecting: false,
-        bleConnected: true,
-        lockStatus: 'unlocked'
+      that.setData({
+        lockStatus: 'unlocked',
+        bleConnecting: false
       })
+      wx.vibrateShort({ type: 'medium' })
       wx.showToast({ title: '门锁已打开 🔓', icon: 'success' })
+
+      // 10秒后自动恢复锁定状态
+      setTimeout(() => {
+        that.setData({ lockStatus: 'locked' })
+      }, 10000)
     }, 1500)
   },
 
-  // ========== 密码锁 ==========
+  // ========== 密码开锁 ==========
   toggleShowCode() {
     this.setData({ showCode: !this.data.showCode })
   },
@@ -138,24 +220,39 @@ Page({
     })
   },
 
-  // ========== 一键开锁 ==========
-  unlockDoor() {
-    const that = this
-    this.setData({ lockStatus: 'unlocking' })
+  refreshLockCode() {
+    const newCode = String(Math.floor(100000 + Math.random() * 900000))
+    this.setData({ lockCode: newCode })
+    wx.showToast({ title: '密码已刷新', icon: 'success' })
+  },
 
-    // 模拟开锁
-    setTimeout(() => {
-      that.setData({
-        lockStatus: 'unlocked',
-        showCode: true
-      })
-      wx.showToast({ title: '门锁已打开 🔓', icon: 'success' })
+  // ========== 二维码开锁 ==========
+  startQrTimer() {
+    this.stopQrTimer()
+    this.setData({ qrTimer: 30 })
 
-      // 10秒后重新锁定显示
-      setTimeout(() => {
-        that.setData({ lockStatus: 'locked' })
-      }, 10000)
-    }, 1200)
+    const interval = setInterval(() => {
+      let timer = this.data.qrTimer - 1
+      if (timer <= 0) {
+        timer = 30
+        // 刷新二维码
+      }
+      this.setData({ qrTimer: timer })
+    }, 1000)
+
+    this.setData({ qrInterval: interval })
+  },
+
+  stopQrTimer() {
+    if (this.data.qrInterval) {
+      clearInterval(this.data.qrInterval)
+      this.setData({ qrInterval: null, qrTimer: 0 })
+    }
+  },
+
+  refreshQrCode() {
+    this.setData({ qrTimer: 30 })
+    wx.showToast({ title: '二维码已刷新', icon: 'success' })
   },
 
   // ========== 酒店服务 ==========
@@ -195,11 +292,16 @@ Page({
     }
   },
 
-  // ========== 查看WiFi ==========
+  // ========== 导航 ==========
+  onGoBook() {
+    wx.switchTab({ url: '/pages/index/index' })
+  },
+
+  // ========== WiFi ==========
   copyWifi() {
     const { wifiName, wifiPassword } = this.data
     wx.setClipboardData({
-      data: `WiFi: ${wifiName}\n密码: ${wifiPassword}`,
+      data: `WiFi名称：${wifiName}\nWiFi密码：${wifiPassword}`,
       success() {
         wx.showToast({ title: 'WiFi信息已复制', icon: 'success' })
       }

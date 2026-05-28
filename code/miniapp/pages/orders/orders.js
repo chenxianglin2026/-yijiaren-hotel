@@ -2,21 +2,26 @@ const app = getApp()
 
 Page({
   data: {
-    // 当前标签
-    currentTab: 'all', // all | pending | paid | completed | cancelled
+    currentTab: 'all',
     tabs: [
-      { key: 'all', label: '全部' },
-      { key: 'pending', label: '待支付' },
-      { key: 'paid', label: '已支付' },
-      { key: 'completed', label: '已完成' },
-      { key: 'cancelled', label: '已取消' }
+      { key: 'all', label: '全部', count: 0 },
+      { key: 'pending', label: '待付款', count: 0 },
+      { key: 'paid', label: '已预订', count: 0 },
+      { key: 'staying', label: '入住中', count: 0 },
+      { key: 'completed', label: '已完成', count: 0 }
     ],
-    // 订单列表
     orders: [],
-    // 加载状态
     loading: true,
     hasMore: true,
-    page: 1
+    page: 1,
+
+    // 订单统计
+    summary: {
+      pending: 0,
+      booked: 0,
+      staying: 0,
+      completed: 0
+    }
   },
 
   onLoad() {
@@ -24,7 +29,7 @@ Page({
   },
 
   onShow() {
-    // 每次显示时刷新
+    // Tab页每次显示时刷新
   },
 
   onPullDownRefresh() {
@@ -51,8 +56,6 @@ Page({
     const { currentTab, page } = this.data
     this.setData({ loading: true })
 
-    // TODO: app.request({ url: '/orders', data: { status: currentTab, page } })
-    // 模拟订单数据
     const mockOrders = [
       {
         id: 'YD20240528001',
@@ -66,8 +69,8 @@ Page({
         guestName: '陈先生',
         price: 298,
         totalPrice: 596,
-        status: 'paid',
-        statusLabel: '已支付',
+        status: 'staying',
+        statusLabel: '入住中',
         createTime: '2024-05-27 14:30',
         roomNumber: '806'
       },
@@ -84,32 +87,49 @@ Page({
         price: 598,
         totalPrice: 1196,
         status: 'pending',
-        statusLabel: '待支付',
+        statusLabel: '待付款',
         createTime: '2024-05-25 09:15',
-        remainTime: 1800 // 剩余支付时间（秒）
+        remainTime: 1800
       },
       {
-        id: 'YD20240520003',
+        id: 'YD20240523003',
         roomName: '豪华双床房',
         roomImage: '/images/room-twin.png',
         storeName: '伊家人酒店·钱江店',
-        checkInDate: '2024-05-20',
-        checkOutDate: '2024-05-22',
+        checkInDate: '2024-06-15',
+        checkOutDate: '2024-06-17',
         nights: 2,
         roomCount: 1,
         guestName: '陈先生',
         price: 368,
         totalPrice: 736,
+        status: 'paid',
+        statusLabel: '已预订',
+        createTime: '2024-05-23 11:00',
+        roomNumber: ''
+      },
+      {
+        id: 'YD20240520004',
+        roomName: '舒适单人间',
+        roomImage: '/images/room-single.png',
+        storeName: '伊家人酒店·西溪店',
+        checkInDate: '2024-05-20',
+        checkOutDate: '2024-05-22',
+        nights: 2,
+        roomCount: 1,
+        guestName: '陈先生',
+        price: 198,
+        totalPrice: 396,
         status: 'completed',
         statusLabel: '已完成',
         createTime: '2024-05-18 16:00',
-        roomNumber: '1206'
+        roomNumber: '302'
       },
       {
-        id: 'YD20240515004',
+        id: 'YD20240515005',
         roomName: '亲子家庭房',
         roomImage: '/images/room-family.png',
-        storeName: '伊家人酒店·西溪店',
+        storeName: '伊家人酒店·西湖店',
         checkInDate: '2024-05-15',
         checkOutDate: '2024-05-16',
         nights: 1,
@@ -130,11 +150,33 @@ Page({
       filtered = mockOrders.filter(o => o.status === currentTab)
     }
 
+    // 计算各状态数量
+    const counts = {
+      pending: mockOrders.filter(o => o.status === 'pending').length,
+      paid: mockOrders.filter(o => o.status === 'paid').length,
+      staying: mockOrders.filter(o => o.status === 'staying').length,
+      completed: mockOrders.filter(o => o.status === 'completed').length,
+      cancelled: mockOrders.filter(o => o.status === 'cancelled').length
+    }
+
+    // 更新tab计数
+    const tabs = that.data.tabs.map(t => ({
+      ...t,
+      count: t.key === 'all' ? mockOrders.length : (counts[t.key] || 0)
+    }))
+
     setTimeout(() => {
       that.setData({
         orders: page === 1 ? filtered : [...that.data.orders, ...filtered],
         loading: false,
-        hasMore: false // 模拟无更多
+        hasMore: false,
+        tabs,
+        summary: {
+          pending: counts.pending,
+          booked: counts.paid,
+          staying: counts.staying,
+          completed: counts.completed
+        }
       })
     }, 500)
   },
@@ -142,9 +184,10 @@ Page({
   // ========== 订单操作 ==========
   onOrderTap(e) {
     const order = e.currentTarget.dataset.order
-    if (order.status === 'paid' || order.status === 'completed') {
-      // 跳转入住页面
+    if (order.status === 'paid' || order.status === 'staying' || order.status === 'completed') {
       wx.navigateTo({ url: `/pages/checkin/checkin?orderId=${order.id}` })
+    } else if (order.status === 'pending') {
+      this.onPayOrder(e)
     }
   },
 
@@ -156,12 +199,18 @@ Page({
       confirmText: '立即支付',
       success: (res) => {
         if (res.confirm) {
-          // TODO: 调支付接口
           wx.showLoading({ title: '支付中...' })
           setTimeout(() => {
             wx.hideLoading()
             wx.showToast({ title: '支付成功', icon: 'success' })
-            this.loadOrders()
+            // 更新订单状态
+            const orders = this.data.orders.map(o => {
+              if (o.id === order.id) {
+                return { ...o, status: 'paid', statusLabel: '已预订' }
+              }
+              return o
+            })
+            this.setData({ orders })
           }, 1000)
         }
       }
@@ -176,9 +225,14 @@ Page({
       confirmColor: '#C56C6C',
       success: (res) => {
         if (res.confirm) {
-          // TODO: app.request({ url: `/orders/${orderId}/cancel`, method: 'POST' })
           wx.showToast({ title: '订单已取消', icon: 'success' })
-          this.loadOrders()
+          const orders = this.data.orders.map(o => {
+            if (o.id === orderId) {
+              return { ...o, status: 'cancelled', statusLabel: '已取消' }
+            }
+            return o
+          })
+          this.setData({ orders })
         }
       }
     })
@@ -187,5 +241,26 @@ Page({
   onGoCheckin(e) {
     const order = e.currentTarget.dataset.order
     wx.navigateTo({ url: `/pages/checkin/checkin?orderId=${order.id}` })
+  },
+
+  onContactHotel() {
+    wx.makePhoneCall({
+      phoneNumber: app.globalData.currentStore.phone || '0571-88886666'
+    })
+  },
+
+  onViewDetail(e) {
+    const order = e.currentTarget.dataset.order
+    wx.navigateTo({ url: `/pages/checkin/checkin?orderId=${order.id}` })
+  },
+
+  onBookAgain(e) {
+    const order = e.currentTarget.dataset.order
+    // 从订单信息提取roomId (简化处理)
+    wx.switchTab({ url: '/pages/index/index' })
+  },
+
+  onGoHome() {
+    wx.switchTab({ url: '/pages/index/index' })
   }
 })

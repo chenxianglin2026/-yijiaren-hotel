@@ -2,7 +2,9 @@
   <!-- 房间信息卡片 -->
   <view class="card room-brief" wx:if="{{room}}">
     <view class="flex-row">
-      <view class="room-thumb img-placeholder" />
+      <view class="room-thumb img-placeholder">
+        <text class="thumb-icon">🛏️</text>
+      </view>
       <view class="flex-col flex-1 ml-10">
         <text class="room-brief-name text-bold">{{room.name}}</text>
         <view class="flex-row mt-10">
@@ -123,7 +125,7 @@
     <text class="section-label">费用明细</text>
     <view class="price-detail mt-20">
       <view class="flex-between mb-20">
-        <text class="text-light">房费 ({{roomPrice}} × {{nights}}晚 × {{roomCount}}间)</text>
+        <text class="text-light">房费 (¥{{roomPrice}} × {{nights}}晚 × {{roomCount}}间)</text>
         <text class="text-dark">¥{{roomTotal}}</text>
       </view>
       <view class="flex-between mb-20" wx:if="{{discount > 0}}">
@@ -145,6 +147,19 @@
     </view>
   </view>
 
+  <!-- 支付方式 -->
+  <view class="card">
+    <text class="section-label">支付方式</text>
+    <view class="pay-method mt-20">
+      <view class="pay-option selected">
+        <text class="pay-icon">💚</text>
+        <text class="pay-label">微信支付</text>
+        <text class="pay-check">✓</text>
+      </view>
+    </view>
+    <text class="pay-hint text-sm text-light mt-10">支持微信支付，安全快捷</text>
+  </view>
+
   <!-- 底部安全区 -->
   <view style="height: 160rpx;"></view>
 
@@ -155,7 +170,34 @@
         <text class="text-lg text-bold">¥{{totalPrice}}</text>
         <text class="text-sm text-light ml-10">含税总价</text>
       </view>
-      <view class="btn-primary" bindtap="submitOrder">提交订单</view>
+      <view class="btn-primary {{submitting ? 'disabled' : ''}}" bindtap="{{submitting ? '' : 'submitOrder'}}">
+        <text wx:if="{{submitting}}">提交中...</text>
+        <text wx:else>微信支付</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 支付确认弹窗 -->
+  <view class="pay-mask" wx:if="{{showPayModal}}">
+    <view class="pay-modal">
+      <text class="pay-modal-title">确认支付</text>
+      <view class="pay-modal-body">
+        <view class="pay-modal-row flex-between">
+          <text class="text-light">订单金额</text>
+          <text class="text-bold text-lg">¥{{totalPrice}}</text>
+        </view>
+        <view class="pay-modal-row flex-between">
+          <text class="text-light">支付方式</text>
+          <text>💚 微信支付</text>
+        </view>
+      </view>
+      <view class="pay-modal-actions">
+        <view class="btn-ghost" bindtap="closePayModal">取消</view>
+        <view class="btn-primary pay-confirm-btn" bindtap="confirmPay">
+          <text wx:if="{{paying}}">支付中...</text>
+          <text wx:else>确认支付 ¥{{totalPrice}}</text>
+        </view>
+      </view>
     </view>
   </view>
 </view>

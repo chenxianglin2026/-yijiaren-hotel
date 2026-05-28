@@ -47,48 +47,184 @@
       </view>
     </view>
 
-    <!-- 智能门锁 -->
-    <view class="card lock-section">
-      <text class="section-label">智能门锁</text>
-      <view class="lock-display mt-20">
-        <view class="lock-circle {{lockStatus}}">
-          <text class="lock-icon">
-            {{lockStatus === 'locked' ? '🔒' : lockStatus === 'unlocking' ? '⏳' : '🔓'}}
-          </text>
-        </view>
-        <text class="lock-status-text mt-20">
-          {{lockStatus === 'locked' ? '门已锁' : lockStatus === 'unlocking' ? '正在开锁...' : '门已打开'}}
-        </text>
+    <!-- 身份证上传 -->
+    <view class="card">
+      <view class="flex-between">
+        <text class="section-label">身份证上传</text>
+        <text class="tag tag-green" wx:if="{{idCardUploaded}}">已上传</text>
+        <text class="tag tag-red" wx:else>待上传</text>
       </view>
-      <view class="lock-actions mt-20">
-        <view class="btn-primary lock-btn" bindtap="unlockDoor" wx:if="{{lockStatus === 'locked'}}">
-          <text>🔑 一键开锁</text>
+      <text class="idcard-hint text-sm text-light mt-10">根据公安部门要求，入住需实名登记，请上传身份证正反面</text>
+      <view class="idcard-grid mt-20">
+        <!-- 正面 -->
+        <view class="idcard-item">
+          <view class="idcard-img-wrap" bindtap="uploadIdCard" data-side="front">
+            <image wx:if="{{idCardFront}}" class="idcard-img" src="{{idCardFront}}" mode="aspectFill" />
+            <view class="idcard-placeholder" wx:else>
+              <text class="idcard-icon">📷</text>
+              <text class="idcard-label">身份证正面</text>
+              <text class="idcard-sub">人像面</text>
+            </view>
+          </view>
+          <text class="idcard-status text-sm" wx:if="{{idCardFront}}">✓ 已拍照</text>
         </view>
-        <view class="btn-outline lock-btn" bindtap="unlockDoor" wx:elif="{{lockStatus === 'unlocked'}}" disabled>
-          <text>门已打开</text>
-        </view>
-        <view class="btn-primary lock-btn" wx:else>
-          <text>⏳ 开锁中...</text>
+        <!-- 反面 -->
+        <view class="idcard-item">
+          <view class="idcard-img-wrap" bindtap="uploadIdCard" data-side="back">
+            <image wx:if="{{idCardBack}}" class="idcard-img" src="{{idCardBack}}" mode="aspectFill" />
+            <view class="idcard-placeholder" wx:else>
+              <text class="idcard-icon">📷</text>
+              <text class="idcard-label">身份证反面</text>
+              <text class="idcard-sub">国徽面</text>
+            </view>
+          </view>
+          <text class="idcard-status text-sm" wx:if="{{idCardBack}}">✓ 已拍照</text>
         </view>
       </view>
     </view>
 
-    <!-- 开门密码 -->
+    <!-- 人脸识别 -->
     <view class="card">
-      <text class="section-label">开门密码</text>
+      <view class="flex-between">
+        <text class="section-label">人脸识别</text>
+        <text class="tag tag-green" wx:if="{{faceVerified}}">已验证</text>
+        <text class="tag tag-warm" wx:else>未验证</text>
+      </view>
+      <view class="face-section mt-20">
+        <view class="face-icon-wrap {{faceVerified ? 'verified' : ''}}">
+          <text class="face-icon">{{faceVerified ? '✅' : '👤'}}</text>
+        </view>
+        <text class="face-title mt-20">{{faceVerified ? '身份已验证通过' : '请完成人脸识别验证'}}</text>
+        <text class="face-desc text-sm text-light mt-10">
+          {{faceVerified ? '您的身份信息已通过系统核验' : '请将面部对准框内，根据提示完成眨眼、张嘴等动作'}}
+        </text>
+        <view class="face-actions mt-20">
+          <view class="btn-primary face-btn" wx:if="{{!faceVerified}}" bindtap="startFaceVerify">
+            📸 开始人脸识别
+          </view>
+          <view class="btn-outline face-btn" wx:else bindtap="startFaceVerify">
+            🔄 重新验证
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 开锁方式切换 -->
+    <view class="unlock-tabs">
+      <view class="unlock-tab {{unlockMethod === 'ble' ? 'active' : ''}}" bindtap="switchUnlockMethod" data-method="ble">
+        <text class="unlock-tab-icon">📶</text>
+        <text class="unlock-tab-label">蓝牙开锁</text>
+      </view>
+      <view class="unlock-tab {{unlockMethod === 'code' ? 'active' : ''}}" bindtap="switchUnlockMethod" data-method="code">
+        <text class="unlock-tab-icon">🔢</text>
+        <text class="unlock-tab-label">密码开锁</text>
+      </view>
+      <view class="unlock-tab {{unlockMethod === 'qr' ? 'active' : ''}}" bindtap="switchUnlockMethod" data-method="qr">
+        <text class="unlock-tab-icon">📱</text>
+        <text class="unlock-tab-label">二维码开锁</text>
+      </view>
+    </view>
+
+    <!-- 蓝牙开锁 -->
+    <view class="card unlock-card" wx:if="{{unlockMethod === 'ble'}}">
+      <text class="section-label">蓝牙开锁</text>
+      <view class="ble-section mt-20">
+        <view class="lock-display">
+          <view class="lock-circle {{lockStatus}}">
+            <text class="lock-icon">
+              {{lockStatus === 'locked' ? '🔒' : lockStatus === 'unlocking' ? '⏳' : '🔓'}}
+            </text>
+          </view>
+          <text class="lock-status-text mt-20">
+            {{lockStatus === 'locked' ? '靠近房门，点击开锁' : lockStatus === 'unlocking' ? '蓝牙连接中...' : '门已打开'}}
+          </text>
+        </view>
+        <view class="ble-steps mt-20">
+          <view class="ble-step">
+            <text class="ble-step-num">1</text>
+            <text class="ble-step-text">确保手机蓝牙已开启</text>
+          </view>
+          <view class="ble-step">
+            <text class="ble-step-num">2</text>
+            <text class="ble-step-text">靠近房门1米范围内</text>
+          </view>
+          <view class="ble-step">
+            <text class="ble-step-num">3</text>
+            <text class="ble-step-text">点击下方开锁按钮</text>
+          </view>
+        </view>
+        <view class="lock-actions mt-20">
+          <view class="btn-primary lock-btn" bindtap="bleUnlock" wx:if="{{lockStatus === 'locked'}}">
+            <text>🔑 一键开锁</text>
+          </view>
+          <view class="btn-outline lock-btn" wx:elif="{{lockStatus === 'unlocked'}}">
+            <text>门已打开</text>
+          </view>
+          <view class="btn-primary lock-btn" wx:else>
+            <text>⏳ 连接中...</text>
+          </view>
+        </view>
+        <view class="ble-status-bar mt-20" wx:if="{{bleAvailable}}">
+          <text class="text-sm text-success">✓ 蓝牙模块可用</text>
+        </view>
+        <view class="ble-status-bar mt-20" wx:else>
+          <text class="text-sm text-light">⚠ 请开启手机蓝牙</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 密码开锁 -->
+    <view class="card unlock-card" wx:if="{{unlockMethod === 'code'}}">
+      <text class="section-label">密码开锁</text>
       <view class="code-section mt-20">
-        <view class="code-display">
+        <text class="code-hint text-sm text-light">在房门密码锁上输入以下6位密码</text>
+        <view class="code-display mt-20">
           <text class="code-digit" wx:for="{{showCode ? order.lockCode.split('') : ['*','*','*','*','*','*']}}" wx:key="index">{{item}}</text>
         </view>
         <view class="code-actions mt-20">
           <view class="btn-ghost" bindtap="toggleShowCode">
-            {{showCode ? '隐藏密码' : '显示密码'}}
+            {{showCode ? '👁️ 隐藏' : '👁️‍🗨️ 显示'}}
           </view>
           <view class="btn-ghost ml-10" bindtap="copyLockCode">
-            复制密码
+            📋 复制
+          </view>
+          <view class="btn-ghost ml-10" bindtap="refreshLockCode">
+            🔄 刷新
           </view>
         </view>
-        <text class="code-hint text-sm text-light mt-10">密码在入住期间有效，离店后自动失效</text>
+        <text class="code-hint text-sm text-light mt-10">密码在入住期间有效，离店后自动失效。如密码失效请刷新获取新密码。</text>
+      </view>
+    </view>
+
+    <!-- 二维码开锁 -->
+    <view class="card unlock-card" wx:if="{{unlockMethod === 'qr'}}">
+      <text class="section-label">二维码开锁</text>
+      <view class="qr-section mt-20">
+        <text class="code-hint text-sm text-light">将二维码对准门锁扫描区域</text>
+        <view class="qr-display mt-20">
+          <view class="qr-code-wrap">
+            <!-- 模拟二维码 -->
+            <view class="qr-mock">
+              <view class="qr-pattern">
+                <view class="qr-row" wx:for="{{[1,2,3,4,5,6,7,8,9,10]}}" wx:key="*this">
+                  <view class="qr-cell {{(index + item) % 3 === 0 ? 'dark' : ''}}" wx:for="{{[1,2,3,4,5,6,7,8,9,10]}}" wx:key="*this"></view>
+                </view>
+              </view>
+              <view class="qr-center">
+                <text class="qr-center-icon">🔑</text>
+              </view>
+            </view>
+          </view>
+        </view>
+        <view class="qr-actions mt-20">
+          <view class="btn-ghost" bindtap="refreshQrCode">
+            🔄 刷新二维码
+          </view>
+        </view>
+        <text class="code-hint text-sm text-light mt-10">二维码每30秒自动刷新，确保安全</text>
+        <view class="qr-timer mt-10" wx:if="{{qrTimer > 0}}">
+          <text class="text-sm text-primary">⏱ {{qrTimer}}秒后刷新</text>
+        </view>
       </view>
     </view>
 
@@ -99,8 +235,8 @@
         <view class="btn-ghost" bindtap="copyWifi">一键复制</view>
       </view>
       <view class="wifi-info mt-20">
-        <text class="wifi-row">📶 {{wifiName}}</text>
-        <text class="wifi-row mt-10">🔑 密码：{{wifiPassword}}</text>
+        <text class="wifi-row">📶 WiFi名称：{{wifiName}}</text>
+        <text class="wifi-row mt-10">🔑 WiFi密码：{{wifiPassword}}</text>
       </view>
     </view>
 

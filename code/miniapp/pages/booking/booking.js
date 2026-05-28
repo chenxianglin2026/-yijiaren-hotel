@@ -17,9 +17,9 @@ Page({
     // 日历相关
     today: '',
     calendarOpen: false,
-    calendarType: '', // 'checkin' | 'checkout'
+    calendarType: '',
     calendarYear: 2024,
-    calendarMonth: 5,
+    calendarMonth: 6,
     calendarDays: [],
 
     // 房间数量
@@ -41,7 +41,12 @@ Page({
     arrivalTimes: ['12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'],
 
     // 是否展示取消政策
-    showPolicy: false
+    showPolicy: false,
+
+    // 支付相关
+    submitting: false,
+    showPayModal: false,
+    paying: false
   },
 
   onLoad(options) {
@@ -49,7 +54,6 @@ Page({
     const roomName = decodeURIComponent(options.roomName || '')
     const price = parseFloat(options.price) || 0
 
-    // 默认日期：今天入住，明天离店
     const today = new Date()
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
@@ -88,7 +92,6 @@ Page({
   },
 
   loadRoomBrief(roomId) {
-    // TODO: app.request({ url: `/rooms/${roomId}/brief` })
     const mock = {
       id: parseInt(roomId) || 101,
       name: this.data.roomName || '雅致大床房',
@@ -112,16 +115,16 @@ Page({
     const startWeekDay = firstDay.getDay()
 
     const days = []
-    // 填充前面的空白
     for (let i = 0; i < startWeekDay; i++) {
       days.push({ day: '', disabled: true })
     }
-    // 填充日期
     const today = new Date()
+    today.setHours(0, 0, 0, 0)
     const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`
     for (let i = 1; i <= daysInMonth; i++) {
+      const dateObj = new Date(calendarYear, calendarMonth - 1, i)
       const dateStr = `${calendarYear}-${String(calendarMonth).padStart(2,'0')}-${String(i).padStart(2,'0')}`
-      const isPast = dateStr < todayStr
+      const isPast = dateObj < today
       days.push({
         day: i,
         disabled: isPast,
@@ -148,11 +151,10 @@ Page({
 
     const { calendarType, checkInDate, checkOutDate } = this.data
     const weekMap = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
-    const d = new Date(date)
+    const d = new Date(date + 'T00:00:00')
     const week = weekMap[d.getDay()]
 
     if (calendarType === 'checkin') {
-      // 如果选择的入住日期 >= 当前离店日期，自动调整离店日期为入住日+1
       if (date >= checkOutDate) {
         const nextDay = new Date(d)
         nextDay.setDate(nextDay.getDate() + 1)
@@ -167,21 +169,14 @@ Page({
           checkOutWeek: weekMap[nextDay.getDay()]
         })
       } else {
-        this.setData({
-          checkInDate: date,
-          checkInWeek: week
-        })
+        this.setData({ checkInDate: date, checkInWeek: week })
       }
     } else {
-      // 离店日期必须 > 入住日期
       if (date <= checkInDate) {
         wx.showToast({ title: '离店日期需晚于入住日期', icon: 'none' })
         return
       }
-      this.setData({
-        checkOutDate: date,
-        checkOutWeek: week
-      })
+      this.setData({ checkOutDate: date, checkOutWeek: week })
     }
 
     this.calcNights()
@@ -210,8 +205,8 @@ Page({
   },
 
   calcNights() {
-    const d1 = new Date(this.data.checkInDate)
-    const d2 = new Date(this.data.checkOutDate)
+    const d1 = new Date(this.data.checkInDate + 'T00:00:00')
+    const d2 = new Date(this.data.checkOutDate + 'T00:00:00')
     const nights = Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24))
     this.setData({ nights: Math.max(1, nights) })
   },
@@ -233,36 +228,20 @@ Page({
   calcPrice() {
     const { roomPrice, nights, roomCount } = this.data
     const roomTotal = roomPrice * nights * roomCount
-    const serviceFee = 0 // 免服务费
-    const discount = nights >= 3 ? Math.floor(roomTotal * 0.1) : 0 // 连住3晚9折
+    const serviceFee = 0
+    const discount = nights >= 3 ? Math.floor(roomTotal * 0.1) : 0
     const totalPrice = roomTotal - discount + serviceFee
 
-    this.setData({
-      roomTotal,
-      serviceFee,
-      discount,
-      totalPrice
-    })
+    this.setData({ roomTotal, serviceFee, discount, totalPrice })
   },
 
   // ========== 表单输入 ==========
-  onNameInput(e) {
-    this.setData({ guestName: e.detail.value })
-  },
+  onNameInput(e) { this.setData({ guestName: e.detail.value }) },
+  onPhoneInput(e) { this.setData({ guestPhone: e.detail.value }) },
+  onRemarkInput(e) { this.setData({ remark: e.detail.value }) },
+  onArrivalChange(e) { this.setData({ arrivalTime: this.data.arrivalTimes[e.detail.value] }) },
 
-  onPhoneInput(e) {
-    this.setData({ guestPhone: e.detail.value })
-  },
-
-  onRemarkInput(e) {
-    this.setData({ remark: e.detail.value })
-  },
-
-  onArrivalChange(e) {
-    this.setData({ arrivalTime: this.data.arrivalTimes[e.detail.value] })
-  },
-
-  // ========== 提交订单 ==========
+  // ========== 提交订单 -> 弹出支付确认 ==========
   submitOrder() {
     const { guestName, guestPhone, checkInDate, checkOutDate, roomCount, totalPrice, roomId } = this.data
 
@@ -275,24 +254,67 @@ Page({
       return
     }
 
-    wx.showModal({
-      title: '确认预订',
-      content: `${guestName}，确认预订${checkInDate}至${checkOutDate}，共${totalPrice}元？`,
-      confirmText: '确认支付',
-      success: (res) => {
-        if (res.confirm) {
-          // TODO: app.request({ url: '/orders', method: 'POST', data: {...} })
-          wx.showLoading({ title: '提交中...' })
-          setTimeout(() => {
-            wx.hideLoading()
-            wx.showToast({ title: '预订成功！', icon: 'success' })
-            setTimeout(() => {
-              wx.switchTab({ url: '/pages/orders/orders' })
-            }, 1500)
-          }, 1000)
-        }
+    // 弹出支付确认弹窗
+    this.setData({ showPayModal: true })
+  },
+
+  closePayModal() {
+    this.setData({ showPayModal: false })
+  },
+
+  // ========== 微信支付 ==========
+  confirmPay() {
+    const that = this
+    this.setData({ showPayModal: false, paying: true, submitting: true })
+
+    wx.showLoading({ title: '创建订单...', mask: true })
+
+    // Step 1: 创建订单 -> 获取支付参数
+    // TODO: 替换为真实接口 app.request({ url: '/orders', method: 'POST', data: {...} })
+    setTimeout(() => {
+      wx.hideLoading()
+
+      // 模拟后端返回的支付参数
+      const mockPayParams = {
+        timeStamp: String(Math.floor(Date.now() / 1000)),
+        nonceStr: 'mock_nonce_' + Math.random().toString(36).substr(2, 8),
+        package: 'prepay_id=mock_prepay_' + Date.now(),
+        signType: 'MD5',
+        paySign: 'mock_sign_' + Math.random().toString(36).substr(2, 16)
       }
-    })
+
+      // Step 2: 调起微信支付
+      wx.requestPayment({
+        timeStamp: mockPayParams.timeStamp,
+        nonceStr: mockPayParams.nonceStr,
+        package: mockPayParams.package,
+        signType: mockPayParams.signType,
+        paySign: mockPayParams.paySign,
+        success() {
+          wx.showToast({ title: '支付成功！', icon: 'success', duration: 2000 })
+          that.setData({ paying: false, submitting: false })
+          // 跳转到订单页
+          setTimeout(() => {
+            wx.switchTab({ url: '/pages/orders/orders' })
+          }, 2000)
+        },
+        fail(err) {
+          console.log('支付失败:', err)
+          that.setData({ paying: false, submitting: false })
+          if (err.errMsg.indexOf('cancel') === -1) {
+            wx.showModal({
+              title: '支付失败',
+              content: '支付未完成，订单已生成可在订单列表继续支付',
+              showCancel: false,
+              confirmText: '知道了'
+            })
+          }
+        },
+        complete() {
+          that.setData({ paying: false, submitting: false })
+        }
+      })
+    }, 800)
   },
 
   togglePolicy() {

@@ -7,9 +7,30 @@
         data-tab="{{item.key}}"
         bindtap="switchTab"
       >
-        {{item.label}}
+        <text>{{item.label}}</text>
+        <text class="tab-badge" wx:if="{{item.count > 0}}">{{item.count}}</text>
       </view>
     </scroll-view>
+  </view>
+
+  <!-- 订单统计摘要 -->
+  <view class="order-summary" wx:if="{{!loading}}">
+    <view class="summary-item">
+      <text class="summary-num">{{summary.pending}}</text>
+      <text class="summary-label">待付款</text>
+    </view>
+    <view class="summary-item">
+      <text class="summary-num">{{summary.booked}}</text>
+      <text class="summary-label">已预订</text>
+    </view>
+    <view class="summary-item">
+      <text class="summary-num">{{summary.staying}}</text>
+      <text class="summary-label">入住中</text>
+    </view>
+    <view class="summary-item">
+      <text class="summary-num">{{summary.completed}}</text>
+      <text class="summary-label">已完成</text>
+    </view>
   </view>
 
   <!-- 加载中 -->
@@ -32,7 +53,10 @@
     >
       <!-- 订单头部 -->
       <view class="order-header flex-between">
-        <text class="order-store text-bold">{{item.storeName}}</text>
+        <view class="flex-row">
+          <text class="order-store text-bold">{{item.storeName}}</text>
+          <text class="order-date text-sm text-light ml-10">{{item.createTime}}</text>
+        </view>
         <text class="order-status {{item.status}}">{{item.statusLabel}}</text>
       </view>
 
@@ -41,17 +65,19 @@
       <!-- 订单内容 -->
       <view class="order-body" bindtap="onOrderTap" data-order="{{item}}">
         <view class="flex-row">
-          <view class="order-room-img img-placeholder" />
+          <view class="order-room-img img-placeholder">
+            <text class="order-room-icon">🛏️</text>
+          </view>
           <view class="flex-col flex-1 ml-10">
             <text class="order-room-name text-bold">{{item.roomName}}</text>
             <view class="order-info mt-10">
-              <text class="text-sm text-light">入住：{{item.checkInDate}} ～ {{item.checkOutDate}}</text>
+              <text class="text-sm text-light">📅 入住：{{item.checkInDate}} → 离店：{{item.checkOutDate}}</text>
             </view>
             <view class="order-info mt-6">
               <text class="text-sm text-light">{{item.nights}}晚 · {{item.roomCount}}间 · {{item.guestName}}</text>
             </view>
             <view class="order-info mt-6" wx:if="{{item.roomNumber}}">
-              <text class="text-sm text-primary">房间号：{{item.roomNumber}}</text>
+              <text class="text-sm text-primary">🚪 房间号：{{item.roomNumber}}</text>
             </view>
           </view>
         </view>
@@ -69,22 +95,29 @@
           </text>
         </view>
         <view class="order-actions">
-          <!-- 待支付 -->
+          <!-- 待付款 -->
           <block wx:if="{{item.status === 'pending'}}">
             <view class="btn-ghost" bindtap="onCancelOrder" data-id="{{item.id}}">取消</view>
             <view class="btn-primary btn-sm ml-10" bindtap="onPayOrder" data-order="{{item}}">立即支付</view>
           </block>
-          <!-- 已支付 -->
+          <!-- 已预订/已支付 -->
           <block wx:elif="{{item.status === 'paid'}}">
-            <view class="btn-outline btn-sm" bindtap="onGoCheckin" data-order="{{item}}">入住开锁</view>
+            <view class="btn-ghost" bindtap="onContactHotel">联系酒店</view>
+            <view class="btn-primary btn-sm ml-10" bindtap="onGoCheckin" data-order="{{item}}">入住开锁</view>
+          </block>
+          <!-- 入住中 -->
+          <block wx:elif="{{item.status === 'staying'}}">
+            <view class="tag tag-green" style="padding:8rpx 20rpx;font-size:24rpx;">入住中</view>
+            <view class="btn-primary btn-sm ml-10" bindtap="onGoCheckin" data-order="{{item}}">开门</view>
           </block>
           <!-- 已完成 -->
           <block wx:elif="{{item.status === 'completed'}}">
-            <view class="btn-ghost">查看详情</view>
+            <view class="btn-ghost" bindtap="onViewDetail" data-order="{{item}}">查看详情</view>
+            <view class="btn-outline btn-sm ml-10" bindtap="onBookAgain" data-order="{{item}}">再次预订</view>
           </block>
           <!-- 已取消 -->
           <block wx:elif="{{item.status === 'cancelled'}}">
-            <view class="btn-ghost">已取消</view>
+            <view class="tag tag-red">已取消</view>
           </block>
         </view>
       </view>
@@ -92,7 +125,12 @@
 
     <!-- 加载更多 -->
     <view class="loading-more" wx:if="{{hasMore}}">
-      <text class="text-sm text-light">加载更多...</text>
+      <text class="text-sm text-light">上拉加载更多...</text>
+    </view>
+
+    <!-- 没有更多 -->
+    <view class="loading-more" wx:elif="{{orders.length > 0 && !hasMore}}">
+      <text class="text-sm text-lighter">— 已经到底了 —</text>
     </view>
   </view>
 
