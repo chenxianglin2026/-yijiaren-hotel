@@ -1,0 +1,161 @@
+<view class="page-booking">
+  <!-- 房间信息卡片 -->
+  <view class="card room-brief" wx:if="{{room}}">
+    <view class="flex-row">
+      <view class="room-thumb img-placeholder" />
+      <view class="flex-col flex-1 ml-10">
+        <text class="room-brief-name text-bold">{{room.name}}</text>
+        <view class="flex-row mt-10">
+          <text class="text-sm text-light">🛏️ {{room.bed}}</text>
+          <text class="text-sm text-light ml-10">📐 {{room.area}}</text>
+          <text class="text-sm text-light ml-10" wx:if="{{room.window}}">🪟 有窗</text>
+        </view>
+        <view class="flex-row mt-10">
+          <text class="price"><text class="price-symbol">¥</text><text class="price-value">{{room.price}}</text></text>
+          <text class="price-unit">/晚</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 入住/离店日期 -->
+  <view class="card">
+    <text class="section-label">入住日期</text>
+    <view class="date-row mt-20">
+      <view class="date-block" bindtap="openCalendar" data-type="checkin">
+        <text class="date-label">入住</text>
+        <text class="date-value">{{checkInDate}}</text>
+        <text class="date-week">{{checkInWeek}}</text>
+      </view>
+      <view class="date-divider">
+        <text class="date-arrow">→</text>
+        <text class="nights-text">共{{nights}}晚</text>
+      </view>
+      <view class="date-block" bindtap="openCalendar" data-type="checkout">
+        <text class="date-label">离店</text>
+        <text class="date-value">{{checkOutDate}}</text>
+        <text class="date-week">{{checkOutWeek}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 日历弹窗 -->
+  <view class="calendar-mask" wx:if="{{calendarOpen}}" bindtap="closeCalendar">
+    <view class="calendar-panel" catchtap="">
+      <view class="calendar-header">
+        <text class="calendar-arrow" bindtap="prevMonth">◀</text>
+        <text class="calendar-title">{{calendarYear}}年{{calendarMonth}}月</text>
+        <text class="calendar-arrow" bindtap="nextMonth">▶</text>
+      </view>
+      <view class="calendar-weeks">
+        <text class="week-day">日</text>
+        <text class="week-day">一</text>
+        <text class="week-day">二</text>
+        <text class="week-day">三</text>
+        <text class="week-day">四</text>
+        <text class="week-day">五</text>
+        <text class="week-day">六</text>
+      </view>
+      <view class="calendar-grid">
+        <view class="calendar-day {{item.disabled ? 'disabled' : ''}} {{item.date === checkInDate || item.date === checkOutDate ? 'selected' : ''}} {{item.isToday ? 'today' : ''}}"
+          wx:for="{{calendarDays}}" wx:key="index"
+          data-date="{{item.date}}"
+          data-disabled="{{item.disabled}}"
+          bindtap="onDayTap"
+        >
+          <text>{{item.day}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 房间数量 -->
+  <view class="card">
+    <text class="section-label">房间数量</text>
+    <view class="flex-between mt-20">
+      <text class="text-light">预订间数</text>
+      <view class="counter">
+        <text class="counter-btn" bindtap="decreaseRoom">−</text>
+        <text class="counter-value">{{roomCount}}</text>
+        <text class="counter-btn" bindtap="increaseRoom">+</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 入住人信息 -->
+  <view class="card">
+    <text class="section-label">入住人信息</text>
+    <view class="form-item mt-20">
+      <text class="form-label">姓名</text>
+      <input class="form-input" placeholder="请输入入住人姓名" value="{{guestName}}" bindinput="onNameInput" />
+    </view>
+    <view class="form-item">
+      <text class="form-label">手机号</text>
+      <input class="form-input" type="number" maxlength="11" placeholder="请输入手机号" value="{{guestPhone}}" bindinput="onPhoneInput" />
+    </view>
+    <view class="form-item">
+      <text class="form-label">预计抵店</text>
+      <picker mode="selector" range="{{arrivalTimes}}" value="2" bindchange="onArrivalChange">
+        <view class="form-picker">{{arrivalTime}}</view>
+      </picker>
+    </view>
+    <view class="form-item">
+      <text class="form-label">备注</text>
+      <textarea class="form-textarea" placeholder="如有特殊需求请备注（选填）" value="{{remark}}" bindinput="onRemarkInput" maxlength="200" />
+    </view>
+  </view>
+
+  <!-- 取消政策 -->
+  <view class="card">
+    <view class="flex-between" bindtap="togglePolicy">
+      <text class="section-label">取消政策</text>
+      <text class="policy-arrow">{{showPolicy ? '▴' : '▾'}}</text>
+    </view>
+    <view class="policy-content mt-20" wx:if="{{showPolicy}}">
+      <text class="text-sm text-light">• 入住当天18:00前可免费取消</text>
+      <text class="text-sm text-light mt-10">• 入住当天18:00后取消，收取首晚房费</text>
+      <text class="text-sm text-light mt-10">• 未按预订入住，收取全额房费</text>
+    </view>
+  </view>
+
+  <!-- 费用明细 -->
+  <view class="card">
+    <text class="section-label">费用明细</text>
+    <view class="price-detail mt-20">
+      <view class="flex-between mb-20">
+        <text class="text-light">房费 ({{roomPrice}} × {{nights}}晚 × {{roomCount}}间)</text>
+        <text class="text-dark">¥{{roomTotal}}</text>
+      </view>
+      <view class="flex-between mb-20" wx:if="{{discount > 0}}">
+        <text class="text-success">连住优惠</text>
+        <text class="text-success">-¥{{discount}}</text>
+      </view>
+      <view class="flex-between mb-20">
+        <text class="text-light">服务费</text>
+        <text class="text-dark">¥{{serviceFee}}</text>
+      </view>
+      <view class="divider"></view>
+      <view class="flex-between">
+        <text class="text-bold">合计</text>
+        <view class="total-price">
+          <text class="price price-symbol">¥</text>
+          <text class="price price-value">{{totalPrice}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部安全区 -->
+  <view style="height: 160rpx;"></view>
+
+  <!-- 底部提交栏 -->
+  <view class="bottom-bar safe-bottom">
+    <view class="bottom-bar-inner">
+      <view class="bottom-total">
+        <text class="text-lg text-bold">¥{{totalPrice}}</text>
+        <text class="text-sm text-light ml-10">含税总价</text>
+      </view>
+      <view class="btn-primary" bindtap="submitOrder">提交订单</view>
+    </view>
+  </view>
+</view>

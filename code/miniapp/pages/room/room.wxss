@@ -1,0 +1,267 @@
+/* ========== 房型详情 ========== */
+
+.page-room {
+  background: #FAF7F2;
+  min-height: 100vh;
+}
+
+/* ---- 图片轮播 ---- */
+.room-swiper {
+  width: 100%;
+  height: 500rpx;
+}
+
+.room-swiper-image {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.swiper-counter {
+  position: absolute;
+  bottom: 20rpx;
+  right: 20rpx;
+  font-size: 22rpx;
+  color: #FFFFFF;
+  background: rgba(0,0,0,0.4);
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
+}
+
+/* ---- 房型头部 ---- */
+.room-header {
+  margin-top: -20rpx;
+  border-radius: 20rpx 20rpx 20rpx 20rpx;
+  position: relative;
+  z-index: 1;
+}
+
+.room-name {
+  font-size: 36rpx;
+}
+
+.room-tags {
+  display: flex;
+  gap: 12rpx;
+  flex-wrap: wrap;
+}
+
+.room-desc {
+  line-height: 1.6;
+}
+
+/* ---- 区块标签 ---- */
+.section-label {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #3D3226;
+}
+
+/* ---- 亮点 ---- */
+.highlight-list {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.highlight-item {
+  width: 50%;
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 16rpx;
+  padding-right: 16rpx;
+}
+
+.highlight-dot {
+  font-size: 24rpx;
+  color: #C8A96E;
+  margin-right: 10rpx;
+  flex-shrink: 0;
+}
+
+.highlight-text {
+  font-size: 26rpx;
+  color: #3D3226;
+  line-height: 1.5;
+}
+
+/* ---- 详情表格 ---- */
+.detail-grid {
+  display: flex;
+  flex-wrap: wrap;
+  border-top: 1rpx solid #F0EBE0;
+  border-left: 1rpx solid #F0EBE0;
+}
+
+.detail-item {
+  width: 50%;
+  display: flex;
+  flex-direction: column;
+  padding: 20rpx;
+  border-right: 1rpx solid #F0EBE0;
+  border-bottom: 1rpx solid #F0EBE0;
+}
+
+.detail-label {
+  font-size: 22rpx;
+  color: #B0A492;
+  margin-bottom: 8rpx;
+}
+
+.detail-value {
+  font-size: 26rpx;
+  color: #3D3226;
+  font-weight: 500;
+}
+
+/* ---- 须知 ---- */
+.notice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.notice-icon {
+  font-size: 24rpx;
+  color: #D4B896;
+  margin-right: 12rpx;
+  flex-shrink: 0;
+}
+
+.notice-text {
+  line-height: 1.5;
+}
+
+/* ---- 评价 ---- */
+.review-summary {
+  display: flex;
+  align-items: center;
+}
+
+.review-score-wrap {
+  display: flex;
+  align-items: baseline;
+  margin-right: 30rpx;
+}
+
+.review-score {
+  font-size: 60rpx;
+  font-weight: 700;
+  color: #C8A96E;
+  line-height: 1;
+}
+
+.review-score-unit {
+  font-size: 24rpx;
+  color: #8B7E6A;
+}
+
+.review-tags-wrap {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+}
+
+.review-tag {
+  font-size: 22rpx;
+  color: #8B7E6A;
+  background: #F8F5EF;
+  padding: 4rpx 14rpx;
+  border-radius: 6rpx;
+}
+
+.review-list {
+  border-top: 1rpx solid #F0EBE0;
+  padding-top: 10rpx;
+}
+
+.review-item {
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #F5F0E8;
+}
+
+.review-item:last-child {
+  border-bottom: none;
+}
+
+.review-avatar {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  overflow: hidden;
+  font-size: 32rpx;
+}
+
+.review-user {
+  font-size: 26rpx;
+}
+
+.review-date {
+  font-size: 22rpx;
+}
+
+.review-score-sm {
+  font-size: 24rpx;
+  color: #D4B896;
+}
+
+.review-content {
+  line-height: 1.6;
+  color: #3D3226;
+}
+
+.review-item-tags {
+  display: flex;
+  gap: 10rpx;
+}
+
+/* ---- 底部预订栏 ---- */
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #FFFFFF;
+  box-shadow: 0 -4rpx 20rpx rgba(61,50,38,0.06);
+  z-index: 100;
+}
+
+.bottom-bar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 30rpx;
+}
+
+.bottom-price {
+  display: flex;
+  align-items: baseline;
+}
+
+.bottom-actions {
+  display: flex;
+  align-items: center;
+}
+
+.btn-outline {
+  font-size: 26rpx;
+  padding: 14rpx 28rpx;
+}
+
+.btn-primary {
+  font-size: 28rpx;
+  padding: 16rpx 40rpx;
+  border-radius: 30rpx;
+}
+
+/* ---- 加载 ---- */
+.loading-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 200rpx 0;
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: #B0A492;
+}

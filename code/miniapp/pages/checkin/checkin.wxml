@@ -1,0 +1,135 @@
+<view class="page-checkin">
+  <!-- 加载中 -->
+  <view class="loading-wrap" wx:if="{{loading}}">
+    <text class="loading-text">加载订单信息...</text>
+  </view>
+
+  <!-- 无有效订单 -->
+  <view class="empty-state" wx:elif="{{!hasActiveOrder}}">
+    <text class="empty-icon">📋</text>
+    <text class="empty-text">暂无可入住的订单</text>
+    <text class="empty-hint text-light text-sm mt-10">请先预订房间</text>
+    <view class="btn-primary mt-30" bindtap="onGoBook">去预订</view>
+  </view>
+
+  <block wx:elif="{{order}}">
+    <!-- 订单信息卡片 -->
+    <view class="card">
+      <view class="flex-between">
+        <text class="section-label">入住信息</text>
+        <text class="tag tag-green">{{checkinStatus === 'active' ? '入住中' : '已离店'}}</text>
+      </view>
+      <view class="info-grid mt-20">
+        <view class="info-item">
+          <text class="info-label">房型</text>
+          <text class="info-value text-bold">{{order.roomName}}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">房间号</text>
+          <text class="info-value room-number">{{order.roomNumber}}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">姓名</text>
+          <text class="info-value">{{order.guestName}}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">楼层</text>
+          <text class="info-value">{{order.floor}}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">入住</text>
+          <text class="info-value">{{order.checkInDate}}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">离店</text>
+          <text class="info-value">{{order.checkOutDate}} (共{{order.nights}}晚)</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 智能门锁 -->
+    <view class="card lock-section">
+      <text class="section-label">智能门锁</text>
+      <view class="lock-display mt-20">
+        <view class="lock-circle {{lockStatus}}">
+          <text class="lock-icon">
+            {{lockStatus === 'locked' ? '🔒' : lockStatus === 'unlocking' ? '⏳' : '🔓'}}
+          </text>
+        </view>
+        <text class="lock-status-text mt-20">
+          {{lockStatus === 'locked' ? '门已锁' : lockStatus === 'unlocking' ? '正在开锁...' : '门已打开'}}
+        </text>
+      </view>
+      <view class="lock-actions mt-20">
+        <view class="btn-primary lock-btn" bindtap="unlockDoor" wx:if="{{lockStatus === 'locked'}}">
+          <text>🔑 一键开锁</text>
+        </view>
+        <view class="btn-outline lock-btn" bindtap="unlockDoor" wx:elif="{{lockStatus === 'unlocked'}}" disabled>
+          <text>门已打开</text>
+        </view>
+        <view class="btn-primary lock-btn" wx:else>
+          <text>⏳ 开锁中...</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 开门密码 -->
+    <view class="card">
+      <text class="section-label">开门密码</text>
+      <view class="code-section mt-20">
+        <view class="code-display">
+          <text class="code-digit" wx:for="{{showCode ? order.lockCode.split('') : ['*','*','*','*','*','*']}}" wx:key="index">{{item}}</text>
+        </view>
+        <view class="code-actions mt-20">
+          <view class="btn-ghost" bindtap="toggleShowCode">
+            {{showCode ? '隐藏密码' : '显示密码'}}
+          </view>
+          <view class="btn-ghost ml-10" bindtap="copyLockCode">
+            复制密码
+          </view>
+        </view>
+        <text class="code-hint text-sm text-light mt-10">密码在入住期间有效，离店后自动失效</text>
+      </view>
+    </view>
+
+    <!-- WiFi信息 -->
+    <view class="card">
+      <view class="flex-between">
+        <text class="section-label">WiFi网络</text>
+        <view class="btn-ghost" bindtap="copyWifi">一键复制</view>
+      </view>
+      <view class="wifi-info mt-20">
+        <text class="wifi-row">📶 {{wifiName}}</text>
+        <text class="wifi-row mt-10">🔑 密码：{{wifiPassword}}</text>
+      </view>
+    </view>
+
+    <!-- 酒店服务 -->
+    <view class="card">
+      <text class="section-label">酒店服务</text>
+      <view class="service-grid mt-20">
+        <view class="service-item" wx:for="{{services}}" wx:key="id" bindtap="onServiceTap" data-id="{{item.id}}">
+          <text class="service-icon">{{item.icon}}</text>
+          <text class="service-label">{{item.label}}</text>
+          <text class="service-desc text-sm text-light">{{item.desc}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 附近推荐 -->
+    <view class="card">
+      <text class="section-label">周边推荐</text>
+      <view class="nearby-list mt-20">
+        <view class="nearby-item flex-between" wx:for="{{nearbyPlaces}}" wx:key="name">
+          <view class="flex-row">
+            <text class="nearby-icon">{{item.icon}}</text>
+            <text class="nearby-name">{{item.name}}</text>
+          </view>
+          <text class="nearby-distance text-sm text-light">{{item.distance}}</text>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <view style="height: 60rpx;" class="safe-bottom"></view>
+</view>

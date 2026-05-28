@@ -1,0 +1,101 @@
+<view class="page-orders">
+  <!-- Tab标签栏 -->
+  <view class="tabs-bar">
+    <scroll-view scroll-x class="tabs-scroll">
+      <view class="tab-item {{currentTab === item.key ? 'active' : ''}}"
+        wx:for="{{tabs}}" wx:key="key"
+        data-tab="{{item.key}}"
+        bindtap="switchTab"
+      >
+        {{item.label}}
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 加载中 -->
+  <view class="loading-wrap" wx:if="{{loading && orders.length === 0}}">
+    <text class="loading-text">加载订单中...</text>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:elif="{{!loading && orders.length === 0}}">
+    <text class="empty-icon">📭</text>
+    <text class="empty-text">暂无订单</text>
+    <text class="empty-hint text-light text-sm mt-10">去首页看看精选房型吧</text>
+    <view class="btn-primary mt-30" bindtap="onGoHome">去预订</view>
+  </view>
+
+  <!-- 订单列表 -->
+  <view class="order-list" wx:else>
+    <view class="order-card card"
+      wx:for="{{orders}}" wx:key="id"
+    >
+      <!-- 订单头部 -->
+      <view class="order-header flex-between">
+        <text class="order-store text-bold">{{item.storeName}}</text>
+        <text class="order-status {{item.status}}">{{item.statusLabel}}</text>
+      </view>
+
+      <view class="divider"></view>
+
+      <!-- 订单内容 -->
+      <view class="order-body" bindtap="onOrderTap" data-order="{{item}}">
+        <view class="flex-row">
+          <view class="order-room-img img-placeholder" />
+          <view class="flex-col flex-1 ml-10">
+            <text class="order-room-name text-bold">{{item.roomName}}</text>
+            <view class="order-info mt-10">
+              <text class="text-sm text-light">入住：{{item.checkInDate}} ～ {{item.checkOutDate}}</text>
+            </view>
+            <view class="order-info mt-6">
+              <text class="text-sm text-light">{{item.nights}}晚 · {{item.roomCount}}间 · {{item.guestName}}</text>
+            </view>
+            <view class="order-info mt-6" wx:if="{{item.roomNumber}}">
+              <text class="text-sm text-primary">房间号：{{item.roomNumber}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="divider"></view>
+
+      <!-- 订单底部 -->
+      <view class="order-footer flex-between">
+        <view class="order-price">
+          <text class="text-sm text-light">合计 </text>
+          <text class="price">
+            <text class="price-symbol">¥</text>
+            <text class="price-value">{{item.totalPrice}}</text>
+          </text>
+        </view>
+        <view class="order-actions">
+          <!-- 待支付 -->
+          <block wx:if="{{item.status === 'pending'}}">
+            <view class="btn-ghost" bindtap="onCancelOrder" data-id="{{item.id}}">取消</view>
+            <view class="btn-primary btn-sm ml-10" bindtap="onPayOrder" data-order="{{item}}">立即支付</view>
+          </block>
+          <!-- 已支付 -->
+          <block wx:elif="{{item.status === 'paid'}}">
+            <view class="btn-outline btn-sm" bindtap="onGoCheckin" data-order="{{item}}">入住开锁</view>
+          </block>
+          <!-- 已完成 -->
+          <block wx:elif="{{item.status === 'completed'}}">
+            <view class="btn-ghost">查看详情</view>
+          </block>
+          <!-- 已取消 -->
+          <block wx:elif="{{item.status === 'cancelled'}}">
+            <view class="btn-ghost">已取消</view>
+          </block>
+        </view>
+      </view>
+    </view>
+
+    <!-- 加载更多 -->
+    <view class="loading-more" wx:if="{{hasMore}}">
+      <text class="text-sm text-light">加载更多...</text>
+    </view>
+  </view>
+
+  <!-- 底部安全区 -->
+  <view style="height: 40rpx;" class="safe-bottom"></view>
+</view>

@@ -1,0 +1,53 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/room/room",
+    "pages/booking/booking",
+    "pages/checkin/checkin",
+    "pages/orders/orders",
+    "pages/mine/mine"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#C8A96E",
+    "navigationBarTitleText": "伊家人酒店",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#FAF7F2"
+  },
+  "tabBar": {
+    "color": "#8B7E6A",
+    "selectedColor": "#C8A96E",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "iconPath": "images/tab-home.png",
+        "selectedIconPath": "images/tab-home-active.png",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/orders/orders",
+        "iconPath": "images/tab-orders.png",
+        "selectedIconPath": "images/tab-orders-active.png",
+        "text": "订单"
+      },
+      {
+        "pagePath": "pages/mine/mine",
+        "iconPath": "images/tab-mine.png",
+        "selectedIconPath": "images/tab-mine-active.png",
+        "text": "我的"
+      }
+    ]
+  },
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于获取您的位置，推荐附近门店"
+    }
+  },
+  "requiredPrivateInfos": [
+    "getLocation",
+    "chooseLocation"
+  ],
+  "sitemapLocation": "sitemap.json"
+}

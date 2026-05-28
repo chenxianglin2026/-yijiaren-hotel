@@ -1,0 +1,170 @@
+<view class="page-index">
+  <!-- 顶部定位 / 门店选择 -->
+  <view class="header-bar">
+    <view class="location-wrap" bindtap="onSwitchStore">
+      <text class="location-icon">📍</text>
+      <text class="location-city">{{city}}</text>
+      <text class="location-arrow">▾</text>
+    </view>
+    <text class="header-title">伊家人酒店</text>
+    <view class="header-placeholder"></view>
+  </view>
+
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <view class="search-input-wrap">
+      <text class="search-icon">🔍</text>
+      <input
+        class="search-input"
+        placeholder="搜索房型、关键词"
+        placeholder-style="color:#B0A492"
+        value="{{searchKey}}"
+        bindinput="onSearchInput"
+        bindconfirm="onSearch"
+      />
+      <text class="search-clear" wx:if="{{searchKey}}" bindtap="onSearchClear">✕</text>
+    </view>
+    <view class="filter-btn {{showFilters ? 'active' : ''}}" bindtap="toggleFilters">
+      <text>筛选</text>
+    </view>
+  </view>
+
+  <!-- 筛选面板 -->
+  <view class="filter-panel" wx:if="{{showFilters}}">
+    <!-- 房型 -->
+    <view class="filter-row">
+      <text class="filter-label">房型</text>
+      <view class="filter-options">
+        <text class="filter-tag {{filters.roomType === 'all' ? 'active' : ''}}" data-field="roomType" data-value="all" bindtap="onFilterChange">全部</text>
+        <text class="filter-tag {{filters.roomType === 'single' ? 'active' : ''}}" data-field="roomType" data-value="single" bindtap="onFilterChange">单人间</text>
+        <text class="filter-tag {{filters.roomType === 'double' ? 'active' : ''}}" data-field="roomType" data-value="double" bindtap="onFilterChange">大床/双床</text>
+        <text class="filter-tag {{filters.roomType === 'suite' ? 'active' : ''}}" data-field="roomType" data-value="suite" bindtap="onFilterChange">套房</text>
+        <text class="filter-tag {{filters.roomType === 'family' ? 'active' : ''}}" data-field="roomType" data-value="family" bindtap="onFilterChange">家庭房</text>
+      </view>
+    </view>
+    <!-- 价格 -->
+    <view class="filter-row">
+      <text class="filter-label">价格</text>
+      <view class="filter-options">
+        <text class="filter-tag {{filters.priceRange === 'all' ? 'active' : ''}}" data-field="priceRange" data-value="all" bindtap="onFilterChange">不限</text>
+        <text class="filter-tag {{filters.priceRange === 'under300' ? 'active' : ''}}" data-field="priceRange" data-value="under300" bindtap="onFilterChange">¥300以下</text>
+        <text class="filter-tag {{filters.priceRange === '300to500' ? 'active' : ''}}" data-field="priceRange" data-value="300to500" bindtap="onFilterChange">¥300-500</text>
+        <text class="filter-tag {{filters.priceRange === '500to800' ? 'active' : ''}}" data-field="priceRange" data-value="500to800" bindtap="onFilterChange">¥500-800</text>
+        <text class="filter-tag {{filters.priceRange === 'above800' ? 'active' : ''}}" data-field="priceRange" data-value="above800" bindtap="onFilterChange">¥800以上</text>
+      </view>
+    </view>
+    <!-- 筛选项 -->
+    <view class="filter-row">
+      <text class="filter-label">设施</text>
+      <view class="filter-options">
+        <text class="filter-tag {{filters.hasWindow ? 'active' : ''}}" data-field="hasWindow" bindtap="onFilterChange">有窗</text>
+        <text class="filter-tag {{filters.breakfast ? 'active' : ''}}" data-field="breakfast" bindtap="onFilterChange">含早餐</text>
+      </view>
+    </view>
+    <view class="filter-actions">
+      <text class="filter-reset" bindtap="resetFilters">重置</text>
+    </view>
+  </view>
+
+  <!-- Banner 轮播 -->
+  <swiper class="banner-swiper" indicator-dots indicator-color="rgba(255,255,255,0.4)" indicator-active-color="#C8A96E" autoplay circular interval="4000">
+    <swiper-item wx:for="{{banners}}" wx:key="id">
+      <view class="banner-slide img-placeholder">
+        <text class="banner-title">{{item.title}}</text>
+      </view>
+    </swiper-item>
+  </swiper>
+
+  <!-- 品牌特色 -->
+  <view class="features-section">
+    <view class="feature-item" wx:for="{{features}}" wx:key="label">
+      <text class="feature-icon">{{item.icon}}</text>
+      <text class="feature-label">{{item.label}}</text>
+      <text class="feature-desc">{{item.desc}}</text>
+    </view>
+  </view>
+
+  <!-- 当前门店 -->
+  <view class="store-card card" wx:if="{{storeInfo}}">
+    <view class="flex-between">
+      <view class="flex-col flex-1">
+        <text class="store-name">{{storeInfo.name}}</text>
+        <text class="store-addr text-sm text-light mt-10">{{storeInfo.address}}</text>
+      </view>
+      <view class="flex-center" bindtap="onSwitchStore">
+        <text class="btn-ghost">切换门店</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 房型列表标题 -->
+  <view class="section-header">
+    <text class="section-title">精选房型</text>
+    <text class="section-sub text-light text-sm">品质之选 · 舒心入住</text>
+  </view>
+
+  <!-- 房型列表 -->
+  <view class="room-list">
+    <!-- 加载中 -->
+    <view class="loading-wrap" wx:if="{{loading}}">
+      <text class="loading-text">正在加载房型...</text>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:elif="{{roomList.length === 0}}">
+      <text class="empty-icon">🏨</text>
+      <text class="empty-text">暂无可选房型</text>
+      <text class="empty-hint text-light text-sm mt-10">请调整筛选条件试试</text>
+    </view>
+
+    <!-- 房型卡片 -->
+    <view class="room-card card"
+      wx:for="{{filteredRooms || roomList}}"
+      wx:key="id"
+      wx:for-item="room"
+      bindtap="onRoomTap"
+      data-id="{{room.id}}"
+    >
+      <view class="room-card-inner">
+        <!-- 图片 -->
+        <view class="room-image-wrap img-placeholder">
+          <view class="room-tags-top" wx:if="{{room.tags.length > 0}}">
+            <text class="room-tag-item" wx:for="{{room.tags}}" wx:for-item="tag" wx:key="*this">{{tag}}</text>
+          </view>
+        </view>
+        <!-- 信息 -->
+        <view class="room-info">
+          <view class="flex-between">
+            <text class="room-name text-bold">{{room.name}}</text>
+            <text class="room-type-tag tag tag-gold">{{room.bed}}</text>
+          </view>
+          <text class="room-desc text-sm text-light mt-10">{{room.description}}</text>
+          <view class="room-meta mt-10">
+            <text class="meta-item" wx:if="{{room.window}}">🪟 有窗</text>
+            <text class="meta-item" wx:if="{{room.breakfast}}">🍳 含早餐</text>
+            <text class="meta-item">📶 WiFi</text>
+            <text class="meta-item">📐 {{room.area}}</text>
+          </view>
+          <view class="divider"></view>
+          <view class="flex-between">
+            <view class="room-price">
+              <text class="price">
+                <text class="price-symbol">¥</text>
+                <text class="price-value">{{room.price}}</text>
+              </text>
+              <text class="price-original line-through ml-10" wx:if="{{room.originalPrice > room.price}}">¥{{room.originalPrice}}</text>
+              <text class="price-unit ml-10">/晚</text>
+            </view>
+            <view class="room-actions">
+              <text class="room-stock text-light text-sm">仅剩{{room.available}}间</text>
+              <view class="btn-primary btn-sm" catchtap="onBookTap" data-id="{{room.id}}">立即预订</view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部安全区 -->
+  <view class="safe-bottom" style="height: 40rpx;"></view>
+</view>

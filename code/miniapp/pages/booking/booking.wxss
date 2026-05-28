@@ -1,0 +1,295 @@
+/* ========== 预订下单 ========== */
+
+.page-booking {
+  background: #FAF7F2;
+  min-height: 100vh;
+}
+
+/* ---- 房间简卡 ---- */
+.room-brief {
+  margin-top: 20rpx;
+}
+
+.room-thumb {
+  width: 160rpx;
+  height: 140rpx;
+  border-radius: 12rpx;
+  flex-shrink: 0;
+}
+
+.room-brief-name {
+  font-size: 30rpx;
+}
+
+/* ---- 日期 ---- */
+.date-row {
+  display: flex;
+  align-items: center;
+}
+
+.date-block {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16rpx;
+  background: #F8F5EF;
+  border-radius: 12rpx;
+}
+
+.date-label {
+  font-size: 22rpx;
+  color: #B0A492;
+  margin-bottom: 6rpx;
+}
+
+.date-value {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #3D3226;
+}
+
+.date-week {
+  font-size: 22rpx;
+  color: #8B7E6A;
+  margin-top: 4rpx;
+}
+
+.date-divider {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 16rpx;
+  min-width: 80rpx;
+}
+
+.date-arrow {
+  font-size: 28rpx;
+  color: #D4B896;
+}
+
+.nights-text {
+  font-size: 22rpx;
+  color: #C8A96E;
+  margin-top: 4rpx;
+}
+
+/* ---- 日历弹窗 ---- */
+.calendar-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+}
+
+.calendar-panel {
+  width: 100%;
+  background: #FFFFFF;
+  border-radius: 30rpx 30rpx 0 0;
+  padding: 30rpx;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24rpx;
+}
+
+.calendar-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #3D3226;
+}
+
+.calendar-arrow {
+  font-size: 28rpx;
+  color: #C8A96E;
+  padding: 10rpx 20rpx;
+}
+
+.calendar-weeks {
+  display: flex;
+  margin-bottom: 10rpx;
+}
+
+.week-day {
+  flex: 1;
+  text-align: center;
+  font-size: 24rpx;
+  color: #B0A492;
+  padding: 10rpx 0;
+}
+
+.calendar-grid {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.calendar-day {
+  width: calc(100% / 7);
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  color: #3D3226;
+  border-radius: 50%;
+}
+
+.calendar-day.disabled {
+  color: #E0D8CC;
+}
+
+.calendar-day.selected {
+  background: linear-gradient(135deg, #C8A96E, #D4B896);
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+.calendar-day.today:not(.selected) {
+  color: #C8A96E;
+  font-weight: 600;
+}
+
+/* ---- 计数器 ---- */
+.counter {
+  display: flex;
+  align-items: center;
+}
+
+.counter-btn {
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  color: #8B7E6A;
+  border: 2rpx solid #E8E0D5;
+  border-radius: 50%;
+}
+
+.counter-value {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #3D3226;
+  min-width: 60rpx;
+  text-align: center;
+  margin: 0 20rpx;
+}
+
+/* ---- 表单 ---- */
+.form-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #F5F0E8;
+}
+
+.form-item:last-child {
+  border-bottom: none;
+}
+
+.form-label {
+  font-size: 26rpx;
+  color: #3D3226;
+  width: 140rpx;
+  flex-shrink: 0;
+}
+
+.form-input {
+  flex: 1;
+  font-size: 26rpx;
+  color: #3D3226;
+  text-align: right;
+}
+
+.form-input::placeholder {
+  color: #B0A492;
+}
+
+.form-picker {
+  flex: 1;
+  font-size: 26rpx;
+  color: #3D3226;
+  text-align: right;
+}
+
+.form-textarea {
+  flex: 1;
+  font-size: 26rpx;
+  color: #3D3226;
+  min-height: 80rpx;
+  padding: 10rpx 0;
+  text-align: right;
+}
+
+.form-textarea::placeholder {
+  color: #B0A492;
+}
+
+/* ---- 政策 ---- */
+.policy-arrow {
+  font-size: 24rpx;
+  color: #8B7E6A;
+}
+
+.policy-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+/* ---- 费用明细 ---- */
+.price-detail {
+}
+
+.text-success {
+  color: #6BAA75;
+}
+
+.total-price {
+  display: flex;
+  align-items: baseline;
+}
+
+/* ---- 底部提交栏 ---- */
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #FFFFFF;
+  box-shadow: 0 -4rpx 20rpx rgba(61,50,38,0.06);
+  z-index: 100;
+}
+
+.bottom-bar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 30rpx;
+}
+
+.bottom-total {
+  display: flex;
+  align-items: baseline;
+}
+
+.btn-primary {
+  font-size: 30rpx;
+  padding: 18rpx 50rpx;
+  border-radius: 30rpx;
+}

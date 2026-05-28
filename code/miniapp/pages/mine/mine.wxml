@@ -1,0 +1,120 @@
+<view class="page-mine">
+  <!-- 用户头部 -->
+  <view class="user-header">
+    <!-- 已登录 -->
+    <block wx:if="{{isLoggedIn}}">
+      <view class="user-info">
+        <image class="user-avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill" wx:if="{{userInfo.avatarUrl}}" />
+        <view class="user-avatar img-placeholder avatar-placeholder" wx:else>
+          <text>👤</text>
+        </view>
+        <view class="user-detail ml-10">
+          <text class="user-name">{{userInfo.nickName || '酒店住客'}}</text>
+          <text class="user-phone text-sm mt-6">{{phoneNumber || '未绑定手机'}}</text>
+        </view>
+      </view>
+    </block>
+
+    <!-- 未登录 -->
+    <block wx:else>
+      <view class="user-info" bindtap="onLogin">
+        <view class="user-avatar img-placeholder avatar-placeholder">
+          <text>👤</text>
+        </view>
+        <view class="user-detail ml-10">
+          <text class="user-name">点击登录</text>
+          <text class="user-phone text-sm mt-6">登录享受更多权益</text>
+        </view>
+        <text class="login-arrow">›</text>
+      </view>
+    </block>
+  </view>
+
+  <!-- 会员卡片 -->
+  <view class="member-card card" wx:if="{{isLoggedIn}}">
+    <view class="flex-between">
+      <view class="flex-row">
+        <text class="member-icon">👑</text>
+        <view class="flex-col ml-10">
+          <text class="member-level">{{memberLevel}}</text>
+          <text class="member-points text-sm text-light mt-4">{{memberPoints}}积分</text>
+        </view>
+      </view>
+      <view class="member-coupons">
+        <text class="coupon-count">{{memberCoupons}}</text>
+        <text class="coupon-label text-sm text-light">张优惠券</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 订单统计 -->
+  <view class="order-stats card" wx:if="{{isLoggedIn}}">
+    <view class="stats-header flex-between" bindtap="onMenuTap" data-url="/pages/orders/orders" data-label="我的订单">
+      <text class="section-label">我的订单</text>
+      <text class="text-sm text-primary">全部订单 ›</text>
+    </view>
+    <view class="stats-grid mt-20">
+      <view class="stat-item" bindtap="onMenuTap" data-url="/pages/orders/orders">
+        <text class="stat-icon">📋</text>
+        <text class="stat-value">{{orderStats.pending}}</text>
+        <text class="stat-label">待支付</text>
+      </view>
+      <view class="stat-item" bindtap="onMenuTap" data-url="/pages/orders/orders">
+        <text class="stat-icon">✅</text>
+        <text class="stat-value">{{orderStats.paid}}</text>
+        <text class="stat-label">已支付</text>
+      </view>
+      <view class="stat-item" bindtap="onMenuTap" data-url="/pages/orders/orders">
+        <text class="stat-icon">🏨</text>
+        <text class="stat-value">{{orderStats.completed}}</text>
+        <text class="stat-label">已完成</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 快捷操作 -->
+  <view class="quick-actions card">
+    <view class="action-item" wx:for="{{quickActions}}" wx:key="icon" bindtap="onActionTap" data-label="{{item.label}}">
+      <text class="action-icon">{{item.icon}}</text>
+      <text class="action-label">{{item.label}}</text>
+    </view>
+  </view>
+
+  <!-- 功能菜单 -->
+  <view class="menu-section" wx:for="{{menus}}" wx:key="index" wx:for-item="group">
+    <view class="card menu-group">
+      <view class="menu-item flex-between"
+        wx:for="{{group}}" wx:key="label"
+        bindtap="onMenuTap"
+        data-url="{{item.url}}"
+        data-label="{{item.label}}"
+      >
+        <view class="flex-row">
+          <text class="menu-icon">{{item.icon}}</text>
+          <view class="flex-col ml-10">
+            <text class="menu-label">{{item.label}}</text>
+            <text class="menu-desc text-sm text-light">{{item.desc}}</text>
+          </view>
+        </view>
+        <view class="flex-row">
+          <text class="menu-badge" wx:if="{{item.badge}}">{{item.badge}}</text>
+          <text class="menu-arrow">›</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 退出登录 -->
+  <view class="logout-section" wx:if="{{isLoggedIn}}">
+    <view class="card logout-btn" bindtap="onLogout">
+      <text class="logout-text">退出登录</text>
+    </view>
+  </view>
+
+  <!-- 底部 -->
+  <view class="footer text-sm text-light">
+    <text>伊家人酒店 v1.0.0</text>
+  </view>
+
+  <view style="height: 40rpx;" class="safe-bottom"></view>
+</view>

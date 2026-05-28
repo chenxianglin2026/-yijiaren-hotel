@@ -1,0 +1,153 @@
+/* ========== 我的订单 ========== */
+
+.page-orders {
+  background: #FAF7F2;
+  min-height: 100vh;
+}
+
+/* ---- Tab栏 ---- */
+.tabs-bar {
+  background: #FFFFFF;
+  border-bottom: 1rpx solid #F0EBE0;
+}
+
+.tabs-scroll {
+  display: flex;
+  white-space: nowrap;
+  padding: 0 20rpx;
+}
+
+.tab-item {
+  display: inline-block;
+  padding: 24rpx 32rpx;
+  font-size: 28rpx;
+  color: #8B7E6A;
+  position: relative;
+}
+
+.tab-item.active {
+  color: #C8A96E;
+  font-weight: 600;
+}
+
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 48rpx;
+  height: 4rpx;
+  background: #C8A96E;
+  border-radius: 2rpx;
+}
+
+/* ---- 加载 ---- */
+.loading-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 200rpx 0;
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: #B0A492;
+}
+
+/* ---- 空状态 ---- */
+.empty-icon {
+  font-size: 80rpx;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: #8B7E6A;
+  margin-top: 20rpx;
+}
+
+.empty-hint {
+  font-size: 24rpx;
+  color: #B0A492;
+}
+
+/* ---- 订单卡片 ---- */
+.order-list {
+  padding-bottom: 20rpx;
+}
+
+.order-card {
+  margin-bottom: 16rpx;
+}
+
+.order-header {
+  padding: 4rpx 0;
+}
+
+.order-store {
+  font-size: 28rpx;
+}
+
+.order-status {
+  font-size: 24rpx;
+  font-weight: 500;
+}
+
+.order-status.pending {
+  color: #E8A84C;
+}
+
+.order-status.paid {
+  color: #6BAA75;
+}
+
+.order-status.completed {
+  color: #8B7E6A;
+}
+
+.order-status.cancelled {
+  color: #C56C6C;
+}
+
+/* ---- 订单内容 ---- */
+.order-body {
+  /* 点击区域 */
+}
+
+.order-room-img {
+  width: 140rpx;
+  height: 120rpx;
+  border-radius: 10rpx;
+  flex-shrink: 0;
+}
+
+.order-room-name {
+  font-size: 28rpx;
+}
+
+.order-info {
+  display: flex;
+}
+
+/* ---- 订单底部 ---- */
+.order-footer {
+  padding: 4rpx 0;
+}
+
+.order-actions {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.btn-sm {
+  padding: 10rpx 28rpx;
+  font-size: 24rpx;
+  border-radius: 24rpx;
+}
+
+/* ---- 加载更多 ---- */
+.loading-more {
+  display: flex;
+  justify-content: center;
+  padding: 30rpx;
+}

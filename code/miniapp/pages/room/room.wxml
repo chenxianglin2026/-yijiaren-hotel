@@ -1,0 +1,144 @@
+<view class="page-room">
+  <!-- 加载中 -->
+  <view class="loading-wrap" wx:if="{{loading}}">
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <block wx:if="{{room}}">
+    <!-- 图片轮播 -->
+    <swiper class="room-swiper" indicator-dots indicator-color="rgba(255,255,255,0.4)" indicator-active-color="#C8A96E" bindchange="onSwiperChange">
+      <swiper-item wx:for="{{images}}" wx:key="*this">
+        <view class="room-swiper-image img-placeholder" data-index="{{index}}" bindtap="onImageTap">
+          <text class="swiper-counter">{{index + 1}}/{{images.length}}</text>
+        </view>
+      </swiper-item>
+    </swiper>
+
+    <!-- 基本信息 -->
+    <view class="room-header card">
+      <view class="flex-between">
+        <text class="room-name text-xl text-bold">{{room.name}}</text>
+        <text class="tag tag-gold">{{room.typeLabel}}</text>
+      </view>
+      <view class="room-tags mt-10">
+        <text class="tag tag-warm" wx:for="{{room.tags}}" wx:key="*this">{{item}}</text>
+      </view>
+      <text class="room-desc text-light mt-20">{{room.description}}</text>
+    </view>
+
+    <!-- 设施亮点 -->
+    <view class="card">
+      <text class="section-label">房间亮点</text>
+      <view class="highlight-list mt-20">
+        <view class="highlight-item" wx:for="{{room.highlights}}" wx:key="*this">
+          <text class="highlight-dot">✦</text>
+          <text class="highlight-text">{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 房间详情 -->
+    <view class="card">
+      <text class="section-label">房间详情</text>
+      <view class="detail-grid mt-20">
+        <view class="detail-item">
+          <text class="detail-label">面积</text>
+          <text class="detail-value">{{room.area}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="detail-label">床型</text>
+          <text class="detail-value">{{room.bed}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="detail-label">楼层</text>
+          <text class="detail-value">{{room.floor}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="detail-label">入住人数</text>
+          <text class="detail-value">{{room.maxGuests}}人</text>
+        </view>
+        <view class="detail-item">
+          <text class="detail-label">窗户</text>
+          <text class="detail-value">{{room.window ? '有窗' : '无窗'}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="detail-label">早餐</text>
+          <text class="detail-value">{{room.breakfast ? '含早餐' : '不含'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 入住须知 -->
+    <view class="card">
+      <text class="section-label">入住须知</text>
+      <view class="notice-list mt-20">
+        <view class="notice-item flex-row" wx:for="{{room.notice}}" wx:key="*this">
+          <text class="notice-icon">•</text>
+          <text class="notice-text text-sm text-light">{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 住客评价 -->
+    <view class="card">
+      <view class="flex-between">
+        <text class="section-label">住客评价</text>
+        <text class="text-sm text-primary">共{{room.reviewSummary.total}}条</text>
+      </view>
+      <!-- 评分概览 -->
+      <view class="review-summary mt-20">
+        <view class="review-score-wrap">
+          <text class="review-score">{{room.reviewSummary.avgScore}}</text>
+          <text class="review-score-unit">分</text>
+        </view>
+        <view class="review-tags-wrap">
+          <text class="review-tag" wx:for="{{room.reviewSummary.tags}}" wx:key="label">
+            {{item.label}} {{item.count}}
+          </text>
+        </view>
+      </view>
+      <!-- 评价列表 -->
+      <view class="review-list mt-20">
+        <view class="review-item" wx:for="{{room.reviews}}" wx:key="id">
+          <view class="flex-between">
+            <view class="flex-row">
+              <view class="review-avatar img-placeholder">
+                <text>👤</text>
+              </view>
+              <view class="flex-col ml-10">
+                <text class="review-user text-bold">{{item.user}}</text>
+                <text class="review-date text-sm text-light">{{item.date}}</text>
+              </view>
+            </view>
+            <text class="review-score-sm">⭐ {{item.score}}</text>
+          </view>
+          <text class="review-content text-sm mt-10">{{item.content}}</text>
+          <view class="review-item-tags mt-10">
+            <text class="tag tag-warm" wx:for="{{item.tags}}" wx:key="*this">{{item}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 底部安全区 -->
+    <view style="height: 160rpx;"></view>
+  </block>
+
+  <!-- 底部预订栏 -->
+  <view class="bottom-bar safe-bottom" wx:if="{{room}}">
+    <view class="bottom-bar-inner">
+      <view class="bottom-price">
+        <text class="price">
+          <text class="price-symbol">¥</text>
+          <text class="price-value">{{room.price}}</text>
+        </text>
+        <text class="price-unit">/晚</text>
+        <text class="price-original line-through ml-10" wx:if="{{room.originalPrice > room.price}}">¥{{room.originalPrice}}</text>
+      </view>
+      <view class="bottom-actions">
+        <view class="btn-outline mr-10" bindtap="onContact">联系酒店</view>
+        <view class="btn-primary" bindtap="onBook">立即预订</view>
+      </view>
+    </view>
+  </view>
+</view>
