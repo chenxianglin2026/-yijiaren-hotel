@@ -30,25 +30,31 @@ def seed():
             print("⚠️  数据库已有数据，跳过播种")
             return
 
-        # ── 1. 创建测试用户 ──
+        import hashlib, os
+
+        def hash_password(pw):
+            salt = os.urandom(16)
+            return salt.hex() + "$" + hashlib.sha256(salt + pw.encode()).hexdigest()
+
+        # ── 1. 创建测试用户
         admin = User(
             username="admin",
             phone="13800000001",
-            hashed_password=pwd_context.hash("admin123"),
+            hashed_password=hash_password("admin123"),
             role="admin",
             nickname="管理员",
         )
         guest1 = User(
             username="testuser",
             phone="13800000002",
-            hashed_password=pwd_context.hash("test123"),
+            hashed_password=hash_password("test123"),
             role="guest",
             nickname="测试用户",
         )
         guest2 = User(
             username="zhangsan",
             phone="13912345678",
-            hashed_password=pwd_context.hash("pass123"),
+            hashed_password=hash_password("pass123"),
             role="guest",
             nickname="张三",
         )

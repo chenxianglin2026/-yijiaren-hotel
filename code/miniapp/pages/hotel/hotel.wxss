@@ -1,0 +1,407 @@
+/* ========== 门店详情页 ========== */
+
+.page-hotel {
+  min-height: 100vh;
+  background: #FAF7F2;
+}
+
+/* ---- 加载 ---- */
+.loading-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 200rpx 0;
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: #B0A492;
+}
+
+/* ---- 轮播 ---- */
+.hotel-swiper {
+  height: 480rpx;
+}
+
+.hotel-swiper-slide {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.swiper-placeholder-icon {
+  font-size: 100rpx;
+  margin-bottom: 16rpx;
+}
+
+.swiper-label {
+  font-size: 24rpx;
+  color: rgba(255,255,255,0.7);
+}
+
+/* ---- 门店信息 ---- */
+.store-info {
+  margin-top: -30rpx;
+  position: relative;
+  z-index: 2;
+  background: #FFFFFF;
+  border-radius: 24rpx 24rpx 0 0;
+  padding-top: 36rpx;
+}
+
+.store-name {
+  font-size: 36rpx;
+  color: #3D3226;
+}
+
+.store-rating-row {
+  align-items: center;
+}
+
+.store-stars {
+  font-size: 24rpx;
+}
+
+.store-score {
+  font-size: 32rpx;
+  color: #C8A96E;
+}
+
+.store-score-label {
+  font-size: 24rpx;
+}
+
+.store-review-count {
+  font-size: 24rpx;
+  color: #B0A492;
+}
+
+.store-badge {
+  flex-shrink: 0;
+}
+
+/* 地址 */
+.store-addr-row {
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #F5F0E8;
+}
+
+.addr-icon {
+  font-size: 28rpx;
+  margin-right: 12rpx;
+}
+
+.addr-text {
+  font-size: 26rpx;
+  line-height: 1.5;
+}
+
+.addr-nav {
+  flex-shrink: 0;
+  margin-left: 12rpx;
+}
+
+/* 电话 */
+.store-contact-row {
+  padding: 20rpx 0;
+}
+
+.contact-icon {
+  font-size: 28rpx;
+  margin-right: 12rpx;
+}
+
+.contact-text {
+  font-size: 26rpx;
+}
+
+.contact-action {
+  flex-shrink: 0;
+  margin-left: 12rpx;
+}
+
+/* 营业标签 */
+.store-meta-row {
+  flex-wrap: wrap;
+  gap: 10rpx;
+}
+
+.store-meta-tag {
+  font-size: 22rpx;
+  padding: 6rpx 20rpx;
+}
+
+/* ---- 区块标题 ---- */
+.section-label {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #3D3226;
+}
+
+/* ---- 设施 ---- */
+.facility-grid {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.facility-item {
+  width: 25%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20rpx 0;
+}
+
+.facility-icon {
+  font-size: 40rpx;
+  margin-bottom: 8rpx;
+}
+
+.facility-label {
+  font-size: 22rpx;
+  color: #8B7E6A;
+}
+
+/* ---- 门店介绍 ---- */
+.store-desc {
+  font-size: 26rpx;
+  line-height: 1.8;
+  color: #6B5E4F;
+}
+
+/* ---- 亮点 ---- */
+.highlight-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.highlight-item {
+  display: flex;
+  align-items: flex-start;
+}
+
+.highlight-dot {
+  color: #C8A96E;
+  font-size: 24rpx;
+  margin-right: 12rpx;
+  margin-top: 2rpx;
+}
+
+.highlight-text {
+  font-size: 26rpx;
+  color: #5A4D3E;
+  line-height: 1.6;
+}
+
+/* ---- 周边 ---- */
+.nearby-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.nearby-item {
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #F5F0E8;
+}
+
+.nearby-item:last-child {
+  border-bottom: none;
+}
+
+.nearby-icon {
+  font-size: 36rpx;
+  width: 60rpx;
+  text-align: center;
+}
+
+.nearby-name {
+  font-size: 28rpx;
+  color: #3D3226;
+}
+
+.nearby-distance {
+  font-size: 22rpx;
+  color: #B0A492;
+  margin-top: 4rpx;
+}
+
+.nearby-arrow {
+  font-size: 28rpx;
+  color: #D0C8B8;
+}
+
+/* ---- 房型区域 ---- */
+.section-header {
+  display: flex;
+  align-items: baseline;
+  padding: 30rpx 30rpx 10rpx;
+}
+
+.section-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #3D3226;
+}
+
+.section-sub {
+  margin-left: 16rpx;
+  font-size: 24rpx;
+  color: #B0A492;
+}
+
+/* ---- 房型卡片 ---- */
+.room-list {
+  padding-bottom: 20rpx;
+}
+
+.room-card {
+  margin-bottom: 10rpx;
+}
+
+.room-card-inner {
+  overflow: hidden;
+}
+
+.room-image-wrap {
+  position: relative;
+  width: 100%;
+  height: 340rpx;
+  border-radius: 16rpx;
+  overflow: hidden;
+  margin-bottom: 20rpx;
+}
+
+.room-tags-top {
+  position: absolute;
+  top: 16rpx;
+  left: 16rpx;
+  display: flex;
+  gap: 10rpx;
+  flex-wrap: wrap;
+}
+
+.room-tag-item {
+  font-size: 20rpx;
+  color: #FFFFFF;
+  background: rgba(200, 169, 110, 0.85);
+  padding: 4rpx 14rpx;
+  border-radius: 6rpx;
+}
+
+.room-name {
+  font-size: 32rpx;
+}
+
+.room-type-tag {
+  font-size: 22rpx;
+}
+
+.room-desc {
+  line-height: 1.5;
+}
+
+.room-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+}
+
+.meta-item {
+  font-size: 22rpx;
+  color: #8B7E6A;
+}
+
+.room-price {
+  display: flex;
+  align-items: baseline;
+}
+
+.price-original {
+  font-size: 22rpx;
+  color: #B0A492;
+}
+
+.room-actions {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.room-stock {
+  font-size: 22rpx;
+  color: #C56C6C;
+  font-weight: 500;
+}
+
+.btn-sm {
+  padding: 12rpx 32rpx;
+  font-size: 26rpx;
+  border-radius: 30rpx;
+}
+
+/* ---- 空状态 ---- */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80rpx 0;
+}
+
+.empty-icon {
+  font-size: 80rpx;
+  opacity: 0.5;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: #B0A492;
+  margin-top: 20rpx;
+}
+
+/* ---- 底部操作栏 ---- */
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #FFFFFF;
+  box-shadow: 0 -4rpx 20rpx rgba(61, 50, 38, 0.06);
+  z-index: 100;
+}
+
+.bottom-bar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16rpx 30rpx;
+}
+
+.bottom-left {
+  display: flex;
+}
+
+.bottom-icon-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4rpx 12rpx;
+}
+
+.bottom-icon {
+  font-size: 36rpx;
+  margin-bottom: 2rpx;
+}
+
+.bottom-icon-label {
+  font-size: 18rpx;
+  color: #8B7E6A;
+}
+
+.bottom-right {
+  display: flex;
+  align-items: center;
+}

@@ -163,3 +163,14 @@ async def list_rooms(hotel_id: int, db: AsyncSession = Depends(get_db)):
     )
     rooms = result.scalars().all()
     return [RoomOut.model_validate(r) for r in rooms]
+
+
+@router.get("/rooms/{room_id}", response_model=RoomOut, summary="房型详情")
+async def get_room_detail(room_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Room).where(Room.id == room_id, Room.is_active == True)
+    )
+    room = result.scalar_one_or_none()
+    if not room:
+        raise HTTPException(status_code=404, detail="房型不存在")
+    return RoomOut.model_validate(room)

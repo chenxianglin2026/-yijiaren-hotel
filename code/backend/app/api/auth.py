@@ -2,6 +2,8 @@
 伊家人酒店系统 - 认证 API
 注册 / 登录 / 微信登录
 """
+import hashlib
+import os
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -10,7 +12,6 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from passlib.context import CryptContext
 from jose import JWTError, jwt
 
 from app.config import settings
@@ -18,8 +19,23 @@ from app.db import get_db, User
 
 router = APIRouter(prefix="/api/auth", tags=["认证"])
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
+
+
+def hash_password(pw: str) -> str:
+    """与 seed_mock.py 一致的 SHA-256 密码哈希"""
+    salt = os.urandom(16)
+    return salt.hex() + "$" + hashlib.sha256(salt + pw.encode()).hexdigest()
+
+
+def verify_password(pw: str, hashed: str) -> bool:
+    """验证密码"""
+    try:
+        salt_hex, hash_value = hashed.split("$", 1)
+        salt = bytes.fromhex(salt_hex)
+        return hashlib.sha256(salt + pw.encode()).hexdigest() == hash_value
+    except (ValueError, IndexError):
+        return False
 
 
 # ── Schemas ──────────────────────────────────────────
@@ -127,7 +143,7 @@ async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
     user = User(
         username=req.username,
         phone=req.phone,
-        hashed_password=pwd_context.hash(req.password),
+        hashed_password=hash_password(req.password),
         nickname=req.nickname or req.username,
         role="guest",
     )
@@ -142,7 +158,7 @@ async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.username == req.username))
     user = result.scalar_one_or_none()
 
-    if not user or not pwd_context.verify(req.password, user.hashed_password):
+    if not user or not verify_password(req.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="用户名或密码错误")
 
     if not user.is_active:
@@ -164,7 +180,7 @@ async def wx_login(req: WxLoginRequest, db: AsyncSession = Depends(get_db)):
             username = f"wx_user_{req.code[:8]}"
             user = User(
                 username=username,
-                hashed_password=pwd_context.hash(openid),
+                hashed_password=hash_password(openid),
                 role="guest",
                 nickname=req.nickname or username,
                 avatar_url=req.avatar_url,

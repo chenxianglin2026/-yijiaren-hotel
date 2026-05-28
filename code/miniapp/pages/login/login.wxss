@@ -1,0 +1,259 @@
+/* ========== 登录页 ========== */
+
+.page-login {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #FAF7F2;
+}
+
+/* ---- 头部品牌区 ---- */
+.login-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80rpx 0 60rpx;
+}
+
+.login-logo-wrap {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 28rpx;
+  background: linear-gradient(135deg, #C8A96E, #D4B896);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 30rpx rgba(200, 169, 110, 0.3);
+}
+
+.login-logo-text {
+  font-size: 64rpx;
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+.login-title {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #3D3226;
+  margin-top: 32rpx;
+  letter-spacing: 4rpx;
+}
+
+.login-subtitle {
+  font-size: 26rpx;
+  color: #B0A492;
+  margin-top: 12rpx;
+  letter-spacing: 2rpx;
+}
+
+/* ---- 表单区域 ---- */
+.login-form {
+  padding: 0 60rpx;
+}
+
+/* ---- 输入组 ---- */
+.input-group {
+  margin-bottom: 32rpx;
+}
+
+.input-label {
+  font-size: 28rpx;
+  color: #3D3226;
+  font-weight: 500;
+  margin-bottom: 16rpx;
+  display: block;
+}
+
+.input-wrap {
+  display: flex;
+  align-items: center;
+  background: #FFFFFF;
+  border-radius: 16rpx;
+  padding: 0 24rpx;
+  height: 96rpx;
+  border: 2rpx solid transparent;
+  box-shadow: 0 2rpx 12rpx rgba(61, 50, 38, 0.04);
+  transition: border-color 0.2s;
+}
+
+.input-wrap:focus-within {
+  border-color: #C8A96E;
+}
+
+.input-prefix {
+  font-size: 28rpx;
+  color: #3D3226;
+  font-weight: 500;
+  padding-right: 20rpx;
+  margin-right: 20rpx;
+  border-right: 2rpx solid #E8E0D5;
+}
+
+.input-field {
+  flex: 1;
+  font-size: 30rpx;
+  color: #3D3226;
+  height: 100%;
+}
+
+.input-clear {
+  font-size: 28rpx;
+  color: #B0A492;
+  padding: 0 8rpx;
+  margin-left: 8rpx;
+}
+
+/* 验证码按钮 */
+.code-btn {
+  flex-shrink: 0;
+  font-size: 26rpx;
+  color: #C8A96E;
+  padding: 12rpx 24rpx;
+  border-radius: 30rpx;
+  background: rgba(200, 169, 110, 0.08);
+  white-space: nowrap;
+  margin-left: 12rpx;
+}
+
+.code-btn.disabled {
+  color: #B0A492;
+  background: #F5F0E8;
+}
+
+/* ---- 协议 ---- */
+.agreement-row {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 40rpx;
+}
+
+.checkbox-wrap {
+  flex-shrink: 0;
+  margin-right: 12rpx;
+  margin-top: 2rpx;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 50%;
+  border: 3rpx solid #D0C8B8;
+  font-size: 20rpx;
+  color: #D0C8B8;
+  transition: all 0.2s;
+}
+
+.checkbox.checked {
+  border-color: #C8A96E;
+  background: #C8A96E;
+  color: #FFFFFF;
+}
+
+.agreement-text {
+  font-size: 24rpx;
+  color: #8B7E6A;
+  line-height: 1.6;
+}
+
+.agreement-link {
+  color: #C8A96E;
+}
+
+/* ---- 登录按钮 ---- */
+.login-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 96rpx;
+  background: linear-gradient(135deg, #C8A96E, #D4B896);
+  border-radius: 48rpx;
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+  box-shadow: 0 8rpx 24rpx rgba(200, 169, 110, 0.3);
+  transition: all 0.2s;
+}
+
+.login-btn:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+.login-btn.disabled {
+  background: #E8E0D5;
+  color: #B0A492;
+  box-shadow: none;
+}
+
+/* ---- 其他登录方式 ---- */
+.other-login {
+  margin-top: 60rpx;
+}
+
+.other-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 40rpx;
+}
+
+.line-dot {
+  width: 60rpx;
+  height: 2rpx;
+  background: #E8E0D5;
+}
+
+.other-text {
+  font-size: 24rpx;
+  color: #B0A492;
+  margin: 0 24rpx;
+}
+
+.other-methods {
+  display: flex;
+  justify-content: center;
+}
+
+.wechat-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFFFFF;
+  border: 2rpx solid #E8E0D5;
+  border-radius: 48rpx;
+  padding: 20rpx 48rpx;
+  font-size: 28rpx;
+  line-height: 1;
+}
+
+.wechat-btn::after {
+  border: none;
+}
+
+.wechat-icon {
+  font-size: 36rpx;
+  margin-right: 12rpx;
+}
+
+.wechat-text {
+  font-size: 28rpx;
+  color: #3D3226;
+}
+
+/* ---- 底部 ---- */
+.login-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40rpx 0;
+}
+
+.footer-text {
+  font-size: 22rpx;
+  color: #B0A492;
+}

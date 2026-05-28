@@ -5,6 +5,8 @@
     "pages/booking/booking",
     "pages/checkin/checkin",
     "pages/orders/orders",
+    "pages/hotel/hotel",
+    "pages/login/login",
     "pages/mine/mine"
   ],
   "window": {

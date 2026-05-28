@@ -1,0 +1,182 @@
+<view class="page-hotel">
+  <!-- 加载中 -->
+  <view class="loading-wrap" wx:if="{{loading}}">
+    <text class="loading-text">加载门店信息...</text>
+  </view>
+
+  <block wx:if="{{!loading && store}}">
+    <!-- 门店图片轮播 -->
+    <swiper class="hotel-swiper" indicator-dots indicator-color="rgba(255,255,255,0.5)" indicator-active-color="#C8A96E" autoplay circular interval="4000">
+      <swiper-item wx:for="{{store.images}}" wx:key="*this">
+        <view class="hotel-swiper-slide img-placeholder" bindtap="onPreviewImage" data-index="{{index}}">
+          <text class="swiper-placeholder-icon">🏨</text>
+          <text class="swiper-label">伊家人酒店</text>
+        </view>
+      </swiper-item>
+    </swiper>
+
+    <!-- 门店基本信息 -->
+    <view class="store-info card">
+      <view class="flex-between">
+        <view class="flex-col flex-1">
+          <text class="store-name text-xl text-bold">{{store.name}}</text>
+          <view class="store-rating-row flex-row mt-10">
+            <text class="store-stars">⭐</text>
+            <text class="store-score text-bold ml-6">{{store.rating}}</text>
+            <text class="store-score-label text-sm text-light ml-6">分</text>
+            <text class="store-review-count text-sm text-light ml-10">{{store.reviewCount}}条评价</text>
+          </view>
+        </view>
+        <view class="store-badge tag tag-gold">{{store.type || '精品酒店'}}</view>
+      </view>
+
+      <!-- 地址 -->
+      <view class="store-addr-row flex-row mt-20" bindtap="onOpenLocation">
+        <text class="addr-icon">📍</text>
+        <text class="addr-text text-light flex-1">{{store.address}}</text>
+        <text class="addr-nav text-primary text-sm">导航 ›</text>
+      </view>
+
+      <!-- 联系电话 -->
+      <view class="store-contact-row flex-row mt-10" bindtap="onCallStore">
+        <text class="contact-icon">📞</text>
+        <text class="contact-text text-light flex-1">{{store.phone}}</text>
+        <text class="contact-action text-primary text-sm">拨打 ›</text>
+      </view>
+
+      <!-- 营业信息 -->
+      <view class="store-meta-row flex-row mt-20">
+        <view class="store-meta-tag tag tag-warm">24小时前台</view>
+        <view class="store-meta-tag tag tag-warm ml-10">智能入住</view>
+        <view class="store-meta-tag tag tag-green ml-10" wx:if="{{store.hasParking}}">免费停车</view>
+      </view>
+    </view>
+
+    <!-- 门店设施 -->
+    <view class="card">
+      <text class="section-label">门店设施</text>
+      <view class="facility-grid mt-20">
+        <view class="facility-item" wx:for="{{store.facilities}}" wx:key="label">
+          <text class="facility-icon">{{item.icon}}</text>
+          <text class="facility-label">{{item.label}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 门店介绍 -->
+    <view class="card">
+      <text class="section-label">门店介绍</text>
+      <text class="store-desc text-light mt-20">{{store.description}}</text>
+    </view>
+
+    <!-- 服务标签 -->
+    <view class="card">
+      <text class="section-label">特色服务</text>
+      <view class="highlight-list mt-20">
+        <view class="highlight-item" wx:for="{{store.highlights}}" wx:key="*this">
+          <text class="highlight-dot">✦</text>
+          <text class="highlight-text">{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 周边推荐 -->
+    <view class="card" wx:if="{{store.nearby.length > 0}}">
+      <text class="section-label">周边推荐</text>
+      <view class="nearby-list mt-20">
+        <view class="nearby-item flex-between" wx:for="{{store.nearby}}" wx:key="name">
+          <view class="flex-row">
+            <text class="nearby-icon">{{item.icon}}</text>
+            <view class="flex-col ml-10">
+              <text class="nearby-name text-bold">{{item.name}}</text>
+              <text class="nearby-distance text-sm text-light">{{item.distance}} · {{item.type}}</text>
+            </view>
+          </view>
+          <text class="nearby-arrow text-light">›</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 房型列表标题 -->
+    <view class="section-header">
+      <text class="section-title">可选房型</text>
+      <text class="section-sub text-sm text-light">共{{filteredRooms.length || store.rooms.length}}种房型</text>
+    </view>
+
+    <!-- 房型列表 -->
+    <view class="room-list">
+      <view class="room-card card"
+        wx:for="{{filteredRooms.length ? filteredRooms : store.rooms}}"
+        wx:key="id"
+        wx:for-item="room"
+        bindtap="onRoomTap"
+        data-id="{{room.id}}"
+      >
+        <view class="room-card-inner">
+          <!-- 图片 -->
+          <view class="room-image-wrap img-placeholder">
+            <view class="room-tags-top" wx:if="{{room.tags.length > 0}}">
+              <text class="room-tag-item" wx:for="{{room.tags}}" wx:for-item="tag" wx:key="*this">{{tag}}</text>
+            </view>
+          </view>
+          <!-- 信息 -->
+          <view class="room-info">
+            <view class="flex-between">
+              <text class="room-name text-bold">{{room.name}}</text>
+              <text class="room-type-tag tag tag-gold">{{room.bed}}</text>
+            </view>
+            <text class="room-desc text-sm text-light mt-10">{{room.description}}</text>
+            <view class="room-meta mt-10">
+              <text class="meta-item" wx:if="{{room.window}}">🪟 有窗</text>
+              <text class="meta-item" wx:if="{{room.breakfast}}">🍳 含早餐</text>
+              <text class="meta-item">📶 WiFi</text>
+              <text class="meta-item">📐 {{room.area}}</text>
+            </view>
+            <view class="divider"></view>
+            <view class="flex-between">
+              <view class="room-price">
+                <text class="price">
+                  <text class="price-symbol">¥</text>
+                  <text class="price-value">{{room.price}}</text>
+                </text>
+                <text class="price-original line-through ml-10" wx:if="{{room.originalPrice > room.price}}">¥{{room.originalPrice}}</text>
+                <text class="price-unit ml-10">/晚</text>
+              </view>
+              <view class="room-actions">
+                <text class="room-stock text-light text-sm">仅剩{{room.available}}间</text>
+                <view class="btn-primary btn-sm" catchtap="onBookTap" data-id="{{room.id}}">立即预订</view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 空状态 -->
+      <view class="empty-state" wx:if="{{store.rooms.length === 0}}">
+        <text class="empty-icon">🏨</text>
+        <text class="empty-text">该门店暂无可选房型</text>
+      </view>
+    </view>
+
+    <!-- 底部操作栏 -->
+    <view style="height: 140rpx;"></view>
+    <view class="bottom-bar safe-bottom">
+      <view class="bottom-bar-inner">
+        <view class="bottom-left flex-row">
+          <view class="bottom-icon-btn" bindtap="onFavorite">
+            <text class="bottom-icon">{{isFavorite ? '❤️' : '🤍'}}</text>
+            <text class="bottom-icon-label">收藏</text>
+          </view>
+          <view class="bottom-icon-btn ml-20" bindtap="onShare">
+            <text class="bottom-icon">🔗</text>
+            <text class="bottom-icon-label">分享</text>
+          </view>
+        </view>
+        <view class="bottom-right">
+          <view class="btn-outline mr-10" bindtap="onCallStore">联系门店</view>
+          <view class="btn-primary" bindtap="onBookRoom">预订房间</view>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>

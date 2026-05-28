@@ -88,6 +88,7 @@
         bindtap="onMenuTap"
         data-url="{{item.url}}"
         data-label="{{item.label}}"
+        data-handler="{{item.handler}}"
       >
         <view class="flex-row">
           <text class="menu-icon">{{item.icon}}</text>
