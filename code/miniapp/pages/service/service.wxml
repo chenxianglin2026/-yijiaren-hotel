@@ -1,0 +1,166 @@
+<view class="page-service">
+  <!-- 页面标题 -->
+  <view class="service-header">
+    <text class="header-title">在店服务</text>
+    <text class="header-sub">一键呼叫 · 贴心服务</text>
+  </view>
+
+  <!-- 当前房间信息（如有入住） -->
+  <view class="room-card card" wx:if="{{roomNumber}}">
+    <view class="flex-between">
+      <view class="flex-row">
+        <text class="room-icon">🏨</text>
+        <text class="room-number">当前房间：{{roomNumber}}号房</text>
+      </view>
+      <text class="room-edit" bindtap="">修改</text>
+    </view>
+  </view>
+
+  <!-- 服务入口 -->
+  <view class="service-grid">
+    <view
+      class="service-item"
+      wx:for="{{serviceTypes}}"
+      wx:key="key"
+      data-service="{{item}}"
+      bindtap="onServiceTap"
+    >
+      <view class="service-icon-wrap" style="background:{{item.bg}};">
+        <text class="service-icon">{{item.icon}}</text>
+      </view>
+      <text class="service-label">{{item.label}}</text>
+      <text class="service-desc">{{item.desc}}</text>
+    </view>
+  </view>
+
+  <!-- 快捷操作 -->
+  <view class="quick-section">
+    <text class="section-title">快捷操作</text>
+    <view class="quick-grid">
+      <view
+        class="quick-item"
+        wx:for="{{quickActions}}"
+        wx:key="label"
+        data-action="{{item.action}}"
+        bindtap="onQuickAction"
+      >
+        <text class="quick-icon">{{item.icon}}</text>
+        <text class="quick-label">{{item.label}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 我的请求 -->
+  <view class="request-section" id="requestList">
+    <view class="flex-between" style="padding: 30rpx 30rpx 10rpx;">
+      <text class="section-title">我的服务请求</text>
+      <text class="section-more text-light text-sm" bindtap="loadRequests">刷新</text>
+    </view>
+
+    <view class="request-list">
+      <block wx:for="{{requestList}}" wx:key="id">
+        <view class="request-card" bindtap="onRequestDetail" data-request="{{item}}">
+          <view class="request-left">
+            <text class="request-icon">
+              {{item.request_type === 'cleaning' ? '🧹' : item.request_type === 'delivery' ? '📦' : item.request_type === 'maintenance' ? '🔧' : '💁'}}
+            </text>
+          </view>
+          <view class="request-body">
+            <view class="flex-between">
+              <text class="request-type">
+                {{item.request_type === 'cleaning' ? '呼叫保洁' : item.request_type === 'delivery' ? '客房送物' : item.request_type === 'maintenance' ? '维修报修' : '其他服务'}}
+              </text>
+              <text
+                class="request-status"
+                style="color:{{item.status === 'completed' ? '#6BAA75' : item.status === 'pending' ? '#E8A838' : '#5B8DEF'}}"
+              >
+                {{item.status === 'pending' ? '等待处理' : item.status === 'accepted' ? '已接单' : item.status === 'processing' ? '处理中' : item.status === 'completed' ? '已完成' : item.status}}
+              </text>
+            </view>
+            <text class="request-desc">{{item.description}}</text>
+            <view class="request-meta">
+              <text class="request-room">房号：{{item.room_number}}</text>
+              <text class="request-time">{{(item.created_at || '').slice(0,16).replace('T',' ')}}</text>
+            </view>
+          </view>
+        </view>
+      </block>
+
+      <!-- 空状态 -->
+      <view class="empty-state" wx:if="{{!requestLoading && requestList.length === 0}}">
+        <text class="empty-icon">📭</text>
+        <text class="empty-text">暂无服务请求</text>
+      </view>
+
+      <view class="load-more" wx:if="{{requestLoading}}">
+        <text>加载中...</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 提交弹窗 -->
+  <view class="form-overlay" wx:if="{{showForm}}" catchtap="closeForm">
+    <view class="form-popup" catchtap="noop">
+      <view class="form-header">
+        <text class="form-title">{{currentService.icon}} {{currentService.label}}</text>
+        <text class="form-close" bindtap="closeForm">✕</text>
+      </view>
+
+      <!-- 房间号 -->
+      <view class="form-group">
+        <text class="form-label">房间号</text>
+        <input
+          class="form-input"
+          placeholder="请输入房间号"
+          placeholder-style="color:#B0A492"
+          value="{{formData.roomNumber || roomNumber}}"
+          bindinput="onRoomInput"
+        />
+      </view>
+
+      <!-- 详细描述 -->
+      <view class="form-group">
+        <text class="form-label">详细描述</text>
+        <textarea
+          class="form-textarea"
+          placeholder="{{currentService.desc}}..."
+          placeholder-style="color:#B0A492"
+          value="{{formData.description}}"
+          bindinput="onDescInput"
+          maxlength="300"
+        />
+        <text class="form-count">{{formData.description.length}}/300</text>
+      </view>
+
+      <!-- 优先级 -->
+      <view class="form-group">
+        <text class="form-label">优先级</text>
+        <view class="priority-options">
+          <view
+            class="priority-item {{formData.priority === 'normal' ? 'active' : ''}}"
+            data-priority="normal"
+            bindtap="onPriorityTap"
+          >
+            <text>普通</text>
+          </view>
+          <view
+            class="priority-item {{formData.priority === 'urgent' ? 'active' : ''}}"
+            data-priority="urgent"
+            bindtap="onPriorityTap"
+          >
+            <text>紧急</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 提交 -->
+      <view class="form-footer">
+        <view class="btn-primary form-submit {{submitting ? 'disabled' : ''}}" bindtap="onSubmitRequest">
+          <text>{{submitting ? '提交中...' : '提交请求'}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="safe-bottom" style="height: 40rpx;"></view>
+</view>

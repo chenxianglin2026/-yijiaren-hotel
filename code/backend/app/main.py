@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.db import init_db
-from app.api import auth, hotels, orders, checkin, rooms
+from app.api import auth, hotels, orders, checkin, rooms, cleaning
 
 
 @asynccontextmanager
@@ -44,17 +44,17 @@ app.include_router(hotels.router)
 app.include_router(orders.router)
 app.include_router(checkin.router)
 app.include_router(rooms.router)
+app.include_router(cleaning.router)
 
 
 # 健康检查
 @app.get("/health", tags=["系统"])
 async def health_check():
-    return {
-        "status": "ok",
-        "app": settings.APP_NAME,
-        "version": settings.APP_VERSION,
-        "dev_mode": settings.DEV_MODE,
-    }
+    return {"status": "ok", "app": settings.APP_NAME, "version": settings.APP_VERSION}
+
+@app.get("/")
+async def root():
+    return {"app": "伊家人酒店系统", "api": "/api/hotels", "docs": "/docs"}
 
 
 # Swagger 文档在 /docs

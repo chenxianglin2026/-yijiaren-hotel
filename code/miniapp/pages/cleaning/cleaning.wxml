@@ -1,0 +1,178 @@
+<view class="page-cleaning">
+  <!-- 顶部统计 -->
+  <view class="stats-bar">
+    <view class="stat-item">
+      <text class="stat-num stat-pending">{{stats.pending}}</text>
+      <text class="stat-label">待接单</text>
+    </view>
+    <view class="stat-item">
+      <text class="stat-num stat-doing">{{stats.inProgress}}</text>
+      <text class="stat-label">进行中</text>
+    </view>
+    <view class="stat-item">
+      <text class="stat-num stat-done">{{stats.completed}}</text>
+      <text class="stat-label">今日完成</text>
+    </view>
+  </view>
+
+  <!-- Tab 切换 -->
+  <view class="tab-bar">
+    <view
+      class="tab-item {{activeTab === 'pending' ? 'active' : ''}}"
+      data-tab="pending"
+      bindtap="onTabChange"
+    >
+      <text>待接单</text>
+    </view>
+    <view
+      class="tab-item {{activeTab === 'mine' ? 'active' : ''}}"
+      data-tab="mine"
+      bindtap="onTabChange"
+    >
+      <text>我的工单</text>
+    </view>
+    <view
+      class="tab-item {{activeTab === 'completed' ? 'active' : ''}}"
+      data-tab="completed"
+      bindtap="onTabChange"
+    >
+      <text>已完成</text>
+    </view>
+  </view>
+
+  <!-- 工单列表 -->
+  <view class="task-list">
+    <block wx:for="{{taskList}}" wx:key="id">
+      <view class="task-card">
+        <!-- 左侧状态图标 -->
+        <view class="task-status-icon" style="background:{{taskStatus[item.status].bg}};">
+          <text style="color:{{taskStatus[item.status].color}};">
+            {{item.status === 'pending' ? '📋' : item.status === 'accepted' ? '✅' : item.status === 'in_progress' ? '🔄' : '🎉'}}
+          </text>
+        </view>
+
+        <!-- 中间信息 -->
+        <view class="task-body">
+          <view class="task-header">
+            <text class="task-room">{{item.room_number}}号房</text>
+            <text class="task-type-tag">{{taskTypes[item.task_type].icon}} {{taskTypes[item.task_type].label}}</text>
+          </view>
+          <view class="task-status-text" style="color:{{taskStatus[item.status].color}};">
+            {{taskStatus[item.status].label}}
+          </view>
+          <text class="task-notes" wx:if="{{item.notes}}">{{item.notes}}</text>
+          <text class="task-time" wx:if="{{item.created_at}}">
+            {{item.status==='completed' ? '完成' : '创建'}}：{{item.created_at.slice(0,16).replace('T',' ')}}
+          </text>
+        </view>
+
+        <!-- 右侧操作按钮 -->
+        <view class="task-actions">
+          <!-- 待接单：接单按钮 -->
+          <view
+            wx:if="{{item.status === 'pending'}}"
+            class="btn-accept"
+            bindtap="onAccept"
+            data-task="{{item}}"
+          >
+            <text>接单</text>
+          </view>
+
+          <!-- 已接单：开始清洁 -->
+          <view
+            wx:if="{{item.status === 'accepted'}}"
+            class="btn-start"
+            bindtap="onStartClean"
+            data-task="{{item}}"
+          >
+            <text>开始</text>
+          </view>
+
+          <!-- 进行中：完工打卡 -->
+          <view
+            wx:if="{{item.status === 'in_progress'}}"
+            class="btn-checkin"
+            bindtap="onCheckin"
+            data-task="{{item}}"
+          >
+            <text>完工</text>
+          </view>
+
+          <!-- 已完成：查看 -->
+          <view
+            wx:if="{{item.status === 'completed'}}"
+            class="btn-detail"
+            bindtap="onTaskDetail"
+            data-task="{{item}}"
+          >
+            <text>详情</text>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!-- 加载提示 -->
+    <view class="load-more" wx:if="{{loading}}">
+      <text>加载中...</text>
+    </view>
+    <view class="no-more" wx:elif="{{!hasMore && taskList.length > 0}}">
+      <text>— 没有更多了 —</text>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{!loading && taskList.length === 0}}">
+      <text class="empty-icon">🧹</text>
+      <text class="empty-text">{{emptyText}}</text>
+      <text class="empty-hint text-light text-sm mt-10">下拉刷新试试</text>
+    </view>
+  </view>
+
+  <!-- 完工打卡弹窗 -->
+  <view class="checkin-overlay" wx:if="{{showCheckin}}" catchtap="closeCheckin">
+    <view class="checkin-popup" catchtap="noop">
+      <view class="checkin-header">
+        <text class="checkin-title">完工打卡</text>
+        <text class="checkin-close" bindtap="closeCheckin">✕</text>
+      </view>
+
+      <!-- 房间信息 -->
+      <view class="checkin-room-info">
+        <text class="checkin-room">{{currentTask.room_number}}号房</text>
+        <text class="checkin-type">{{taskTypes[currentTask.task_type].label}}</text>
+      </view>
+
+      <!-- 拍照区域 -->
+      <view class="checkin-photo-area" bindtap="onTakePhoto">
+        <block wx:if="{{checkinPhoto}}">
+          <image class="checkin-photo" src="{{checkinPhoto}}" mode="aspectFill" />
+          <text class="photo-retake">点击重新拍照</text>
+        </block>
+        <block wx:else>
+          <text class="photo-icon">📸</text>
+          <text class="photo-hint">点击拍摄完工照片</text>
+          <text class="photo-sub">请确保房间整洁明亮</text>
+        </block>
+      </view>
+
+      <!-- 备注 -->
+      <view class="checkin-note-wrap">
+        <textarea
+          class="checkin-note"
+          placeholder="填写完工备注（选填）"
+          placeholder-style="color:#B0A492"
+          value="{{checkinNote}}"
+          bindinput="onCheckinNoteInput"
+          maxlength="200"
+        />
+        <text class="note-count">{{checkinNote.length}}/200</text>
+      </view>
+
+      <!-- 提交按钮 -->
+      <view class="checkin-footer">
+        <view class="btn-primary checkin-submit {{submitting ? 'disabled' : ''}}" bindtap="onSubmitCheckin">
+          <text>{{submitting ? '提交中...' : '确认完工'}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

@@ -90,11 +90,7 @@ async def list_hotels(
 
     # 总数
     count_query = select(__import__("sqlalchemy").func.count()).select_from(query.subquery())
-    total_result = await db.execute(count_query)
-
-    # Handle both tuple and scalar return types from SQLAlchemy count
-    raw = total_result.one()
-    total = raw[0] if isinstance(raw, (tuple, list)) else raw
+    total = (await db.execute(count_query)).scalar_one()
 
     # 分页
     offset = (page - 1) * page_size

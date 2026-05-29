@@ -25,6 +25,7 @@ class UserRole:
     ADMIN = "admin"
     GUEST = "guest"
     FRONT_DESK = "front_desk"
+    CLEANER = "cleaner"
 
 
 class OrderStatus:
