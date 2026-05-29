@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>伊家人酒店 - 管理后台</title>
+<link rel="stylesheet" href="css/admin.css">
+<style>
+  /* index-specific styles */
+  .logo-icon-img { width:40px; height:40px; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <!-- ========== Sidebar ========== -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-icon">🏨</span>
+      <div class="logo-name">伊家人酒店</div>
+      <div class="logo-sub">管理后台 v2.0</div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-page="pages/dashboard.html" data-title="仪表盘">
+        <span class="nav-icon">📊</span> 仪表盘
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-title">业务管理</div>
+        <div class="nav-item" data-page="pages/hotels.html" data-title="门店管理">
+          <span class="nav-icon">🏢</span> 门店管理
+        </div>
+        <div class="nav-item" data-page="pages/orders.html" data-title="订单管理">
+          <span class="nav-icon">📋</span> 订单管理
+        </div>
+        <div class="nav-item" data-page="pages/rooms.html" data-title="房态管理">
+          <span class="nav-icon">🚪</span> 房态管理
+        </div>
+        <div class="nav-item" data-page="pages/cleaning.html" data-title="保洁派单">
+          <span class="nav-icon">🧹</span> 保洁派单
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-title">财务管理</div>
+        <div class="nav-item" data-page="pages/finance.html" data-title="财务报表">
+          <span class="nav-icon">💰</span> 财务报表
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-title">系统设置</div>
+        <div class="nav-item" data-page="pages/devices.html" data-title="设备监控">
+          <span class="nav-icon">📡</span> 设备监控
+        </div>
+        <div class="nav-item" data-page="pages/settings.html" data-title="系统设置">
+          <span class="nav-icon">⚙️</span> 系统设置
+        </div>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      © 2026 伊家人酒店管理系统
+    </div>
+  </aside>
+
+  <!-- ========== Main Content ========== -->
+  <div class="main">
+    <header class="main-header">
+      <div class="breadcrumb">
+        🏠 首页 / <span id="pageBreadcrumb">仪表盘</span>
+      </div>
+      <div class="header-actions">
+        <div class="header-time" id="headerTime">--</div>
+        <div class="header-user">
+          <div class="avatar">张</div>
+          <span>张经理</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="main-content">
+      <iframe id="contentFrame" src="pages/dashboard.html" title="内容区"></iframe>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const navItems = document.querySelectorAll('.sidebar-nav .nav-item');
+  const iframe = document.getElementById('contentFrame');
+  const breadcrumb = document.getElementById('pageBreadcrumb');
+  const timeEl = document.getElementById('headerTime');
+
+  // Clock update
+  function updateTime() {
+    const now = new Date();
+    const str = now.getFullYear() + '年' +
+      (now.getMonth()+1) + '月' +
+      now.getDate() + '日 ' +
+      String(now.getHours()).padStart(2,'0') + ':' +
+      String(now.getMinutes()).padStart(2,'0') + ':' +
+      String(now.getSeconds()).padStart(2,'0');
+    timeEl.textContent = str;
+  }
+  updateTime();
+  setInterval(updateTime, 1000);
+
+  // Navigation
+  navItems.forEach(function(item) {
+    item.addEventListener('click', function() {
+      // Remove active from all
+      navItems.forEach(function(n) { n.classList.remove('active'); });
+      // Activate current
+      item.classList.add('active');
+
+      const page = item.getAttribute('data-page');
+      const title = item.getAttribute('data-title');
+
+      // Update iframe
+      iframe.src = page;
+      breadcrumb.textContent = title;
+    });
+  });
+})();
+</script>
+</body>
+</html>

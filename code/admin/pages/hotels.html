@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="../css/admin.css">
+<style>
+  .hotel-card-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:20px; }
+  .hotel-card { background:var(--bg-card); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; transition:var(--transition); }
+  .hotel-card:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.1); }
+  .hotel-card-img { height:160px; background:linear-gradient(135deg, #c8a05220, #c8a05208); display:flex; align-items:center; justify-content:center; font-size:56px; position:relative; }
+  .hotel-card-img .status-dot { position:absolute; top:12px; right:12px; width:12px; height:12px; border-radius:50%; }
+  .hotel-card-img .status-dot.online { background:var(--success); box-shadow:0 0 8px rgba(82,196,26,0.5); }
+  .hotel-card-img .status-dot.offline { background:var(--error); box-shadow:0 0 8px rgba(245,34,45,0.5); }
+  .hotel-card-body { padding:16px 20px; }
+  .hotel-card-body .hotel-name { font-size:17px; font-weight:700; margin-bottom:6px; }
+  .hotel-card-body .hotel-addr { font-size:12px; color:var(--text-muted); margin-bottom:10px; }
+  .hotel-card-body .hotel-meta { display:flex; gap:20px; font-size:12px; color:var(--text-secondary); }
+  .hotel-card-body .hotel-meta span { display:flex; align-items:center; gap:4px; }
+  .hotel-card-footer { padding:12px 20px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+  .hotel-card-footer .btn { font-size:12px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="page-title">门店管理</div>
+
+  <!-- Stat Row -->
+  <div class="stat-cards">
+    <div class="stat-card">
+      <div class="stat-icon gold">🏢</div>
+      <div class="stat-info">
+        <div class="stat-value">3</div>
+        <div class="stat-label">运营中门店</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green">🛏️</div>
+      <div class="stat-info">
+        <div class="stat-value">156</div>
+        <div class="stat-label">总客房数</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon blue">👥</div>
+      <div class="stat-info">
+        <div class="stat-value">42</div>
+        <div class="stat-label">在职员工</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions Bar -->
+  <div class="flex-between mb-md">
+    <div class="filter-bar">
+      <input class="form-input" placeholder="🔍 搜索门店..." style="width:220px;">
+      <select class="form-select">
+        <option>全部状态</option>
+        <option>运营中</option>
+        <option>装修中</option>
+        <option>已关闭</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="openAddHotel()">+ 新增门店</button>
+  </div>
+
+  <!-- Hotel Cards -->
+  <div class="hotel-card-grid">
+    <!-- Hotel 1 -->
+    <div class="hotel-card">
+      <div class="hotel-card-img">
+        🏨
+        <span class="status-dot online"></span>
+      </div>
+      <div class="hotel-card-body">
+        <div class="hotel-name">伊家人酒店 · 锦绣路旗舰店</div>
+        <div class="hotel-addr">📍 上海市浦东新区锦绣路1288号</div>
+        <div class="hotel-meta">
+          <span>🛏️ 68间客房</span>
+          <span>👤 18名员工</span>
+          <span>⭐ 4.8分</span>
+        </div>
+      </div>
+      <div class="hotel-card-footer">
+        <span style="font-size:12px;">
+          <span class="badge badge-success">运营中</span>
+          今日入住率 <strong style="color:var(--gold-dark);">88%</strong>
+        </span>
+        <div class="gap-sm" style="display:flex;">
+          <button class="btn btn-outline btn-sm" onclick="editHotel(1)">编辑</button>
+          <button class="btn btn-outline btn-sm">详情</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hotel 2 -->
+    <div class="hotel-card">
+      <div class="hotel-card-img">
+        🏩
+        <span class="status-dot online"></span>
+      </div>
+      <div class="hotel-card-body">
+        <div class="hotel-name">伊家人酒店 · 滨江路店</div>
+        <div class="hotel-addr">📍 上海市徐汇区滨江路568号</div>
+        <div class="hotel-meta">
+          <span>🛏️ 52间客房</span>
+          <span>👤 14名员工</span>
+          <span>⭐ 4.6分</span>
+        </div>
+      </div>
+      <div class="hotel-card-footer">
+        <span style="font-size:12px;">
+          <span class="badge badge-success">运营中</span>
+          今日入住率 <strong style="color:var(--gold-dark);">82%</strong>
+        </span>
+        <div class="gap-sm" style="display:flex;">
+          <button class="btn btn-outline btn-sm" onclick="editHotel(2)">编辑</button>
+          <button class="btn btn-outline btn-sm">详情</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hotel 3 -->
+    <div class="hotel-card">
+      <div class="hotel-card-img">
+        🏬
+        <span class="status-dot online"></span>
+      </div>
+      <div class="hotel-card-body">
+        <div class="hotel-name">伊家人酒店 · 人民路店</div>
+        <div class="hotel-addr">📍 上海市黄浦区人民路326号</div>
+        <div class="hotel-meta">
+          <span>🛏️ 36间客房</span>
+          <span>👤 10名员工</span>
+          <span>⭐ 4.5分</span>
+        </div>
+      </div>
+      <div class="hotel-card-footer">
+        <span style="font-size:12px;">
+          <span class="badge badge-success">运营中</span>
+          今日入住率 <strong style="color:var(--gold-dark);">91%</strong>
+        </span>
+        <div class="gap-sm" style="display:flex;">
+          <button class="btn btn-outline btn-sm" onclick="editHotel(3)">编辑</button>
+          <button class="btn btn-outline btn-sm">详情</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Hotel Modal -->
+  <div class="modal-overlay" id="hotelModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">新增门店</div>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">门店名称 *</label>
+            <input class="form-input" id="hotelName" placeholder="如：伊家人酒店 · XX路店">
+          </div>
+          <div class="form-group">
+            <label class="form-label">门店类型</label>
+            <select class="form-select" id="hotelType">
+              <option>旗舰店</option>
+              <option>标准店</option>
+              <option>精品店</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">详细地址 *</label>
+          <input class="form-input" id="hotelAddr" placeholder="省市区街道门牌号">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">联系电话</label>
+            <input class="form-input" id="hotelPhone" placeholder="021-XXXXXXXX">
+          </div>
+          <div class="form-group">
+            <label class="form-label">客房数量</label>
+            <input class="form-input" id="hotelRooms" type="number" placeholder="如：50" min="1">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">开业日期</label>
+            <input class="form-input" id="hotelOpenDate" type="date">
+          </div>
+          <div class="form-group">
+            <label class="form-label">状态</label>
+            <select class="form-select" id="hotelStatus">
+              <option>运营中</option>
+              <option>装修中</option>
+              <option>已关闭</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">描述</label>
+          <textarea class="form-textarea" id="hotelDesc" placeholder="门店简介..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveHotel()">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let editingId = null;
+
+function openAddHotel() {
+  editingId = null;
+  document.getElementById('modalTitle').textContent = '新增门店';
+  document.getElementById('hotelName').value = '';
+  document.getElementById('hotelAddr').value = '';
+  document.getElementById('hotelPhone').value = '';
+  document.getElementById('hotelRooms').value = '';
+  document.getElementById('hotelOpenDate').value = '';
+  document.getElementById('hotelDesc').value = '';
+  document.getElementById('hotelModal').classList.add('show');
+}
+
+function editHotel(id) {
+  editingId = id;
+  var hotels = {
+    1: {name:'伊家人酒店 · 锦绣路旗舰店', type:'旗舰店', addr:'上海市浦东新区锦绣路1288号', phone:'021-58881234', rooms:'68', date:'2023-03-15', status:'运营中', desc:'旗舰店，地处浦东核心商圈，毗邻世纪公园。'},
+    2: {name:'伊家人酒店 · 滨江路店', type:'标准店', addr:'上海市徐汇区滨江路568号', phone:'021-64882345', rooms:'52', date:'2024-01-08', status:'运营中', desc:'标准店，坐落于浦江之畔，风景优美。'},
+    3: {name:'伊家人酒店 · 人民路店', type:'精品店', addr:'上海市黄浦区人民路326号', phone:'021-63335678', rooms:'36', date:'2024-08-20', status:'运营中', desc:'精品店，位于人民广场商圈，交通便利。'}
+  };
+  var h = hotels[id];
+  if (!h) return;
+  document.getElementById('modalTitle').textContent = '编辑门店';
+  document.getElementById('hotelName').value = h.name;
+  document.getElementById('hotelType').value = h.type;
+  document.getElementById('hotelAddr').value = h.addr;
+  document.getElementById('hotelPhone').value = h.phone;
+  document.getElementById('hotelRooms').value = h.rooms;
+  document.getElementById('hotelOpenDate').value = h.date;
+  document.getElementById('hotelStatus').value = h.status;
+  document.getElementById('hotelDesc').value = h.desc;
+  document.getElementById('hotelModal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('hotelModal').classList.remove('show');
+}
+
+function saveHotel() {
+  var name = document.getElementById('hotelName').value.trim();
+  if (!name) { alert('请填写门店名称'); return; }
+  alert(editingId ? '门店信息已更新！' : '新门店已创建！');
+  closeModal();
+}
+</script>
+</body>
+</html>

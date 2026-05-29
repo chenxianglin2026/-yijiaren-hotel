@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="../css/admin.css">
+<style>
+  .device-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px; }
+  .device-card { background:var(--bg-card); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; }
+  .device-card .device-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .device-card .device-name { font-weight:600; font-size:15px; }
+  .device-card .device-type { font-size:11px; color:var(--text-muted); }
+  .device-card .device-meta { font-size:12px; color:var(--text-secondary); display:flex; flex-wrap:wrap; gap:12px; margin-top:8px; }
+  .device-card .device-value { font-size:14px; font-weight:600; color:var(--gold-dark); margin-top:8px; }
+  .status-dot-sm { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:4px; }
+  .status-dot-sm.online { background:var(--success); }
+  .status-dot-sm.offline { background:var(--error); }
+  .status-dot-sm.warning { background:var(--warning); }
+  .device-chart-mini { height:40px; margin-top:8px; display:flex; align-items:flex-end; gap:2px; }
+  .device-chart-mini .dbar { flex:1; background:#e0c882; border-radius:2px 2px 0 0; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="page-title">设备监控</div>
+
+  <!-- Stat Cards -->
+  <div class="stat-cards">
+    <div class="stat-card">
+      <div class="stat-icon green">📡</div>
+      <div class="stat-info">
+        <div class="stat-value">47</div>
+        <div class="stat-label">在线设备</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon red">⚠️</div>
+      <div class="stat-info">
+        <div class="stat-value">2</div>
+        <div class="stat-label">异常设备</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon blue">🔌</div>
+      <div class="stat-info">
+        <div class="stat-value">3</div>
+        <div class="stat-label">离线设备</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon gold">📶</div>
+      <div class="stat-info">
+        <div class="stat-value">98.2<span style="font-size:16px;">%</span></div>
+        <div class="stat-label">设备在线率</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter -->
+  <div class="filter-bar mb-md">
+    <select class="form-select" style="width:auto;">
+      <option>全部门店</option>
+      <option>锦绣路旗舰店</option>
+      <option>滨江路店</option>
+      <option>人民路店</option>
+    </select>
+    <select class="form-select" style="width:auto;">
+      <option>全部类型</option>
+      <option>智能门锁</option>
+      <option>温控器</option>
+      <option>烟雾报警器</option>
+      <option>热水器</option>
+      <option>摄像头</option>
+      <option>门禁系统</option>
+    </select>
+    <select class="form-select" style="width:auto;">
+      <option>全部状态</option>
+      <option>在线</option>
+      <option>离线</option>
+      <option>异常</option>
+    </select>
+    <input class="form-input" placeholder="搜索设备ID..." style="width:180px;">
+    <button class="btn btn-outline btn-sm">🔄 刷新</button>
+  </div>
+
+  <!-- Device Grid -->
+  <div class="device-grid">
+    <!-- 智能门锁 -->
+    <div class="device-card">
+      <div class="device-header">
+        <div><div class="device-name">智能门锁 #A001</div><div class="device-type">锦绣路旗舰店 · 301房</div></div>
+        <span class="badge badge-success">在线</span>
+      </div>
+      <div class="device-meta">
+        <span>电池 85%</span><span>信号 -42dBm</span><span>最后开锁: 14:30</span>
+      </div>
+    </div>
+    <div class="device-card">
+      <div class="device-header">
+        <div><div class="device-name">智能门锁 #A015</div><div class="device-type">滨江路店 · 601房</div></div>
+        <span class="badge badge-success">在线</span>
+      </div>
+      <div class="device-meta">
+        <span>电池 72%</span><span>信号 -48dBm</span><span>最后开锁: 12:05</span>
+      </div>
+    </div>
+    <div class="device-card">
+      <div class="device-header">
+        <div><div class="device-name">智能门锁 #A028</div><div class="device-type">人民路店 · 208房</div></div>
+        <span class="badge badge-warning">低电量</span>
+      </div>
+      <div class="device-meta">
+        <span style="color:var(--error);">电池 12%</span><span>信号 -55dBm</span><span>最后开锁: 09:20</span>
+      </div>
+      <div class="alert alert-warning" style="margin-top:8px;padding:6px 10px;font-size:11px;">
+        ⚠️ 电池电量过低，建议尽快更换
+      </div>
+    </div>
+
+    <!-- 温控器 -->
+    <div class="device-card">
+      <div class="device-header">
+        <div><div class="device-name">温控器 #T001</div><div class="device-type">锦绣路旗舰店 · 301房</div></div>
+        <span class="badge badge-success">在线</span>
+      </div>
+      <div class="device-value">🌡️ 24.5°C / 设定 24°C</div>
+      <div class="device-meta"><span>湿度 52%</span><span>模式: 制冷</span></div>
+    </div>
+    <div class="device-card">
+      <div class="device-header">
+        <div><div class="device-name">温控器 #T008</div><div class="device-type">滨江路店 · 403房</div></div>
+        <span class="badge badge-success">在线</span>
+      </div>
+      <div class="device-value">🌡️ 26.0°C / 设定 25°C</div>
+      <div class="device-meta"><span>湿度 58%</span><span>模式: 制冷</span></div>
+    </div>
+
+    <!-- 烟雾报警器 -->
+    <div class="device-card">
+      <div class="device-header">
+        <div><div class="device-name">烟雾报警器 #S005</div><div class="device-type">锦绣路旗舰店 · 3层走廊</div></div>
+        <span class="badge badge-error">报警</span>
+      </div>
+      <div class="device-value" style="color:var(--error);">🔴 烟雾浓度 285ppm (阈值250)</div>
+      <div class="device-meta"><span>触发时间: 14:15</span></div>
+      <div class="alert alert-error" style="margin-top:8px;padding:6px 10px;font-size:11px;">
+        🚨 烟雾浓度超标！请立即派人排查！
+      </div>
+    </div>
+    <div class="device-card">
+      <div class="device-header">
+        <div><div class="device-name">烟雾报警器 #S001</div><div class="device-type">锦绣路旗舰店 · 1层走廊</div></div>
+        <span class="badge badge-success">正常</span>
+      </div>
+      <div class="device-value" style="color:var(--success);">🟢 烟雾浓度 18ppm</div>
+      <div class="device-meta"><span>上次检测: 14:35</span></div>
+    </div>
+
+    <!-- 热水器 -->
+    <div class="device-card">
+      <div class="device-header">
+        <div><div class="device-name">热水系统 #W001</div><div class="device-type">锦绣路旗舰店 · 中央</div></div>
+        <span class="badge badge-success">在线</span>
+      </div>
+      <div class="device-value">🌊 水温 58°C / 水量 85%</div>
+      <div class="device-meta"><span>压力 0.35MPa</span><span>能耗 2.4kW</span></div>
+    </div>
+    <div class="device-card">
+      <div class="device-header">
+        <div><div class="device-name">热水系统 #W002</div><div class="device-type">滨江路店 · 中央</div></div>
+        <span class="badge badge-warning">异常</span>
+      </div>
+      <div class="device-value" style="color:var(--warning);">🌊 水温 38°C (低于设定50°C)</div>
+      <div class="device-meta"><span>压力 0.28MPa</span><span>能耗 1.8kW</span></div>
+      <div class="alert alert-warning" style="margin-top:8px;padding:6px 10px;font-size:11px;">
+        ⚠️ 水温异常偏低，请检查加热系统
+      </div>
+    </div>
+
+    <!-- 门禁 -->
+    <div class="device-card">
+      <div class="device-header">
+        <div><div class="device-name">大门门禁 #G001</div><div class="device-type">锦绣路旗舰店 · 正门</div></div>
+        <span class="badge badge-success">在线</span>
+      </div>
+      <div class="device-meta"><span>今日通行 186次</span><span>最后通行: 14:32</span></div>
+    </div>
+    <div class="device-card">
+      <div class="device-header">
+        <div><div class="device-name">大门门禁 #G002</div><div class="device-type">滨江路店 · 正门</div></div>
+        <span class="badge badge-error">离线</span>
+      </div>
+      <div class="device-meta"><span>最后在线: 05-28 08:30</span></div>
+      <div class="alert alert-error" style="margin-top:8px;padding:6px 10px;font-size:11px;">
+        🚨 设备离线超过24小时，请检查网络连接
+      </div>
+    </div>
+
+    <!-- Camera -->
+    <div class="device-card">
+      <div class="device-header">
+        <div><div class="device-name">摄像头 #C001</div><div class="device-type">锦绣路旗舰店 · 大堂</div></div>
+        <span class="badge badge-success">在线</span>
+      </div>
+      <div class="device-meta"><span>分辨率 1080p</span><span>帧率 25fps</span><span>存储剩余 86%</span></div>
+    </div>
+    <div class="device-card">
+      <div class="device-header">
+        <div><div class="device-name">摄像头 #C005</div><div class="device-type">人民路店 · 停车场</div></div>
+        <span class="badge badge-success">在线</span>
+      </div>
+      <div class="device-meta"><span>分辨率 1080p</span><span>帧率 25fps</span><span>存储剩余 72%</span></div>
+    </div>
+  </div>
+
+  <!-- Event Log -->
+  <div class="card mt-md">
+    <div class="card-header">
+      <div class="card-title">设备事件日志</div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>时间</th><th>设备</th><th>门店</th><th>事件</th><th>级别</th></tr></thead>
+        <tbody>
+          <tr><td>2026-05-29 14:35</td><td>烟雾报警器 #S001</td><td>锦绣路旗舰店</td><td>自检通过</td><td><span class="badge badge-info">正常</span></td></tr>
+          <tr><td>2026-05-29 14:30</td><td>智能门锁 #A001</td><td>锦绣路旗舰店</td><td>客人开锁(王建国)</td><td><span class="badge badge-info">正常</span></td></tr>
+          <tr><td>2026-05-29 14:15</td><td>烟雾报警器 #S005</td><td>锦绣路旗舰店</td><td>烟雾浓度超标报警</td><td><span class="badge badge-error">严重</span></td></tr>
+          <tr><td>2026-05-29 12:05</td><td>智能门锁 #A015</td><td>滨江路店</td><td>客人开锁(赵明辉)</td><td><span class="badge badge-info">正常</span></td></tr>
+          <tr><td>2026-05-29 11:20</td><td>热水系统 #W002</td><td>滨江路店</td><td>水温低于阈值</td><td><span class="badge badge-warning">警告</span></td></tr>
+          <tr><td>2026-05-29 09:20</td><td>智能门锁 #A028</td><td>人民路店</td><td>低电量警告</td><td><span class="badge badge-warning">警告</span></td></tr>
+          <tr><td>2026-05-28 08:30</td><td>大门门禁 #G002</td><td>滨江路店</td><td>设备离线</td><td><span class="badge badge-error">严重</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="../css/admin.css">
+<style>
+  .quick-actions { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px; }
+  .chart-section { display:grid; grid-template-columns:2fr 1fr; gap:20px; }
+  .alert-list { list-style:none; }
+  .alert-list li { padding:10px 0; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; font-size:13px; }
+  .alert-list li:last-child { border-bottom:none; }
+  .alert-list .alert-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .alert-list .alert-dot.warn { background:var(--warning); }
+  .alert-list .alert-dot.info { background:var(--info); }
+  .alert-list .alert-dot.err { background:var(--error); }
+  .alert-list .alert-time { font-size:11px; color:var(--text-muted); margin-left:auto; white-space:nowrap; }
+  .progress-bar { height:8px; background:#f0f0f0; border-radius:4px; margin-top:8px; overflow:hidden; }
+  .progress-bar .progress-fill { height:100%; border-radius:4px; background:linear-gradient(90deg, #c8a052, #e0c882); }
+  .today-summary { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:16px; }
+  .summary-item { text-align:center; padding:12px; background:#faf8f3; border-radius:6px; }
+  .summary-item .num { font-size:22px; font-weight:700; color:var(--gold-dark); }
+  .summary-item .lbl { font-size:11px; color:var(--text-muted); margin-top:2px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Stat Cards -->
+  <div class="stat-cards">
+    <div class="stat-card">
+      <div class="stat-icon gold">📋</div>
+      <div class="stat-info">
+        <div class="stat-value">47</div>
+        <div class="stat-label">今日订单数</div>
+        <div class="stat-change up">↑ 12% 较昨日</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green">🏠</div>
+      <div class="stat-info">
+        <div class="stat-value">86.4<span style="font-size:16px;font-weight:400">%</span></div>
+        <div class="stat-label">今日入住率</div>
+        <div class="stat-change up">↑ 5.3% 较昨日</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon blue">💰</div>
+      <div class="stat-info">
+        <div class="stat-value">¥32,850</div>
+        <div class="stat-label">今日营收</div>
+        <div class="stat-change up">↑ 8.7% 较昨日</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon red">🔔</div>
+      <div class="stat-info">
+        <div class="stat-value">3</div>
+        <div class="stat-label">待处理报警</div>
+        <div class="stat-change down">需立即处理</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions">
+    <button class="btn btn-primary" onclick="parent.document.querySelector('[data-page=\\'pages/orders.html\\']').click()">+ 新建订单</button>
+    <button class="btn btn-outline" onclick="parent.document.querySelector('[data-page=\\'pages/rooms.html\\']').click()">📅 查看房态</button>
+    <button class="btn btn-outline" onclick="parent.document.querySelector('[data-page=\\'pages/cleaning.html\\']').click()">🧹 保洁派单</button>
+    <button class="btn btn-outline">📄 导出日报</button>
+  </div>
+
+  <!-- Chart + Alerts -->
+  <div class="chart-section">
+    <!-- Revenue Chart -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">近7天营收趋势（元）</div>
+      </div>
+      <div class="chart-bar">
+        <div class="bar" style="height:120px;"><span class="bar-val">28,450</span><span class="bar-label">5/23</span></div>
+        <div class="bar" style="height:105px;"><span class="bar-val">25,180</span><span class="bar-label">5/24</span></div>
+        <div class="bar" style="height:140px;"><span class="bar-val">33,620</span><span class="bar-label">5/25</span></div>
+        <div class="bar" style="height:155px;"><span class="bar-val">37,200</span><span class="bar-label">5/26</span></div>
+        <div class="bar" style="height:130px;"><span class="bar-val">31,500</span><span class="bar-label">5/27</span></div>
+        <div class="bar" style="height:145px;"><span class="bar-val">34,800</span><span class="bar-label">5/28</span></div>
+        <div class="bar" style="height:138px;"><span class="bar-val">32,850</span><span class="bar-label">5/29</span></div>
+      </div>
+      <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--text-muted);">本周累计营收 ¥223,600 | 日均 ¥31,943</div>
+    </div>
+
+    <!-- Alerts -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">实时报警</div>
+        <span class="badge badge-error">3条未处理</span>
+      </div>
+      <ul class="alert-list">
+        <li>
+          <span class="alert-dot err"></span>
+          <span>锦绣路店 301房烟雾报警器触发</span>
+          <span class="alert-time">10分钟前</span>
+        </li>
+        <li>
+          <span class="alert-dot warn"></span>
+          <span>滨江路店热水系统水温异常（38°C）</span>
+          <span class="alert-time">25分钟前</span>
+        </li>
+        <li>
+          <span class="alert-dot info"></span>
+          <span>人民路店 205房退房超时未清洁</span>
+          <span class="alert-time">45分钟前</span>
+        </li>
+        <li>
+          <span class="alert-dot warn"></span>
+          <span>锦绣路店布草库存不足（低于20套）</span>
+          <span class="alert-time">1小时前</span>
+        </li>
+        <li>
+          <span class="alert-dot info"></span>
+          <span>滨江路店502房客人要求延迟退房</span>
+          <span class="alert-time">2小时前</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Today Summary -->
+  <div class="card mt-md">
+    <div class="card-header">
+      <div class="card-title">今日运营概览 2026年5月29日 星期五</div>
+    </div>
+    <div class="today-summary">
+      <div class="summary-item">
+        <div class="num">47</div><div class="lbl">总订单</div>
+      </div>
+      <div class="summary-item">
+        <div class="num">38</div><div class="lbl">已入住</div>
+      </div>
+      <div class="summary-item">
+        <div class="num">5</div><div class="lbl">预订中</div>
+      </div>
+      <div class="summary-item">
+        <div class="num">4</div><div class="lbl">已退房</div>
+      </div>
+      <div class="summary-item">
+        <div class="num">6</div><div class="lbl">待清洁</div>
+      </div>
+      <div class="summary-item">
+        <div class="num">¥32,850</div><div class="lbl">今日营收</div>
+      </div>
+      <div class="summary-item">
+        <div class="num">¥683</div><div class="lbl">平均房价</div>
+      </div>
+      <div class="summary-item">
+        <div class="num">3</div><div class="lbl">门店运营</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
