@@ -1,0 +1,39 @@
+// rooms page styles
+.room-toolbar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:20px; }
+  .room-toolbar .hotel-selector { display:flex; }
+  .room-toolbar .hotel-selector .hs-btn { padding:8px 16px; border:1px solid var(--border); background:#fff; cursor:pointer; font-size:13px; transition:var(--transition); }
+  .room-toolbar .hotel-selector .hs-btn:first-child { border-radius:6px 0 0 6px; }
+  .room-toolbar .hotel-selector .hs-btn:last-child { border-radius:0 6px 6px 0; }
+  .room-toolbar .hotel-selector .hs-btn.active { background:var(--gold); color:#fff; border-color:var(--gold); }
+  .room-legend { display:flex; gap:16px; align-items:center; font-size:12px; color:var(--text-muted); margin-left:auto; }
+  .room-legend span { display:flex; align-items:center; gap:4px; }
+  .room-legend .dot { width:10px; height:10px; border-radius:3px; }
+  .room-legend .dot.vacant { background:var(--success); }
+  .room-legend .dot.occupied { background:var(--info); }
+  .room-legend .dot.cleaning { background:var(--warning); }
+  .room-legend .dot.maintenance { background:#8c8c8c; }
+
+  .room-floor { margin-bottom:20px; }
+  .room-floor-title { font-size:15px; font-weight:600; color:var(--text-primary); margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+  .room-floor-title .floor-stat { font-size:12px; font-weight:400; color:var(--text-muted); }
+  .room-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; }
+  .room-box {
+    background:var(--bg-card); border-radius:8px; padding:14px; cursor:pointer;
+    border:2px solid transparent; transition:var(--transition); text-align:center;
+    position:relative;
+  }
+  .room-box:hover { transform:translateY(-2px); box-shadow:0 4px 16px rgba(0,0,0,0.08); }
+  .room-box.vacant { border-color:#b7eb8f; background:#f6ffed; }
+  .room-box.occupied { border-color:#91d5ff; background:#e6f7ff; }
+  .room-box.cleaning { border-color:#ffe58f; background:#fffbe6; }
+  .room-box.maintenance { border-color:#d9d9d9; background:#f5f5f5; }
+  .room-box .room-no { font-size:20px; font-weight:700; }
+  .room-box .room-type-name { font-size:11px; color:var(--text-muted); margin-top:2px; }
+  .room-box .room-price { font-size:12px; color:var(--gold-dark); font-weight:600; margin-top:4px; }
+  .room-box .room-guest-name { font-size:12px; color:var(--text-secondary); margin-top:4px; }
+  .room-box .room-timer { font-size:10px; color:var(--text-muted); margin-top:2px; }
+
+  .detail-panel { background:var(--bg-card); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px; display:none; }
+  .detail-panel.show { display:block; }
+  .detail-panel .panel-row { display:flex; margin-bottom:10px; font-size:13px; }
+  .detail-panel .panel-label { color:var(--text-muted); width:80px; flex-shrink:0; }

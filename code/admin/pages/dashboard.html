@@ -21,45 +21,15 @@
   .summary-item { text-align:center; padding:12px; background:#faf8f3; border-radius:6px; }
   .summary-item .num { font-size:22px; font-weight:700; color:var(--gold-dark); }
   .summary-item .lbl { font-size:11px; color:var(--text-muted); margin-top:2px; }
+  .loading { text-align:center; padding:40px; color:var(--text-muted); }
 </style>
 </head>
 <body>
 <div class="page">
 
   <!-- Stat Cards -->
-  <div class="stat-cards">
-    <div class="stat-card">
-      <div class="stat-icon gold">📋</div>
-      <div class="stat-info">
-        <div class="stat-value">47</div>
-        <div class="stat-label">今日订单数</div>
-        <div class="stat-change up">↑ 12% 较昨日</div>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon green">🏠</div>
-      <div class="stat-info">
-        <div class="stat-value">86.4<span style="font-size:16px;font-weight:400">%</span></div>
-        <div class="stat-label">今日入住率</div>
-        <div class="stat-change up">↑ 5.3% 较昨日</div>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon blue">💰</div>
-      <div class="stat-info">
-        <div class="stat-value">¥32,850</div>
-        <div class="stat-label">今日营收</div>
-        <div class="stat-change up">↑ 8.7% 较昨日</div>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon red">🔔</div>
-      <div class="stat-info">
-        <div class="stat-value">3</div>
-        <div class="stat-label">待处理报警</div>
-        <div class="stat-change down">需立即处理</div>
-      </div>
-    </div>
+  <div class="stat-cards" id="statCards">
+    <div class="loading">加载中...</div>
   </div>
 
   <!-- Quick Actions -->
@@ -72,92 +42,101 @@
 
   <!-- Chart + Alerts -->
   <div class="chart-section">
-    <!-- Revenue Chart -->
     <div class="card">
-      <div class="card-header">
-        <div class="card-title">近7天营收趋势（元）</div>
+      <div class="card-header"><div class="card-title">近7天营收趋势（元）</div></div>
+      <div class="chart-bar" id="revenueChart">
+        <div class="loading">加载中...</div>
       </div>
-      <div class="chart-bar">
-        <div class="bar" style="height:120px;"><span class="bar-val">28,450</span><span class="bar-label">5/23</span></div>
-        <div class="bar" style="height:105px;"><span class="bar-val">25,180</span><span class="bar-label">5/24</span></div>
-        <div class="bar" style="height:140px;"><span class="bar-val">33,620</span><span class="bar-label">5/25</span></div>
-        <div class="bar" style="height:155px;"><span class="bar-val">37,200</span><span class="bar-label">5/26</span></div>
-        <div class="bar" style="height:130px;"><span class="bar-val">31,500</span><span class="bar-label">5/27</span></div>
-        <div class="bar" style="height:145px;"><span class="bar-val">34,800</span><span class="bar-label">5/28</span></div>
-        <div class="bar" style="height:138px;"><span class="bar-val">32,850</span><span class="bar-label">5/29</span></div>
-      </div>
-      <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--text-muted);">本周累计营收 ¥223,600 | 日均 ¥31,943</div>
+      <div id="revenueSummary" style="text-align:center;margin-top:12px;font-size:12px;color:var(--text-muted);"></div>
     </div>
 
-    <!-- Alerts -->
     <div class="card">
       <div class="card-header">
         <div class="card-title">实时报警</div>
-        <span class="badge badge-error">3条未处理</span>
+        <span class="badge badge-error" id="alertCount">0条未处理</span>
       </div>
-      <ul class="alert-list">
-        <li>
-          <span class="alert-dot err"></span>
-          <span>锦绣路店 301房烟雾报警器触发</span>
-          <span class="alert-time">10分钟前</span>
-        </li>
-        <li>
-          <span class="alert-dot warn"></span>
-          <span>滨江路店热水系统水温异常（38°C）</span>
-          <span class="alert-time">25分钟前</span>
-        </li>
-        <li>
-          <span class="alert-dot info"></span>
-          <span>人民路店 205房退房超时未清洁</span>
-          <span class="alert-time">45分钟前</span>
-        </li>
-        <li>
-          <span class="alert-dot warn"></span>
-          <span>锦绣路店布草库存不足（低于20套）</span>
-          <span class="alert-time">1小时前</span>
-        </li>
-        <li>
-          <span class="alert-dot info"></span>
-          <span>滨江路店502房客人要求延迟退房</span>
-          <span class="alert-time">2小时前</span>
-        </li>
+      <ul class="alert-list" id="alertList">
+        <li style="color:var(--text-muted);">暂无报警</li>
       </ul>
     </div>
   </div>
 
   <!-- Today Summary -->
   <div class="card mt-md">
-    <div class="card-header">
-      <div class="card-title">今日运营概览 2026年5月29日 星期五</div>
-    </div>
-    <div class="today-summary">
-      <div class="summary-item">
-        <div class="num">47</div><div class="lbl">总订单</div>
-      </div>
-      <div class="summary-item">
-        <div class="num">38</div><div class="lbl">已入住</div>
-      </div>
-      <div class="summary-item">
-        <div class="num">5</div><div class="lbl">预订中</div>
-      </div>
-      <div class="summary-item">
-        <div class="num">4</div><div class="lbl">已退房</div>
-      </div>
-      <div class="summary-item">
-        <div class="num">6</div><div class="lbl">待清洁</div>
-      </div>
-      <div class="summary-item">
-        <div class="num">¥32,850</div><div class="lbl">今日营收</div>
-      </div>
-      <div class="summary-item">
-        <div class="num">¥683</div><div class="lbl">平均房价</div>
-      </div>
-      <div class="summary-item">
-        <div class="num">3</div><div class="lbl">门店运营</div>
-      </div>
+    <div class="card-header"><div class="card-title" id="summaryTitle">今日运营概览</div></div>
+    <div class="today-summary" id="todaySummary">
+      <div class="loading">加载中...</div>
     </div>
   </div>
 
 </div>
+
+<script>
+// ---- Token helper ----
+const token = localStorage.getItem('yjr_token');
+const headers = { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+
+// ---- Format helpers ----
+function fmtMoney(n) { return '¥' + Number(n || 0).toLocaleString('zh-CN', {minimumFractionDigits:0,maximumFractionDigits:0}); }
+function fmtDate(d) { return d.getMonth()+1 + '月' + d.getDate() + '日'; }
+
+// ---- Load dashboard stats ----
+async function loadDashboard() {
+  try {
+    const res = await fetch('/api/dashboard/stats', { headers });
+    const json = await res.json();
+    if (json.code !== 0) throw new Error(json.msg);
+    const d = json.data;
+
+    // Stat cards
+    document.getElementById('statCards').innerHTML = [
+      { icon:'📋', cls:'gold', val:d.orders_today, label:'今日订单数' },
+      { icon:'🏠', cls:'green', val:d.occupancy_rate + '%', label:'入住率', sub:d.occupied_rooms + '/' + d.total_rooms + '间' },
+      { icon:'💰', cls:'blue', val:fmtMoney(d.revenue_today), label:'今日营收' },
+      { icon:'🧹', cls:'red', val:d.pending_cleaning_count, label:'待清洁' },
+    ].map(s => `
+      <div class="stat-card">
+        <div class="stat-icon ${s.cls}">${s.icon}</div>
+        <div class="stat-info">
+          <div class="stat-value">${s.val}</div>
+          <div class="stat-label">${s.label}</div>
+          ${s.sub ? '<div class="stat-change" style="color:var(--text-muted);">'+s.sub+'</div>' : ''}
+        </div>
+      </div>`).join('');
+
+    // Today summary
+    const today = new Date();
+    document.getElementById('summaryTitle').textContent = '今日运营概览 ' + today.getFullYear() + '年' + fmtDate(today) + ' ' + ['日','一','二','三','四','五','六'][today.getDay()];
+    document.getElementById('todaySummary').innerHTML = [
+      { num:d.orders_today, lbl:'总订单' },
+      { num:d.checked_in_count, lbl:'已入住' },
+      { num:d.total_rooms - d.occupied_rooms, lbl:'空房' },
+      { num:d.occupancy_rate + '%', lbl:'入住率' },
+      { num:d.pending_cleaning_count, lbl:'待清洁' },
+      { num:fmtMoney(d.revenue_today), lbl:'今日营收' },
+      { num:d.revenue_today > 0 && d.orders_today > 0 ? fmtMoney(Math.round(d.revenue_today/d.orders_today)) : '¥0', lbl:'平均房价' },
+      { num:d.hotel_name || '全部门店', lbl:'当前门店' },
+    ].map(i => `<div class="summary-item"><div class="num">${i.num}</div><div class="lbl">${i.lbl}</div></div>`).join('');
+
+    // Revenue chart placeholder (real chart needs history API)
+    document.getElementById('revenueChart').innerHTML = 
+      '<div style="display:flex;align-items:center;justify-content:center;height:180px;color:var(--text-muted);">📊 营收图表API开发中</div>';
+    document.getElementById('revenueSummary').textContent = '当前入住 ' + d.checked_in_count + ' 间 | 总房间 ' + d.total_rooms + ' 间';
+
+    // Alerts
+    document.getElementById('alertCount').textContent = d.pending_cleaning_count + '条待清洁';
+    document.getElementById('alertList').innerHTML = d.pending_cleaning_count > 0 
+      ? '<li><span class="alert-dot warn"></span><span>有 ' + d.pending_cleaning_count + ' 间房待清洁</span><span class="alert-time">现在</span></li>'
+      : '<li style="color:var(--text-muted);">暂无报警</li>';
+
+  } catch (err) {
+    document.getElementById('statCards').innerHTML = '<div class="loading" style="color:var(--error);">加载失败: ' + err.message + '</div>';
+  }
+}
+
+loadDashboard();
+// Auto-refresh every 60s
+setInterval(loadDashboard, 60000);
+</script>
 </body>
 </html>

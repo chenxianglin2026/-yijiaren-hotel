@@ -1,0 +1,12 @@
+{
+  "name": "admin",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "npx --yes sass --no-source-map scss/main.scss css/admin.css --style=compressed --quiet",
+    "watch": "npx --yes sass --no-source-map scss/main.scss css/admin.css --style=compressed --watch"
+  },
+  "dependencies": {
+    "sass-embedded": "^1.100.0"
+  }
+}

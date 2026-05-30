@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.db import get_db, User, Order, Room, Hotel, OrderStatus
 from app.api.auth import get_current_user
@@ -149,7 +150,9 @@ async def list_orders(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    query = select(Order).where(Order.user_id == current_user.id)
+    query = select(Order).where(Order.user_id == current_user.id).options(
+        selectinload(Order.hotel), selectinload(Order.room)
+    )
 
     if status:
         query = query.where(Order.status == status)
@@ -208,7 +211,9 @@ async def get_order(
     current_user: User = Depends(get_current_user),
 ):
     result = await db.execute(
-        select(Order).where(Order.id == order_id, Order.user_id == current_user.id)
+        select(Order).where(Order.id == order_id, Order.user_id == current_user.id).options(
+            selectinload(Order.hotel), selectinload(Order.room)
+        )
     )
     order = result.scalar_one_or_none()
     if not order:
@@ -245,7 +250,9 @@ async def cancel_order(
     current_user: User = Depends(get_current_user),
 ):
     result = await db.execute(
-        select(Order).where(Order.id == order_id, Order.user_id == current_user.id)
+        select(Order).where(Order.id == order_id, Order.user_id == current_user.id).options(
+            selectinload(Order.hotel), selectinload(Order.room)
+        )
     )
     order = result.scalar_one_or_none()
     if not order:

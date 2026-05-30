@@ -1,0 +1,17 @@
+// dashboard page styles
+.quick-actions { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px; }
+  .chart-section { display:grid; grid-template-columns:2fr 1fr; gap:20px; }
+  .alert-list { list-style:none; }
+  .alert-list li { padding:10px 0; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; font-size:13px; }
+  .alert-list li:last-child { border-bottom:none; }
+  .alert-list .alert-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .alert-list .alert-dot.warn { background:var(--warning); }
+  .alert-list .alert-dot.info { background:var(--info); }
+  .alert-list .alert-dot.err { background:var(--error); }
+  .alert-list .alert-time { font-size:11px; color:var(--text-muted); margin-left:auto; white-space:nowrap; }
+  .progress-bar { height:8px; background:#f0f0f0; border-radius:4px; margin-top:8px; overflow:hidden; }
+  .progress-bar .progress-fill { height:100%; border-radius:4px; background:linear-gradient(90deg, #c8a052, #e0c882); }
+  .today-summary { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:16px; }
+  .summary-item { text-align:center; padding:12px; background:#faf8f3; border-radius:6px; }
+  .summary-item .num { font-size:22px; font-weight:700; color:var(--gold-dark); }
+  .summary-item .lbl { font-size:11px; color:var(--text-muted); margin-top:2px; }

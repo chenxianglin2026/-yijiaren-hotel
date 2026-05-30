@@ -87,11 +87,15 @@
 
 <script>
 (function() {
-  const navItems = document.querySelectorAll('.sidebar-nav .nav-item');
-  const iframe = document.getElementById('contentFrame');
-  const breadcrumb = document.getElementById('pageBreadcrumb');
-  const timeEl = document.getElementById('headerTime');
+  // Auth check
+  const token = localStorage.getItem('yjr_token');
+  if (!token) { location.href = 'pages/login.html'; return; }
 
+  // Original code below
+  const iframe = document.getElementById('contentFrame');
+  const breadcrumb = document.getElementById('breadcrumb');
+  const timeEl = document.getElementById('liveTime');
+  const navItems = document.querySelectorAll('.sidebar .nav-item');
   // Clock update
   function updateTime() {
     const now = new Date();

@@ -1,0 +1,19 @@
+// ============================================
+// 伊家人酒店 PC管理后台 - 主样式入口
+// 编译: npx sass --no-source-map scss/main.scss css/admin.css --style=compressed
+// ============================================
+
+@import 'variables';
+@import 'base';
+@import 'layout';
+@import 'components';
+@import 'utilities';
+
+@import 'pages/dashboard';
+@import 'pages/hotels';
+@import 'pages/rooms';
+@import 'pages/orders';
+@import 'pages/cleaning';
+@import 'pages/finance';
+@import 'pages/devices';
+@import 'pages/settings';

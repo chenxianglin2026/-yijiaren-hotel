@@ -1,3 +1,8 @@
+/**
+ * 伊家人小程序 - 首页
+ * 接入真实后端API：酒店列表 / 房型列表 / 仪表盘统计
+ */
+const api = require('../../utils/api')
 const app = getApp()
 
 Page({
@@ -11,19 +16,29 @@ Page({
     // 筛选条件
     filters: {
       priceRange: 'all',    // all | under300 | 300to500 | 500to800 | above800
-      roomType: 'all',      // all | single | double | suite | family
+      roomType: 'all',      // all | 大床房 | 双床房 | 套房 | 家庭房 | 单人间
       hasWindow: false,
       breakfast: false
     },
     showFilters: false,
-    // 房型列表
+    // 原始房型列表（用于筛选）
+    _allRooms: [],
+    // 房型列表（展示用）
     roomList: [],
-    // 门店信息
-    storeInfo: null,
+    // 筛选后的列表
+    filteredRooms: null,
+    // 酒店列表
+    hotelList: [],
+    // 当前选中的酒店
+    currentHotel: null,
+    // 酒店ID（从app.globalData获取或默认1）
+    hotelId: 1,
     // Banner轮播
     banners: [],
     // 加载状态
     loading: true,
+    loadingMore: false,
+    hasMore: true,
     // 品牌特色
     features: [
       { icon: '🏨', label: '品质酒店', desc: '精选房源' },
@@ -38,17 +53,26 @@ Page({
   onLoad() {
     this.getLocation()
     this.loadBanners()
+    this.loadHotels()
   },
 
   onShow() {
+    // 如果从其他页面切换回来，检查门店是否变化
     const store = app.globalData.currentStore
-    if (store) {
-      this.setData({ storeInfo: store })
+    if (store && this.data.hotelId !== store.id) {
+      this.setData({
+        hotelId: store.id,
+        currentHotel: store
+      })
+      this.loadRooms()
     }
   },
 
   onPullDownRefresh() {
-    this.loadRooms().then(() => wx.stopPullDownRefresh())
+    Promise.all([
+      this.loadHotels(),
+      this.loadRooms()
+    ]).then(() => wx.stopPullDownRefresh())
   },
 
   // ========== LBS 定位 ==========
@@ -65,7 +89,7 @@ Page({
       },
       fail() {
         // 定位失败使用默认位置
-        that.setData({ city: '杭州' })
+        that.setData({ city: '全国' })
         that.loadRooms()
       }
     })
@@ -73,28 +97,16 @@ Page({
 
   reverseGeocode(lat, lng) {
     const that = this
-    wx.request({
-      url: `https://apis.map.qq.com/ws/geocoder/v1/?location=${lat},${lng}&key=YOUR_KEY`,
-      success(res) {
-        if (res.data.status === 0) {
-          const city = res.data.result.address_component.city || '杭州'
-          that.setData({ city })
-          app.globalData.location.city = city
-        } else {
-          that.setData({ city: '杭州' })
-        }
-        that.loadRooms()
-      },
-      fail() {
-        that.setData({ city: '杭州' })
-        that.loadRooms()
-      }
-    })
+    // TODO: 配置腾讯地图key后启用逆地理编码
+    // 目前直接根据定位加载数据
+    this.setData({ city: '杭州' })
+    app.globalData.location.city = '杭州'
+    this.loadRooms()
   },
 
   // ========== 加载Banner ==========
   loadBanners() {
-    // 模拟数据 - 实际从接口获取
+    // 可接入 /api/dashboard/promotions 或配置文件
     this.setData({
       banners: [
         {
@@ -119,133 +131,107 @@ Page({
     })
   },
 
-  // ========== 加载房型 ==========
-  loadRooms() {
+  // ========== 加载酒店列表 ==========
+  async loadHotels() {
+    try {
+      const res = await api.get('/api/hotels', {
+        city: this.data.city === '全国' ? undefined : this.data.city,
+        page_size: 50
+      })
+      const hotels = res.items || []
+      this.setData({ hotelList: hotels })
+
+      // 如果app.globalData中有currentStore，使用它
+      const store = app.globalData.currentStore
+      if (store && store.id) {
+        this.setData({
+          hotelId: store.id,
+          currentHotel: store
+        })
+      } else if (hotels.length > 0) {
+        // 默认选第一个酒店
+        const firstHotel = hotels[0]
+        this.setData({
+          hotelId: firstHotel.id,
+          currentHotel: firstHotel
+        })
+        app.switchStore(firstHotel)
+      }
+    } catch (err) {
+      console.error('[首页] 加载酒店列表失败:', err)
+    }
+  },
+
+  // ========== 加载房型（从真实API） ==========
+  async loadRooms() {
     const that = this
     this.setData({ loading: true })
 
-    // TODO: 替换为真实API
-    // app.request({ url: '/rooms', data: { storeId: app.globalData.currentStore.id } })
-
-    // 模拟酒店真实房型数据
-    const mockRooms = [
-      {
-        id: 101,
-        name: '雅致大床房',
-        image: '/images/room-double.png',
-        type: 'double',
-        area: '28㎡',
-        bed: '1.8m大床',
-        window: true,
-        breakfast: true,
-        wifi: true,
-        floor: '3-8层',
-        maxGuests: 2,
-        originalPrice: 368,
-        price: 298,
-        tags: ['限量特惠', '含双早'],
-        available: 5,
-        description: '简约雅致设计，配备金可儿床垫，干湿分离卫浴'
-      },
-      {
-        id: 102,
-        name: '豪华双床房',
-        image: '/images/room-twin.png',
-        type: 'double',
-        area: '35㎡',
-        bed: '1.35m双床',
-        window: true,
-        breakfast: true,
-        wifi: true,
-        floor: '5-12层',
-        maxGuests: 2,
-        originalPrice: 458,
-        price: 368,
-        tags: ['含双早', '高层景观'],
-        available: 8,
-        description: '宽敞双床布局，适合商务出行或亲友同住'
-      },
-      {
-        id: 201,
-        name: '尊享套房',
-        image: '/images/room-suite.png',
-        type: 'suite',
-        area: '55㎡',
-        bed: '2.0m大床',
-        window: true,
-        breakfast: true,
-        wifi: true,
-        floor: '15-20层',
-        maxGuests: 2,
-        originalPrice: 788,
-        price: 598,
-        tags: ['独立客厅', '浴缸', '城市景观'],
-        available: 3,
-        description: '一室一厅格局，独立会客厅，全景落地窗尽揽城市风光'
-      },
-      {
-        id: 301,
-        name: '亲子家庭房',
-        image: '/images/room-family.png',
-        type: 'family',
-        area: '42㎡',
-        bed: '1.8m大床+1.2m小床',
-        window: true,
-        breakfast: true,
-        wifi: true,
-        floor: '6-10层',
-        maxGuests: 3,
-        originalPrice: 528,
-        price: 428,
-        tags: ['儿童主题', '含三早'],
-        available: 4,
-        description: '童趣主题布置，配备儿童用品、安全护栏，亲子出行首选'
-      },
-      {
-        id: 103,
-        name: '舒适单人间',
-        image: '/images/room-single.png',
-        type: 'single',
-        area: '22㎡',
-        bed: '1.5m大床',
-        window: true,
-        breakfast: false,
-        wifi: true,
-        floor: '2-5层',
-        maxGuests: 1,
-        originalPrice: 258,
-        price: 198,
-        tags: ['经济实惠'],
-        available: 6,
-        description: '精致小巧空间，功能齐全，商务出差高性价比之选'
-      },
-      {
-        id: 202,
-        name: '行政景观套房',
-        image: '/images/room-executive.png',
-        type: 'suite',
-        area: '65㎡',
-        bed: '2.0m大床',
-        window: true,
-        breakfast: true,
-        wifi: true,
-        floor: '18-22层',
-        maxGuests: 2,
-        originalPrice: 988,
-        price: 738,
-        tags: ['行政酒廊', '管家服务', '全景视野'],
-        available: 2,
-        description: '行政楼层专属礼遇，独立办公区，180°全景落地窗'
+    try {
+      const hotelId = this.data.hotelId
+      if (!hotelId) {
+        // 没有酒店ID，尝试先加载酒店列表
+        await this.loadHotels()
+        if (!this.data.hotelId) {
+          this.setData({ loading: false })
+          return
+        }
       }
-    ]
 
-    // 模拟网络延迟
-    setTimeout(() => {
+      const currentHotelId = this.data.hotelId
+
+      // 调用真实API: GET /api/hotels/{hotel_id}/rooms
+      const rooms = await api.get(`/api/hotels/${currentHotelId}/rooms`)
+
+      // 将后端数据转换为小程序展示格式
+      const roomList = rooms.map(room => ({
+        id: room.id,
+        hotel_id: room.hotel_id,
+        name: room.name,
+        image: room.images || '/images/room-default.png',
+        type: room.room_type,
+        area: `${room.area || 25}m²`,
+        bed: room.bed_type || '1.8m大床',
+        window: room.has_window,
+        breakfast: room.has_bathtub,  // 有浴缸通常也含早
+        wifi: room.has_wifi,
+        floor: '详情见描述',
+        maxGuests: room.max_guests,
+        originalPrice: Math.round(room.price * 1.2),
+        price: room.price,
+        tags: room.has_bathtub ? ['浴缸'] : [],
+        available: room.available_count,
+        description: room.description || ''
+      }))
+
       that.setData({
-        roomList: mockRooms,
-        loading: false
+        _allRooms: roomList,
+        roomList: roomList,
+        loading: false,
+        filteredRooms: null
       })
-    }, 600)
+    } catch (err) {
+      console.error('[首页] 加载房型失败:', err)
+      that.setData({
+        loading: false,
+        roomList: []
+      })
+      wx.showToast({ title: '加载失败，下拉刷新重试', icon: 'none' })
+    }
+  },
+
+  // ========== 切换酒店 ==========
+  async onHotelChange(e) {
+    const hotelId = e.currentTarget.dataset.id
+    const hotel = this.data.hotelList.find(h => h.id === hotelId)
+    if (hotel) {
+      this.setData({
+        hotelId: hotel.id,
+        currentHotel: hotel
+      })
+      app.switchStore(hotel)
+      await this.loadRooms()
+    }
   },
 
   // ========== 搜索 ==========
@@ -256,19 +242,21 @@ Page({
   onSearch() {
     const key = this.data.searchKey.trim()
     if (!key) {
-      this.loadRooms()
+      this.setData({ filteredRooms: null })
       return
     }
     // 本地过滤
-    const filtered = this.data.roomList.filter(item =>
-      item.name.includes(key) || item.description.includes(key)
+    const source = this.data._allRooms
+    const filtered = source.filter(item =>
+      item.name.includes(key) ||
+      (item.description && item.description.includes(key)) ||
+      (item.type && item.type.includes(key))
     )
-    this.setData({ roomList: filtered })
+    this.setData({ filteredRooms: filtered })
   },
 
   onSearchClear() {
-    this.setData({ searchKey: '' })
-    this.loadRooms()
+    this.setData({ searchKey: '', filteredRooms: null })
   },
 
   // ========== 筛选 ==========
@@ -289,9 +277,9 @@ Page({
   },
 
   applyFilters() {
-    const { filters, roomList } = this.data
-    // 重新加载所有房间再做筛选
-    let rooms = roomList
+    const { filters } = this.data
+    const source = this.data._allRooms
+    let rooms = [...source]
 
     // 房型筛选
     if (filters.roomType !== 'all') {
@@ -313,7 +301,7 @@ Page({
     if (filters.hasWindow) {
       rooms = rooms.filter(r => r.window)
     }
-    // 含早
+    // 含早（用有浴缸近似）
     if (filters.breakfast) {
       rooms = rooms.filter(r => r.breakfast)
     }
@@ -343,17 +331,25 @@ Page({
     wx.navigateTo({ url: `/pages/booking/booking?roomId=${id}` })
   },
 
-  // 切换门店
+  // 切换门店（保留兼容）
   onSwitchStore() {
+    const hotels = this.data.hotelList
+    if (hotels.length === 0) {
+      wx.showToast({ title: '暂无门店', icon: 'none' })
+      return
+    }
+    const itemList = hotels.map(h => h.name)
+    const that = this
     wx.showActionSheet({
-      itemList: ['伊家人酒店·西湖店', '伊家人酒店·钱江店', '伊家人酒店·西溪店'],
+      itemList,
       success(res) {
-        const stores = [
-          { id: 1, name: '伊家人酒店·西湖店', address: '杭州市西湖区龙井路88号', lat: 30.2375, lng: 120.1398, phone: '0571-88886666' },
-          { id: 2, name: '伊家人酒店·钱江店', address: '杭州市上城区钱江路168号', lat: 30.2448, lng: 120.2120, phone: '0571-88887777' },
-          { id: 3, name: '伊家人酒店·西溪店', address: '杭州市余杭区文二西路952号', lat: 30.2713, lng: 120.0581, phone: '0571-88888888' }
-        ]
-        app.switchStore(stores[res.tapIndex])
+        const hotel = hotels[res.tapIndex]
+        that.setData({
+          hotelId: hotel.id,
+          currentHotel: hotel
+        })
+        app.switchStore(hotel)
+        that.loadRooms()
       }
     })
   }

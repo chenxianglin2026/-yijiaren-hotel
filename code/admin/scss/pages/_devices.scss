@@ -1,0 +1,14 @@
+// devices page styles
+.device-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px; }
+  .device-card { background:var(--bg-card); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; }
+  .device-card .device-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .device-card .device-name { font-weight:600; font-size:15px; }
+  .device-card .device-type { font-size:11px; color:var(--text-muted); }
+  .device-card .device-meta { font-size:12px; color:var(--text-secondary); display:flex; flex-wrap:wrap; gap:12px; margin-top:8px; }
+  .device-card .device-value { font-size:14px; font-weight:600; color:var(--gold-dark); margin-top:8px; }
+  .status-dot-sm { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:4px; }
+  .status-dot-sm.online { background:var(--success); }
+  .status-dot-sm.offline { background:var(--error); }
+  .status-dot-sm.warning { background:var(--warning); }
+  .device-chart-mini { height:40px; margin-top:8px; display:flex; align-items:flex-end; gap:2px; }
+  .device-chart-mini .dbar { flex:1; background:#e0c882; border-radius:2px 2px 0 0; }

@@ -1,0 +1,61 @@
+// ============================================
+// 工具类 & 响应式 & 打印
+// ============================================
+
+// --- Text colors ---
+.text-success { color: var(--success); }
+.text-warning { color: var(--warning); }
+.text-error   { color: var(--error); }
+.text-muted   { color: var(--text-muted); }
+.text-center  { text-align: center; }
+.text-right   { text-align: right; }
+
+// --- Spacing ---
+.mt-sm { margin-top: 8px; }
+.mt-md { margin-top: 16px; }
+.mb-sm { margin-bottom: 8px; }
+.mb-md { margin-bottom: 16px; }
+
+// --- Flex helpers ---
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.gap-sm { gap: 8px; }
+.gap-md { gap: 16px; }
+
+// --- Print ---
+@media print {
+  .sidebar,
+  .main-header { display: none !important; }
+
+  .main-content iframe { display: none !important; }
+}
+
+// --- Responsive ---
+@media (max-width: 768px) {
+  .sidebar {
+    width: 60px;
+    min-width: 60px;
+  }
+
+  .sidebar {
+    .logo-name,
+    .logo-sub,
+    .nav-group-title,
+    .nav-item span:not(.nav-icon) { display: none; }
+  }
+
+  .sidebar-logo { padding: 12px 8px; }
+
+  .nav-item {
+    padding: 10px;
+    justify-content: center;
+    margin: 2px 8px;
+  }
+
+  .form-row { grid-template-columns: 1fr; }
+  .stat-cards { grid-template-columns: 1fr 1fr; }
+}
