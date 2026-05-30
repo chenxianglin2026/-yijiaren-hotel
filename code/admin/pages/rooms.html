@@ -4,256 +4,97 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="../css/admin.css">
-
-
+<style>
+  .room-toolbar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+  .hs-btn { padding:6px 16px; border:1px solid var(--border); border-radius:6px; background:#fff; cursor:pointer; font-size:13px; }
+  .hs-btn.active { background:var(--gold); color:#fff; border-color:var(--gold); }
+  .room-legend { display:flex; gap:12px; margin-left:auto; font-size:12px; color:var(--text-muted); }
+  .room-legend .dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:4px; }
+  .dot.vacant{background:var(--success)} .dot.occupied{background:var(--info)} .dot.cleaning{background:var(--warning)} .dot.booked{background:#faad14}
+  .room-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
+  .room-card-new { background:var(--bg-card); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; border-left:4px solid var(--border); cursor:pointer; transition:var(--transition); }
+  .room-card-new:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,0.08); }
+  .room-card-new .rc-name { font-size:18px; font-weight:700; color:var(--text-primary); }
+  .room-card-new .rc-type { font-size:12px; color:var(--text-muted); margin-top:2px; }
+  .room-card-new .rc-stats { display:flex; gap:12px; margin-top:12px; }
+  .room-card-new .rc-stat { text-align:center; flex:1; padding:8px 4px; background:#faf8f3; border-radius:6px; }
+  .room-card-new .rc-stat .n { font-size:20px; font-weight:700; color:var(--gold-dark); }
+  .room-card-new .rc-stat .l { font-size:10px; color:var(--text-muted); }
+  .rc-booked{border-left-color:#faad14} .rc-occupied{border-left-color:var(--info)} .rc-vacant{border-left-color:var(--success)} .rc-mixed{border-left-color:var(--gold)}
+  .summary-bar { display:flex; gap:16px; margin-bottom:20px; }
+  .summary-item-bar { flex:1; text-align:center; padding:12px; background:var(--bg-card); border-radius:var(--radius); box-shadow:var(--shadow); }
+  .summary-item-bar .n { font-size:24px; font-weight:700; }
+  .summary-item-bar .l { font-size:11px; color:var(--text-muted); }
+</style>
 </head>
 <body>
 <div class="page">
   <div class="page-title">房态管理</div>
 
-  <!-- Toolbar -->
   <div class="room-toolbar">
-    <div class="hotel-selector">
-      <button class="hs-btn active" onclick="switchHotel(this, 'jinxiu')">锦绣路旗舰店</button>
-      <button class="hs-btn" onclick="switchHotel(this, 'binjiang')">滨江路店</button>
-      <button class="hs-btn" onclick="switchHotel(this, 'renmin')">人民路店</button>
-    </div>
-    <select class="form-select" style="width:auto;">
-      <option>全部楼层</option>
-      <option>1层</option>
-      <option>2层</option>
-      <option>3层</option>
-      <option>4层</option>
-      <option>5层</option>
-      <option>6层</option>
-    </select>
-    <button class="btn btn-outline btn-sm">🔄 刷新</button>
+    <div id="hotelBtns"></div>
+    <button class="btn btn-outline btn-sm" onclick="loadRooms()">🔄 刷新</button>
     <div class="room-legend">
-      <span><span class="dot vacant"></span>空房</span>
-      <span><span class="dot occupied"></span>入住</span>
-      <span><span class="dot cleaning"></span>清洁中</span>
-      <span><span class="dot maintenance"></span>维修</span>
+      <span><span class="dot vacant"></span>空闲</span>
+      <span><span class="dot booked"></span>已预订</span>
+      <span><span class="dot occupied"></span>入住中</span>
+      <span><span class="dot cleaning"></span>待清洁</span>
     </div>
   </div>
 
-  <!-- Room Board -->
-  <div id="roomBoard">
-    <!-- Rendered by JS -->
-  </div>
-
-  <!-- Detail Panel -->
-  <div class="detail-panel" id="detailPanel">
-    <div class="card-header">
-      <div class="card-title" id="detailTitle">房间详情</div>
-      <button class="modal-close" onclick="document.getElementById('detailPanel').classList.remove('show')">✕</button>
-    </div>
-    <div id="detailBody"></div>
-  </div>
+  <div class="summary-bar" id="summary"></div>
+  <div class="room-grid" id="roomGrid"></div>
 </div>
 
 <script>
-// Hotel room data
-var hotelData = {
-  jinxiu: {
-    name: '锦绣路旗舰店',
-    floors: {
-      '1层': [
-        {no:'101', type:'经济单人间', price:380, status:'vacant'},
-        {no:'102', type:'经济单人间', price:380, status:'occupied', guest:'陈小红', checkin:'05-29'},
-        {no:'103', type:'经济单人间', price:380, status:'cleaning'},
-        {no:'104', type:'标准双床房', price:680, status:'occupied', guest:'张伟民', checkin:'05-28'},
-        {no:'105', type:'标准双床房', price:680, status:'vacant'},
-        {no:'106', type:'标准双床房', price:680, status:'maintenance'},
-      ],
-      '2层': [
-        {no:'201', type:'标准双床房', price:680, status:'occupied', guest:'李娟', checkin:'05-29'},
-        {no:'202', type:'标准双床房', price:680, status:'vacant'},
-        {no:'203', type:'舒适大床房', price:880, status:'occupied', guest:'王志强', checkin:'05-28'},
-        {no:'204', type:'舒适大床房', price:880, status:'cleaning'},
-        {no:'205', type:'标准双床房', price:680, status:'occupied', guest:'李美玲', checkin:'05-29'},
-        {no:'206', type:'舒适大床房', price:880, status:'vacant'},
-        {no:'207', type:'舒适大床房', price:880, status:'vacant'},
-        {no:'208', type:'标准双床房', price:680, status:'occupied', guest:'赵强', checkin:'05-27'},
-        {no:'209', type:'标准双床房', price:680, status:'vacant'},
-        {no:'210', type:'标准双床房', price:680, status:'cleaning'},
-      ],
-      '3层': [
-        {no:'301', type:'豪华大床房', price:1280, status:'occupied', guest:'王建国', checkin:'05-29'},
-        {no:'302', type:'豪华大床房', price:1280, status:'vacant'},
-        {no:'303', type:'豪华大床房', price:1280, status:'occupied', guest:'钱学明', checkin:'05-28'},
-        {no:'304', type:'豪华大床房', price:1280, status:'cleaning'},
-        {no:'305', type:'豪华大床房', price:1280, status:'vacant'},
-        {no:'306', type:'豪华大床房', price:1280, status:'occupied', guest:'刘建国', checkin:'05-29'},
-        {no:'307', type:'豪华大床房', price:1280, status:'vacant'},
-        {no:'308', type:'豪华大床房', price:1280, status:'occupied', guest:'周伟', checkin:'05-29'},
-      ],
-      '4层': [
-        {no:'401', type:'行政套房', price:1880, status:'occupied', guest:'孙总经理', checkin:'05-27'},
-        {no:'402', type:'行政套房', price:1880, status:'vacant'},
-        {no:'403', type:'豪华大床房', price:1280, status:'occupied', guest:'黄丽华', checkin:'05-28'},
-        {no:'404', type:'豪华大床房', price:1280, status:'vacant'},
-      ],
-      '5层': [
-        {no:'501', type:'家庭套房', price:2580, status:'vacant'},
-        {no:'502', type:'家庭套房', price:2580, status:'occupied', guest:'马瑞', checkin:'05-29'},
-        {no:'503', type:'总统套房', price:5880, status:'vacant'},
-      ],
-    }
-  },
-  binjiang: {
-    name: '滨江路店',
-    floors: {
-      '1层': [
-        {no:'101', type:'经济单人间', price:350, status:'occupied', guest:'刘德华', checkin:'05-29'},
-        {no:'102', type:'经济单人间', price:350, status:'vacant'},
-        {no:'103', type:'标准双床房', price:620, status:'occupied', guest:'郭富城', checkin:'05-28'},
-        {no:'104', type:'标准双床房', price:620, status:'cleaning'},
-      ],
-      '2层': [
-        {no:'201', type:'江景大床房', price:980, status:'occupied', guest:'张学友', checkin:'05-29'},
-        {no:'202', type:'江景大床房', price:980, status:'vacant'},
-        {no:'203', type:'江景大床房', price:980, status:'occupied', guest:'黎明', checkin:'05-27'},
-        {no:'204', type:'舒适双床房', price:720, status:'vacant'},
-        {no:'205', type:'舒适双床房', price:720, status:'cleaning'},
-      ],
-      '3层': [
-        {no:'301', type:'行政套房', price:1680, status:'vacant'},
-        {no:'302', type:'行政套房', price:1680, status:'occupied', guest:'梁朝伟', checkin:'05-29'},
-      ],
-      '4层': [
-        {no:'401', type:'标准双床房', price:620, status:'occupied', guest:'吴丽丽', checkin:'05-29'},
-        {no:'402', type:'标准双床房', price:620, status:'maintenance'},
-        {no:'403', type:'标准双床房', price:620, status:'occupied', guest:'杨静', checkin:'05-28'},
-        {no:'404', type:'标准双床房', price:620, status:'vacant'},
-        {no:'405', type:'标准双床房', price:620, status:'vacant'},
-      ],
-      '6层': [
-        {no:'601', type:'江景套房', price:2880, status:'occupied', guest:'赵明辉', checkin:'05-29'},
-        {no:'602', type:'江景套房', price:2880, status:'vacant'},
-      ],
-    }
-  },
-  renmin: {
-    name: '人民路店',
-    floors: {
-      '1层': [
-        {no:'101', type:'经济单人间', price:320, status:'vacant'},
-        {no:'102', type:'经济单人间', price:320, status:'occupied', guest:'陈小红', checkin:'05-29'},
-        {no:'103', type:'经济单人间', price:320, status:'cleaning'},
-        {no:'104', type:'经济单人间', price:320, status:'vacant'},
-        {no:'105', type:'经济单人间', price:320, status:'maintenance'},
-      ],
-      '2层': [
-        {no:'201', type:'舒适大床房', price:780, status:'occupied', guest:'孙芳', checkin:'05-29'},
-        {no:'202', type:'舒适大床房', price:780, status:'vacant'},
-        {no:'203', type:'舒适大床房', price:780, status:'occupied', guest:'周杰伦', checkin:'05-28'},
-        {no:'204', type:'舒适大床房', price:780, status:'vacant'},
-        {no:'205', type:'标准双床房', price:580, status:'occupied', guest:'蔡依林', checkin:'05-29'},
-        {no:'206', type:'标准双床房', price:580, status:'vacant'},
-        {no:'207', type:'标准双床房', price:580, status:'cleaning'},
-        {no:'208', type:'舒适大床房', price:780, status:'occupied', guest:'林俊杰', checkin:'05-27'},
-        {no:'209', type:'舒适大床房', price:780, status:'vacant'},
-        {no:'210', type:'舒适大床房', price:780, status:'vacant'},
-      ],
-    }
+const T = localStorage.getItem('yjr_token');
+const H = { 'Authorization':'Bearer '+T };
+const F = n => '¥'+Number(n||0).toLocaleString();
+let curHotel = null;
+
+async function loadRooms(hid){
+  curHotel = hid||null;
+  let url = '/api/rooms/status';
+  if(hid) url += '?hotel_id='+hid;
+  try{
+    let r = await fetch(url,{headers:H});
+    let j = await r.json();
+    if(j.code&&j.code!==0) throw new Error(j.msg);
+    let d = j.data||j, items = d.items||[];
+    
+    // Hotel buttons
+    let hotels = [...new Set(items.map(i=>i.hotel_id))];
+    let hotelNames = {};
+    items.forEach(i=>{ hotelNames[i.hotel_id]=i.hotel_name||d.hotel_name||'门店'+i.hotel_id; });
+    document.getElementById('hotelBtns').innerHTML = 
+      '<button class="hs-btn'+(curHotel?'':' active')+'" onclick="loadRooms()">全部门店</button>'+
+      hotels.map(h=>'<button class="hs-btn'+(curHotel===h?' active':'')+'" onclick="loadRooms('+h+')">'+hotelNames[h]+'</button>').join('');
+
+    // Summary
+    document.getElementById('summary').innerHTML = [
+      {c:'var(--success)',n:d.total_rooms,l:'总房间'},
+      {c:'var(--success)',n:d.available_total,l:'空闲'},
+      {c:'#faad14',n:d.booked_total,l:'已预订'},
+      {c:'var(--info)',n:d.occupied_total,l:'入住中'},
+      {c:'var(--warning)',n:d.cleaning_total,l:'待清洁'}
+    ].map(s=>'<div class="summary-item-bar"><div class="n" style="color:'+s.c+'">'+s.n+'</div><div class="l">'+s.l+'</div></div>').join('');
+
+    // Room cards
+    document.getElementById('roomGrid').innerHTML = items.length ? items.map(r=>{
+      let cls = r.available_count>r.total_count*0.5?'rc-vacant':r.occupied_count>r.total_count*0.5?'rc-occupied':r.booked_count>r.total_count*0.5?'rc-booked':'rc-mixed';
+      return '<div class="room-card-new '+cls+'"><div class="rc-name">'+r.name+'</div><div class="rc-type">'+r.room_type+' · '+F(r.price)+'/晚 · '+(r.bed_type||'')+'</div><div class="rc-stats">'+
+        '<div class="rc-stat"><div class="n" style="color:var(--success);">'+r.available_count+'</div><div class="l">空闲</div></div>'+
+        '<div class="rc-stat"><div class="n" style="color:#faad14;">'+r.booked_count+'</div><div class="l">预订</div></div>'+
+        '<div class="rc-stat"><div class="n" style="color:var(--info);">'+r.occupied_count+'</div><div class="l">入住</div></div>'+
+        '<div class="rc-stat"><div class="n" style="color:var(--warning);">'+r.cleaning_count+'</div><div class="l">清洁</div></div>'+
+      '</div></div>';
+    }).join('') : '<div style="color:var(--text-muted);grid-column:1/-1;text-align:center;padding:40px;">暂无房态数据</div>';
+  }catch(e){
+    document.getElementById('roomGrid').innerHTML = '<div style="color:var(--error);grid-column:1/-1;text-align:center;padding:40px;">加载失败: '+e.message+'</div>';
   }
-};
-
-var currentHotel = 'jinxiu';
-
-var statusLabels = {
-  vacant: '空房',
-  occupied: '已入住',
-  cleaning: '清洁中',
-  maintenance: '维修中'
-};
-
-var statusClass = {
-  vacant: 'vacant',
-  occupied: 'occupied',
-  cleaning: 'cleaning',
-  maintenance: 'maintenance'
-};
-
-function switchHotel(btn, hotel) {
-  document.querySelectorAll('.hs-btn').forEach(function(b) { b.classList.remove('active'); });
-  btn.classList.add('active');
-  currentHotel = hotel;
-  document.getElementById('detailPanel').classList.remove('show');
-  renderBoard();
 }
 
-function renderBoard() {
-  var data = hotelData[currentHotel];
-  var board = document.getElementById('roomBoard');
-  var html = '';
-  var totalRooms = 0, occupied = 0, vacant = 0, cleaning = 0, maintenance = 0;
-
-  Object.keys(data.floors).forEach(function(floor) {
-    var rooms = data.floors[floor];
-    html += '<div class="room-floor">';
-    html += '<div class="room-floor-title">' + floor + '</div>';
-    html += '<div class="room-grid">';
-    rooms.forEach(function(r) {
-      totalRooms++;
-      if (r.status === 'occupied') occupied++;
-      if (r.status === 'vacant') vacant++;
-      if (r.status === 'cleaning') cleaning++;
-      if (r.status === 'maintenance') maintenance++;
-
-      html += '<div class="room-box ' + statusClass[r.status] + '" onclick="showRoomDetail(\'' + r.no + '\', \'' + r.type + '\', ' + r.price + ', \'' + r.status + '\', \'' + (r.guest || '') + '\', \'' + (r.checkin || '') + '\')">';
-      html += '<div class="room-no">' + r.no + '</div>';
-      html += '<div class="room-type-name">' + r.type + '</div>';
-      html += '<div class="room-price">¥' + r.price + '</div>';
-      if (r.guest) {
-        html += '<div class="room-guest-name">' + r.guest + '</div>';
-      }
-      if (r.status === 'occupied' && r.checkin) {
-        html += '<div class="room-timer">入住 ' + r.checkin + '</div>';
-      }
-      html += '</div>';
-    });
-    html += '</div></div>';
-  });
-
-  // Summary
-  html += '<div class="card mt-md"><div class="card-title" style="font-size:14px;">📊 ' + data.name + '房态统计</div>';
-  html += '<div style="display:flex;gap:24px;margin-top:12px;font-size:13px;">';
-  html += '<span>总客房: <strong>' + totalRooms + '</strong>间</span>';
-  html += '<span style="color:var(--info);">已入住: <strong>' + occupied + '</strong>间 (' + (totalRooms>0 ? Math.round(occupied/totalRooms*100) : 0) + '%)</span>';
-  html += '<span style="color:var(--success);">空房: <strong>' + vacant + '</strong>间</span>';
-  html += '<span style="color:var(--warning);">清洁中: <strong>' + cleaning + '</strong>间</span>';
-  html += '<span style="color:#8c8c8c;">维修: <strong>' + maintenance + '</strong>间</span>';
-  html += '</div></div>';
-
-  board.innerHTML = html;
-}
-
-function showRoomDetail(no, type, price, status, guest, checkin) {
-  document.getElementById('detailTitle').textContent = no + '号房 · ' + type;
-  var body = document.getElementById('detailBody');
-  var html = '';
-  html += '<div class="detail-row"><span class="detail-label">房号</span><span class="detail-value">' + no + '</span></div>';
-  html += '<div class="detail-row"><span class="detail-label">房型</span><span class="detail-value">' + type + '</span></div>';
-  html += '<div class="detail-row"><span class="detail-label">价格</span><span class="detail-value" style="color:var(--gold-dark);font-weight:600;">¥' + price + '/晚</span></div>';
-  html += '<div class="detail-row"><span class="detail-label">状态</span><span class="detail-value">' + statusLabels[status] + '</span></div>';
-  if (guest) {
-    html += '<div class="detail-row"><span class="detail-label">客人</span><span class="detail-value">' + guest + '</span></div>';
-  }
-  if (checkin) {
-    html += '<div class="detail-row"><span class="detail-label">入住日期</span><span class="detail-value">2026年' + checkin + '</span></div>';
-  }
-  html += '<div class="mt-md">';
-  html += '<button class="btn btn-primary btn-sm">办理入住</button> ';
-  html += '<button class="btn btn-outline btn-sm">设为清洁</button> ';
-  html += '<button class="btn btn-outline btn-sm">维修标记</button>';
-  html += '</div>';
-  body.innerHTML = html;
-  document.getElementById('detailPanel').classList.add('show');
-}
-
-// Initial
-renderBoard();
+loadRooms();
 </script>
 </body>
 </html>
