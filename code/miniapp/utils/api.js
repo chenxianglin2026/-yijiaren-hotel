@@ -4,7 +4,7 @@
  * 封装 wx.request，提供统一的请求/响应拦截、Token 管理、错误处理
  */
 
-const BASE_URL = 'http://192.168.43.139:8001'
+const BASE_URL = 'http://43.163.5.90:8001'
 
 // 请求队列，用于并发请求时的 token 刷新
 let isRefreshing = false
