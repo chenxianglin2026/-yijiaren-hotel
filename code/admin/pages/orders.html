@@ -4,248 +4,162 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="../css/admin.css">
-
-
+<style>
+.detail-row { display:flex; padding:10px 0; border-bottom:1px solid var(--border); }
+.detail-label { width:90px; font-size:13px; color:var(--text-muted); flex-shrink:0; }
+.detail-value { font-size:14px; color:var(--text-primary); }
+</style>
 </head>
 <body>
 <div class="page">
   <div class="page-title">订单管理</div>
 
-  <!-- Stat Row -->
-  <div class="stat-cards">
-    <div class="stat-card">
-      <div class="stat-icon gold">📋</div>
-      <div class="stat-info">
-        <div class="stat-value">2,847</div>
-        <div class="stat-label">本月订单总数</div>
-        <div class="stat-change up">↑ 18.3% 较上月</div>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon green">✅</div>
-      <div class="stat-info">
-        <div class="stat-value">2,630</div>
-        <div class="stat-label">已完成订单</div>
-        <div class="stat-change up">完成率 92.4%</div>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon blue">💳</div>
-      <div class="stat-info">
-        <div class="stat-value">¥186.5<span style="font-size:14px;">万</span></div>
-        <div class="stat-label">本月交易额</div>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon red">🕐</div>
-      <div class="stat-info">
-        <div class="stat-value">52</div>
-        <div class="stat-label">待处理订单</div>
-        <div class="stat-change down">含12笔退款申请</div>
-      </div>
-    </div>
-  </div>
+  <div class="stat-cards" id="statCards"></div>
 
-  <!-- Filter Bar -->
   <div class="card">
     <div class="filter-bar">
-      <input class="form-input" id="searchInput" placeholder="🔍 搜索订单号/客人姓名/手机号..." style="width:260px;">
-      <select class="form-select" id="filterStatus">
-        <option value="">全部状态</option>
-        <option>已入住</option>
-        <option>预订中</option>
-        <option>已完成</option>
-        <option>已取消</option>
-        <option>退款中</option>
-      </select>
-      <select class="form-select" id="filterHotel">
-        <option value="">全部门店</option>
-        <option>锦绣路旗舰店</option>
-        <option>滨江路店</option>
-        <option>人民路店</option>
-      </select>
-      <input class="form-input" type="date" id="filterDateFrom" style="width:150px;" value="2026-05-01">
+      <input class="form-input" id="search" placeholder="🔍 搜索订单号/客人姓名..." style="width:220px;">
+      <select class="form-select" id="status"><option value="">全部状态</option><option>pending</option><option>paid</option><option>checked_in</option><option>completed</option><option>cancelled</option></select>
+      <input class="form-input" type="date" id="dateFrom" style="width:140px;">
       <span style="color:var(--text-muted);">至</span>
-      <input class="form-input" type="date" id="filterDateTo" style="width:150px;" value="2026-05-29">
-      <button class="btn btn-primary btn-sm" onclick="filterOrders()">查询</button>
-      <button class="btn btn-outline btn-sm" onclick="resetFilter()">重置</button>
-      <button class="btn btn-outline btn-sm" style="margin-left:auto;" onclick="exportOrders()">📥 导出Excel</button>
+      <input class="form-input" type="date" id="dateTo" style="width:140px;">
+      <button class="btn btn-primary btn-sm" onclick="loadOrders()">查询</button>
+      <button class="btn btn-outline btn-sm" onclick="resetFilters()">重置</button>
+      <button class="btn btn-outline btn-sm" style="margin-left:auto;" onclick="exportCSV()">📥 导出</button>
     </div>
   </div>
 
-  <!-- Orders Table -->
   <div class="card">
     <div class="table-wrap">
-      <table id="ordersTable">
-        <thead>
-          <tr>
-            <th>订单编号</th>
-            <th>门店</th>
-            <th>房型</th>
-            <th>房号</th>
-            <th>客人姓名</th>
-            <th>手机号</th>
-            <th>入住日期</th>
-            <th>退房日期</th>
-            <th>金额</th>
-            <th>状态</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody id="ordersBody"></tbody>
-      </table>
+      <table><thead><tr>
+        <th>订单号</th><th>客人</th><th>房型</th><th>入住/退房</th><th class="text-right">金额</th><th>状态</th><th>创建时间</th><th>操作</th>
+      </tr></thead><tbody id="ordersBody"><tr><td colspan="8" class="loading-row">加载中...</td></tr></tbody></table>
     </div>
     <div class="pagination" id="pagination"></div>
   </div>
 
-  <!-- Order Detail Modal -->
   <div class="modal-overlay" id="detailModal">
     <div class="modal">
-      <div class="modal-header">
-        <div class="modal-title">订单详情</div>
-        <button class="modal-close" onclick="document.getElementById('detailModal').classList.remove('show')">✕</button>
-      </div>
+      <div class="modal-header"><div class="modal-title">订单详情</div><button class="modal-close" onclick="closeModal()">✕</button></div>
       <div class="modal-body" id="detailContent"></div>
-      <div class="modal-footer">
-        <button class="btn btn-outline" onclick="document.getElementById('detailModal').classList.remove('show')">关闭</button>
-        <button class="btn btn-primary">打印订单</button>
-      </div>
     </div>
   </div>
 </div>
 
 <script>
-// Real order data
-var allOrders = [
-  {id:'YJR20260529001', hotel:'锦绣路旗舰店', type:'豪华大床房', room:'301', guest:'王建国', phone:'138****6789', checkin:'2026-05-29', checkout:'2026-05-31', amount:1280, status:'已入住', payment:'微信支付', source:'携程'},
-  {id:'YJR20260529002', hotel:'锦绣路旗舰店', type:'标准双床房', room:'205', guest:'李美玲', phone:'139****8901', checkin:'2026-05-29', checkout:'2026-05-30', amount:680, status:'已入住', payment:'支付宝', source:'美团'},
-  {id:'YJR20260529003', hotel:'滨江路店', type:'江景套房', room:'601', guest:'赵明辉', phone:'135****2345', checkin:'2026-05-29', checkout:'2026-06-01', amount:2880, status:'已入住', payment:'银行卡', source:'飞猪'},
-  {id:'YJR20260529004', hotel:'人民路店', type:'经济单人间', room:'102', guest:'陈小红', phone:'137****4567', checkin:'2026-05-29', checkout:'2026-05-30', amount:380, status:'已入住', payment:'微信支付', source:'到店'},
-  {id:'YJR20260529005', hotel:'锦绣路旗舰店', type:'豪华大床房', room:'308', guest:'周伟', phone:'136****7890', checkin:'2026-05-29', checkout:'2026-05-31', amount:1280, status:'已入住', payment:'支付宝', source:'携程'},
-  {id:'YJR20260529006', hotel:'滨江路店', type:'标准双床房', room:'403', guest:'吴丽丽', phone:'138****3456', checkin:'2026-05-30', checkout:'2026-06-01', amount:1360, status:'预订中', payment:'未支付', source:'美团'},
-  {id:'YJR20260529007', hotel:'锦绣路旗舰店', type:'家庭套房', room:'501', guest:'郑国强', phone:'133****9012', checkin:'2026-05-30', checkout:'2026-06-02', amount:2580, status:'预订中', payment:'已付定金', source:'携程'},
-  {id:'YJR20260529008', hotel:'人民路店', type:'舒适大床房', room:'208', guest:'孙芳', phone:'150****5678', checkin:'2026-05-31', checkout:'2026-06-02', amount:1560, status:'预订中', payment:'微信支付', source:'到店'},
-  {id:'YJR20260529009', hotel:'滨江路店', type:'江景套房', room:'602', guest:'刘洋', phone:'186****1234', checkin:'2026-05-28', checkout:'2026-05-29', amount:2880, status:'已完成', payment:'银行卡', source:'飞猪'},
-  {id:'YJR20260529010', hotel:'锦绣路旗舰店', type:'标准双床房', room:'210', guest:'黄志强', phone:'159****8901', checkin:'2026-05-27', checkout:'2026-05-29', amount:1360, status:'已完成', payment:'支付宝', source:'携程'},
-  {id:'YJR20260529011', hotel:'锦绣路旗舰店', type:'豪华大床房', room:'305', guest:'林小红', phone:'177****3456', checkin:'2026-05-29', checkout:'2026-05-30', amount:1280, status:'已取消', payment:'已退款', source:'美团'},
-  {id:'YJR20260529012', hotel:'人民路店', type:'经济单人间', room:'105', guest:'张伟', phone:'152****7890', checkin:'2026-05-29', checkout:'2026-05-30', amount:380, status:'退款中', payment:'微信支付', source:'到店'},
-  {id:'YJR20260529013', hotel:'滨江路店', type:'标准双床房', room:'405', guest:'杨静', phone:'131****5678', checkin:'2026-05-28', checkout:'2026-05-30', amount:1360, status:'已入住', payment:'银行卡', source:'携程'},
-  {id:'YJR20260529014', hotel:'锦绣路旗舰店', type:'家庭套房', room:'502', guest:'马瑞', phone:'185****1234', checkin:'2026-05-29', checkout:'2026-06-01', amount:2580, status:'已入住', payment:'微信支付', source:'飞猪'},
-  {id:'YJR20260529015', hotel:'人民路店', type:'舒适大床房', room:'210', guest:'徐丽', phone:'132****8901', checkin:'2026-05-28', checkout:'2026-05-29', amount:780, status:'已完成', payment:'支付宝', source:'美团'},
-];
+const T = localStorage.getItem('yjr_token');
+const H = { 'Authorization':'Bearer '+T };
+const F = n => '¥'+Number(n||0).toLocaleString();
+const STATUS = {pending:'待支付',paid:'已支付',checked_in:'已入住',completed:'已完成',cancelled:'已取消'};
+const BADGE = {pending:'badge-warning',paid:'badge-info',checked_in:'badge-success',completed:'badge-processing',cancelled:'badge-error'};
 
-var currentPage = 1;
-var pageSize = 10;
-var filteredOrders = allOrders.slice();
+let page=1, pageSize=10, totalCount=0;
 
-function getStatusBadge(status) {
-  var map = {
-    '已入住': '<span class="badge badge-success">已入住</span>',
-    '预订中': '<span class="badge badge-info">预订中</span>',
-    '已完成': '<span class="badge badge-processing">已完成</span>',
-    '已取消': '<span class="badge badge-error">已取消</span>',
-    '退款中': '<span class="badge badge-warning">退款中</span>'
-  };
-  return map[status] || status;
-}
+async function loadOrders(){
+  let params = new URLSearchParams();
+  let s = document.getElementById('search').value.trim();
+  if(s) params.set('keyword',s);
+  let st = document.getElementById('status').value;
+  if(st) params.set('status',st);
+  let df = document.getElementById('dateFrom').value;
+  if(df) params.set('start_date',df);
+  let dt = document.getElementById('dateTo').value;
+  if(dt) params.set('end_date',dt);
+  params.set('page',page); params.set('page_size',pageSize);
 
-function renderTable() {
-  var start = (currentPage - 1) * pageSize;
-  var pageData = filteredOrders.slice(start, start + pageSize);
-  var tbody = document.getElementById('ordersBody');
-  var html = '';
-  pageData.forEach(function(o) {
-    html += '<tr>' +
-      '<td><a href="javascript:void(0)" onclick="showDetail(\'' + o.id + '\')" style="color:var(--gold-dark);font-weight:600;">' + o.id + '</a></td>' +
-      '<td>' + o.hotel + '</td>' +
-      '<td>' + o.type + '</td>' +
-      '<td>' + o.room + '</td>' +
-      '<td>' + o.guest + '</td>' +
-      '<td>' + o.phone + '</td>' +
-      '<td>' + o.checkin + '</td>' +
-      '<td>' + o.checkout + '</td>' +
-      '<td class="text-right" style="font-weight:600;">¥' + o.amount.toLocaleString() + '</td>' +
-      '<td>' + getStatusBadge(o.status) + '</td>' +
-      '<td>' +
-        '<button class="btn btn-outline btn-sm" onclick="showDetail(\'' + o.id + '\')">详情</button>' +
-      '</td>' +
-      '</tr>';
-  });
-  tbody.innerHTML = html;
+  try{
+    let r = await fetch('/api/orders?'+params,{headers:H});
+    let j = await r.json();
+    if(j.code!==0) throw new Error(j.msg);
+    let items = j.data?.items || j.data || [];
+    totalCount = j.data?.total || items.length;
 
-  // Pagination
-  var totalPages = Math.ceil(filteredOrders.length / pageSize);
-  var pagDiv = document.getElementById('pagination');
-  var pagHtml = '';
-  pagHtml += '<button class="page-btn" ' + (currentPage===1?'disabled':'') + ' onclick="goPage(' + (currentPage-1) + ')">&laquo;</button>';
-  for (var i=1; i<=totalPages; i++) {
-    pagHtml += '<button class="page-btn' + (i===currentPage?' active':'') + '" onclick="goPage(' + i + ')">' + i + '</button>';
+    // Stat cards
+    let stats = {total:totalCount, paid:0, pending:0};
+    items.forEach(i=>{ stats.paid+=i.status==='paid'||i.status==='checked_in'?1:0; stats.pending+=i.status==='pending'?1:0; });
+    document.getElementById('statCards').innerHTML = [
+      {icon:'📋',cls:'gold',val:totalCount,label:'查询结果'},
+      {icon:'✅',cls:'green',val:stats.paid,label:'已支付/入住'},
+      {icon:'💰',cls:'blue',val:F(items.reduce((s,i)=>s+(i.total_price||0),0)),label:'金额合计'},
+      {icon:'🕐',cls:'red',val:stats.pending,label:'待支付'}
+    ].map(s=>`<div class="stat-card"><div class="stat-icon ${s.cls}">${s.icon}</div><div class="stat-info"><div class="stat-value">${s.val}</div><div class="stat-label">${s.label}</div></div></div>`).join('');
+
+    // Table
+    document.getElementById('ordersBody').innerHTML = items.length ? items.map(o=>{
+      let d = new Date(o.created_at||o.checkin_date||''), ds = d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');
+      return `<tr>
+        <td><a href="javascript:void(0)" onclick="showDetail('${o.order_no||o.id}')" style="color:var(--gold-dark);font-weight:600;">${o.order_no||o.id}</a></td>
+        <td>${o.guest_name||'-'}</td>
+        <td>${o.room_type||'-'}</td>
+        <td>${o.checkin_date||'-'} ~ ${o.checkout_date||'-'}</td>
+        <td class="text-right" style="font-weight:600;">${F(o.total_price)}</td>
+        <td><span class="badge ${BADGE[o.status]||'badge-info'}">${STATUS[o.status]||o.status}</span></td>
+        <td>${ds}</td>
+        <td><button class="btn btn-outline btn-sm" onclick="showDetail('${o.order_no||o.id}')">详情</button></td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px;">暂无订单数据</td></tr>';
+
+    // Pagination
+    let tp = Math.ceil(totalCount/pageSize);
+    let pag = '';
+    pag += `<button class="page-btn" ${page<=1?'disabled':''} onclick="goPage(${page-1})">&laquo;</button>`;
+    for(let i=Math.max(1,page-2);i<=Math.min(tp,page+2);i++)
+      pag += `<button class="page-btn${i===page?' active':''}" onclick="goPage(${i})">${i}</button>`;
+    pag += `<button class="page-btn" ${page>=tp?'disabled':''} onclick="goPage(${page+1})">&raquo;</button>`;
+    pag += `<span style="font-size:12px;color:var(--text-muted);margin-left:12px;">共${totalCount}条</span>`;
+    document.getElementById('pagination').innerHTML = pag;
+  }catch(e){
+    document.getElementById('ordersBody').innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--error);padding:20px;">加载失败: '+e.message+'</td></tr>';
   }
-  pagHtml += '<button class="page-btn" ' + (currentPage===totalPages?'disabled':'') + ' onclick="goPage(' + (currentPage+1) + ')">&raquo;</button>';
-  pagHtml += '<span style="font-size:12px;color:var(--text-muted);margin-left:12px;">共' + filteredOrders.length + '条</span>';
-  pagDiv.innerHTML = pagHtml;
 }
 
-function goPage(p) {
-  var totalPages = Math.ceil(filteredOrders.length / pageSize);
-  if (p < 1 || p > totalPages) return;
-  currentPage = p;
-  renderTable();
+function goPage(p){
+  let tp = Math.ceil(totalCount/pageSize);
+  if(p<1||p>tp) return;
+  page=p; loadOrders();
 }
 
-function filterOrders() {
-  var search = (document.getElementById('searchInput').value || '').toLowerCase();
-  var status = document.getElementById('filterStatus').value;
-  var hotel = document.getElementById('filterHotel').value;
-  var dateFrom = document.getElementById('filterDateFrom').value;
-  var dateTo = document.getElementById('filterDateTo').value;
+function resetFilters(){
+  document.getElementById('search').value='';
+  document.getElementById('status').value='';
+  document.getElementById('dateFrom').value='';
+  document.getElementById('dateTo').value='';
+  page=1; loadOrders();
+}
 
-  filteredOrders = allOrders.filter(function(o) {
-    if (search && o.id.toLowerCase().indexOf(search)===-1 && o.guest.toLowerCase().indexOf(search)===-1 && o.phone.indexOf(search)===-1) return false;
-    if (status && o.status !== status) return false;
-    if (hotel && o.hotel !== hotel) return false;
-    if (dateFrom && o.checkin < dateFrom) return false;
-    if (dateTo && o.checkin > dateTo) return false;
-    return true;
+async function showDetail(id){
+  try{
+    let r = await fetch('/api/orders/'+id,{headers:H});
+    let j = await r.json();
+    let o = (j.code===0?j.data:null)||{};
+    document.getElementById('detailContent').innerHTML = 
+      '<div class="detail-row"><span class="detail-label">订单编号</span><span class="detail-value">'+(o.order_no||id)+'</span></div>'+
+      '<div class="detail-row"><span class="detail-label">客人</span><span class="detail-value">'+(o.guest_name||'-')+' ('+(o.guest_phone||'-')+')</span></div>'+
+      '<div class="detail-row"><span class="detail-label">房型</span><span class="detail-value">'+(o.room_type||'-')+'</span></div>'+
+      '<div class="detail-row"><span class="detail-label">入住</span><span class="detail-value">'+(o.checkin_date||'-')+'</span></div>'+
+      '<div class="detail-row"><span class="detail-label">退房</span><span class="detail-value">'+(o.checkout_date||'-')+'</span></div>'+
+      '<div class="detail-row"><span class="detail-label">金额</span><span class="detail-value" style="font-weight:700;color:var(--gold-dark);">'+F(o.total_price)+'</span></div>'+
+      '<div class="detail-row"><span class="detail-label">状态</span><span class="detail-value"><span class="badge '+(BADGE[o.status]||'')+'">'+(STATUS[o.status]||o.status||'-')+'</span></span></div>';
+    document.getElementById('detailModal').classList.add('show');
+  }catch(e){
+    alert('加载失败: '+e.message);
+  }
+}
+
+function closeModal(){ document.getElementById('detailModal').classList.remove('show'); }
+
+function exportCSV(){
+  let rows=[['订单号','客人','房型','入住','退房','金额','状态']];
+  document.querySelectorAll('#ordersBody tr').forEach(r=>{
+    if(r.cells.length<7) return;
+    rows.push([].map.call(r.cells,(c,i)=>i<7?c.textContent.trim():'').filter(Boolean));
   });
-  currentPage = 1;
-  renderTable();
+  let csv = '\uFEFF'+rows.map(r=>r.map(c=>'"'+c.replace(/"/g,'""')+'"').join(',')).join('\n');
+  let b = new Blob([csv],{type:'text/csv'});
+  let a = document.createElement('a'); a.href=URL.createObjectURL(b); a.download='orders_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
 }
 
-function resetFilter() {
-  document.getElementById('searchInput').value = '';
-  document.getElementById('filterStatus').value = '';
-  document.getElementById('filterHotel').value = '';
-  document.getElementById('filterDateFrom').value = '2026-05-01';
-  document.getElementById('filterDateTo').value = '2026-05-29';
-  filteredOrders = allOrders.slice();
-  currentPage = 1;
-  renderTable();
-}
-
-function showDetail(id) {
-  var o = allOrders.find(function(x) { return x.id === id; });
-  if (!o) return;
-  var html = '<div class="detail-row"><span class="detail-label">订单编号</span><span class="detail-value">' + o.id + '</span></div>' +
-    '<div class="detail-row"><span class="detail-label">门店</span><span class="detail-value">' + o.hotel + '</span></div>' +
-    '<div class="detail-row"><span class="detail-label">房型/房号</span><span class="detail-value">' + o.type + ' / ' + o.room + '号房</span></div>' +
-    '<div class="detail-row"><span class="detail-label">客人</span><span class="detail-value">' + o.guest + ' (' + o.phone + ')</span></div>' +
-    '<div class="detail-row"><span class="detail-label">入住</span><span class="detail-value">' + o.checkin + '</span></div>' +
-    '<div class="detail-row"><span class="detail-label">退房</span><span class="detail-value">' + o.checkout + '</span></div>' +
-    '<div class="detail-row"><span class="detail-label">金额</span><span class="detail-value" style="font-weight:700;color:var(--gold-dark);">¥' + o.amount.toLocaleString() + '</span></div>' +
-    '<div class="detail-row"><span class="detail-label">支付方式</span><span class="detail-value">' + o.payment + '</span></div>' +
-    '<div class="detail-row"><span class="detail-label">来源渠道</span><span class="detail-value">' + o.source + '</span></div>' +
-    '<div class="detail-row"><span class="detail-label">状态</span><span class="detail-value">' + getStatusBadge(o.status) + '</span></div>';
-  document.getElementById('detailContent').innerHTML = html;
-  document.getElementById('detailModal').classList.add('show');
-}
-
-function exportOrders() {
-  alert('正在生成Excel文件...\n\n共导出 ' + filteredOrders.length + ' 条订单记录。\n文件将自动下载。');
-}
-
-// Initial render
-renderTable();
+loadOrders();
 </script>
 </body>
 </html>
