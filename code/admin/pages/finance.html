@@ -4,232 +4,164 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="../css/admin.css">
-
-
+<style>
+  .finance-summary { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
+  .finance-card { background:var(--bg-card); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow); }
+  .fc-title { font-size:12px; color:var(--text-muted); margin-bottom:8px; }
+  .fc-value { font-size:24px; font-weight:700; color:var(--text-primary); }
+  .fc-sub { font-size:12px; margin-top:4px; }
+  .highlight-green { color:var(--success) !important; }
+  .loading-row td { text-align:center; color:var(--text-muted); padding:20px; }
+  @media(max-width:768px){ .finance-summary{grid-template-columns:1fr 1fr;} }
+</style>
 </head>
 <body>
 <div class="page">
   <div class="page-title">财务报表</div>
 
-  <!-- Tabs -->
-  <div class="tabs finance-tabs">
-    <div class="tab active" onclick="switchTab(this, 'daily')">日报表</div>
-    <div class="tab" onclick="switchTab(this, 'monthly')">月报表</div>
-    <div class="tab" onclick="switchTab(this, 'reconciliation')">对账管理</div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab(this,'daily')">日报表</div>
+    <div class="tab" onclick="switchTab(this,'monthly')">月报表</div>
+    <div class="tab" onclick="switchTab(this,'reconciliation')">对账管理</div>
   </div>
 
-  <!-- ===== Daily Report ===== -->
+  <!-- ===== Daily ===== -->
   <div id="tab-daily">
-    <div class="finance-summary">
-      <div class="finance-card">
-        <div class="fc-title">今日营收</div>
-        <div class="fc-value" style="color:var(--gold-dark);">¥32,850</div>
-        <div class="fc-sub highlight-green">↑ 8.7% 较昨日</div>
-      </div>
-      <div class="finance-card">
-        <div class="fc-title">今日订单数</div>
-        <div class="fc-value">47</div>
-        <div class="fc-sub highlight-green">↑ 12% 较昨日</div>
-      </div>
-      <div class="finance-card">
-        <div class="fc-title">平均房价 (ADR)</div>
-        <div class="fc-value">¥683</div>
-        <div class="fc-sub highlight-green">↑ 3.2%</div>
-      </div>
-      <div class="finance-card">
-        <div class="fc-title">RevPAR</div>
-        <div class="fc-value">¥590</div>
-        <div class="fc-sub highlight-green">↑ 5.1%</div>
-      </div>
-    </div>
-
+    <div class="finance-summary" id="dailyCards"></div>
     <div class="card">
       <div class="card-header">
-        <div class="card-title">每日营收明细 - 2026年5月</div>
-        <div>
-          <select class="form-select" style="width:auto;display:inline-block;">
-            <option>2026年5月</option>
-            <option>2026年4月</option>
-            <option>2026年3月</option>
-          </select>
-          <button class="btn btn-outline btn-sm" style="margin-left:8px;">📥 导出</button>
-        </div>
+        <div class="card-title">近7天营收明细</div>
+        <button class="btn btn-outline btn-sm" onclick="exportCSV('daily')">📥 导出</button>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>日期</th><th>订单数</th><th>入住间夜</th><th>客房收入</th><th>其他收入</th><th>总营收</th><th>入住率</th><th>ADR</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>5月29日 (今日)</td><td class="text-center">47</td><td class="text-center">44</td><td class="text-right">¥31,200</td><td class="text-right">¥1,650</td><td class="text-right" style="font-weight:700;">¥32,850</td><td class="text-center">86.4%</td><td class="text-right">¥683</td></tr>
-            <tr><td>5月28日</td><td class="text-center">42</td><td class="text-center">39</td><td class="text-right">¥28,500</td><td class="text-right">¥1,720</td><td class="text-right">¥30,220</td><td class="text-center">81.2%</td><td class="text-right">¥658</td></tr>
-            <tr><td>5月27日</td><td class="text-center">38</td><td class="text-center">36</td><td class="text-right">¥26,800</td><td class="text-right">¥1,380</td><td class="text-right">¥28,180</td><td class="text-center">78.5%</td><td class="text-right">¥692</td></tr>
-            <tr><td>5月26日</td><td class="text-center">45</td><td class="text-center">42</td><td class="text-right">¥35,100</td><td class="text-right">¥2,100</td><td class="text-right">¥37,200</td><td class="text-center">88.2%</td><td class="text-right">¥712</td></tr>
-            <tr><td>5月25日</td><td class="text-center">41</td><td class="text-center">38</td><td class="text-right">¥31,900</td><td class="text-right">¥1,720</td><td class="text-right">¥33,620</td><td class="text-center">82.8%</td><td class="text-right">¥668</td></tr>
-            <tr><td>5月24日</td><td class="text-center">34</td><td class="text-center">30</td><td class="text-right">¥23,500</td><td class="text-right">¥1,680</td><td class="text-right">¥25,180</td><td class="text-center">72.5%</td><td class="text-right">¥635</td></tr>
-            <tr><td>5月23日</td><td class="text-center">39</td><td class="text-center">36</td><td class="text-right">¥26,800</td><td class="text-right">¥1,650</td><td class="text-right">¥28,450</td><td class="text-center">76.8%</td><td class="text-right">¥655</td></tr>
-          </tbody>
-          <tfoot>
-            <tr style="font-weight:700;background:#faf8f3;">
-              <td>本月合计</td><td class="text-center">286</td><td class="text-center">265</td><td class="text-right">¥203,800</td><td class="text-right">¥11,900</td><td class="text-right">¥215,700</td><td class="text-center">80.9%</td><td class="text-right">¥672</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </div>
-
-    <!-- Revenue by Hotel -->
-    <div class="card mt-md">
-      <div class="card-header">
-        <div class="card-title">各门店今日营收</div>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>门店</th><th class="text-center">订单数</th><th class="text-center">入住率</th><th class="text-right">客房收入</th><th class="text-right">其他收入</th><th class="text-right">总营收</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>锦绣路旗舰店</td><td class="text-center">22</td><td class="text-center">88%</td><td class="text-right">¥15,800</td><td class="text-right">¥820</td><td class="text-right" style="font-weight:700;">¥16,620</td></tr>
-            <tr><td>滨江路店</td><td class="text-center">15</td><td class="text-center">82%</td><td class="text-right">¥10,200</td><td class="text-right">¥580</td><td class="text-right" style="font-weight:700;">¥10,780</td></tr>
-            <tr><td>人民路店</td><td class="text-center">10</td><td class="text-center">91%</td><td class="text-right">¥5,200</td><td class="text-right">¥250</td><td class="text-right" style="font-weight:700;">¥5,450</td></tr>
-          </tbody>
-        </table>
-      </div>
+      <div class="table-wrap"><table id="dailyTable"></table></div>
     </div>
   </div>
 
-  <!-- ===== Monthly Report ===== -->
+  <!-- ===== Monthly ===== -->
   <div id="tab-monthly" style="display:none;">
-    <div class="finance-summary">
-      <div class="finance-card">
-        <div class="fc-title">本月营收</div>
-        <div class="fc-value" style="color:var(--gold-dark);">¥186.5<span style="font-size:18px;">万</span></div>
-        <div class="fc-sub highlight-green">↑ 18.3% 较上月</div>
-      </div>
-      <div class="finance-card">
-        <div class="fc-title">本月订单</div>
-        <div class="fc-value">2,847</div>
-        <div class="fc-sub highlight-green">↑ 15.2% 较上月</div>
-      </div>
-      <div class="finance-card">
-        <div class="fc-title">本月入住率</div>
-        <div class="fc-value">80.9%</div>
-        <div class="fc-sub highlight-green">↑ 5.6%</div>
-      </div>
-      <div class="finance-card">
-        <div class="fc-title">本月净利润</div>
-        <div class="fc-value">¥58.3<span style="font-size:18px;">万</span></div>
-        <div class="fc-sub highlight-green">利润率 31.3%</div>
-      </div>
-    </div>
-
+    <div class="finance-summary" id="monthlyCards"></div>
     <div class="card">
-      <div class="card-header"><div class="card-title">月度营收趋势</div></div>
-      <div class="chart-bar">
-        <div class="bar" style="height:100px;"><span class="bar-val">158万</span><span class="bar-label">1月</span></div>
-        <div class="bar" style="height:85px;"><span class="bar-val">132万</span><span class="bar-label">2月</span></div>
-        <div class="bar" style="height:115px;"><span class="bar-val">178万</span><span class="bar-label">3月</span></div>
-        <div class="bar" style="height:125px;"><span class="bar-val">195万</span><span class="bar-label">4月</span></div>
-        <div class="bar" style="height:120px;"><span class="bar-val">186万</span><span class="bar-label">5月</span></div>
-      </div>
-    </div>
-
-    <div class="card mt-md">
-      <div class="card-header"><div class="card-title">月度收支明细</div></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>项目</th><th class="text-right">1月</th><th class="text-right">2月</th><th class="text-right">3月</th><th class="text-right">4月</th><th class="text-right">5月</th></tr></thead>
-          <tbody>
-            <tr><td>客房收入</td><td class="text-right">¥145万</td><td class="text-right">¥118万</td><td class="text-right">¥162万</td><td class="text-right">¥178万</td><td class="text-right">¥168万</td></tr>
-            <tr><td>餐饮收入</td><td class="text-right">¥8万</td><td class="text-right">¥9万</td><td class="text-right">¥10万</td><td class="text-right">¥11万</td><td class="text-right">¥12万</td></tr>
-            <tr><td>其他收入</td><td class="text-right">¥5万</td><td class="text-right">¥5万</td><td class="text-right">¥6万</td><td class="text-right">¥6万</td><td class="text-right">¥6.5万</td></tr>
-            <tr style="font-weight:700;background:#faf8f3;"><td>总收入</td><td class="text-right">¥158万</td><td class="text-right">¥132万</td><td class="text-right">¥178万</td><td class="text-right">¥195万</td><td class="text-right">¥186.5万</td></tr>
-            <tr style="color:var(--error);"><td>运营成本</td><td class="text-right">¥98万</td><td class="text-right">¥85万</td><td class="text-right">¥112万</td><td class="text-right">¥125万</td><td class="text-right">¥118万</td></tr>
-            <tr style="font-weight:700;color:var(--success);"><td>净利润</td><td class="text-right">¥60万</td><td class="text-right">¥47万</td><td class="text-right">¥66万</td><td class="text-right">¥70万</td><td class="text-right">¥68.5万</td></tr>
-          </tbody>
-        </table>
-      </div>
+      <div class="card-header"><div class="card-title">月度统计</div></div>
+      <div class="table-wrap"><table id="monthlyTable"></table></div>
     </div>
   </div>
 
   <!-- ===== Reconciliation ===== -->
   <div id="tab-reconciliation" style="display:none;">
-    <div class="alert alert-info">
-      ℹ️ 对账管理：核对各渠道（携程、美团、飞猪等）订单与系统数据的一致性。
-    </div>
-
+    <div class="alert alert-info">ℹ️ 支付对账：核对各渠道订单金额与系统记录的一致性。</div>
     <div class="card">
-      <div class="card-header">
-        <div class="card-title">渠道对账总览 - 2026年5月</div>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>渠道</th><th class="text-center">系统订单</th><th class="text-center">渠道订单</th><th class="text-center">差异</th><th class="text-right">系统金额</th><th class="text-right">渠道金额</th><th class="text-right">差异金额</th><th class="text-center">状态</th></tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>携程</td><td class="text-center">1,245</td><td class="text-center">1,245</td><td class="text-center">0</td>
-              <td class="text-right">¥82.3万</td><td class="text-right">¥82.3万</td><td class="text-right">¥0</td>
-              <td class="text-center"><span class="badge badge-success">一致</span></td>
-            </tr>
-            <tr>
-              <td>美团</td><td class="text-center">862</td><td class="text-center">862</td><td class="text-center">0</td>
-              <td class="text-right">¥56.8万</td><td class="text-right">¥56.8万</td><td class="text-right">¥0</td>
-              <td class="text-center"><span class="badge badge-success">一致</span></td>
-            </tr>
-            <tr>
-              <td>飞猪</td><td class="text-center">420</td><td class="text-center">420</td><td class="text-center">0</td>
-              <td class="text-right">¥28.4万</td><td class="text-right">¥28.4万</td><td class="text-right">¥0</td>
-              <td class="text-center"><span class="badge badge-success">一致</span></td>
-            </tr>
-            <tr>
-              <td>到店(线下)</td><td class="text-center">320</td><td class="text-center">--</td><td class="text-center">--</td>
-              <td class="text-right">¥19.0万</td><td class="text-right">¥19.0万</td><td class="text-right">¥0</td>
-              <td class="text-center"><span class="badge badge-success">一致</span></td>
-            </tr>
-            <tr style="font-weight:700;background:#faf8f3;">
-              <td>合计</td><td class="text-center">2,847</td><td class="text-center">2,527</td><td class="text-center">--</td>
-              <td class="text-right">¥186.5万</td><td class="text-right">¥186.5万</td><td class="text-right">¥0</td>
-              <td class="text-center"><span class="badge badge-success">一致</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="card mt-md">
-      <div class="card-header">
-        <div class="card-title">退款记录</div>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>退款编号</th><th>原订单号</th><th>门店</th><th>金额</th><th>原因</th><th>状态</th><th>时间</th></tr></thead>
-          <tbody>
-            <tr>
-              <td>RF20260529001</td><td>YJR20260529011</td><td>锦绣路旗舰店</td><td class="text-right">¥1,280</td><td>行程变更</td><td><span class="badge badge-success">已退款</span></td><td>2026-05-29 10:30</td>
-            </tr>
-            <tr>
-              <td>RF20260529002</td><td>YJR20260529012</td><td>人民路店</td><td class="text-right">¥380</td><td>房间不满意</td><td><span class="badge badge-warning">处理中</span></td><td>2026-05-29 11:15</td>
-            </tr>
-            <tr>
-              <td>RF20260528001</td><td>YJR20260528008</td><td>滨江路店</td><td class="text-right">¥680</td><td>重复预订</td><td><span class="badge badge-success">已退款</span></td><td>2026-05-28 16:20</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <div class="card-header"><div class="card-title">支付对账明细</div></div>
+      <div class="table-wrap"><table id="reconTable"></table></div>
     </div>
   </div>
 </div>
 
 <script>
-function switchTab(tabEl, tabId) {
-  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
-  tabEl.classList.add('active');
-  document.getElementById('tab-daily').style.display = tabId === 'daily' ? 'block' : 'none';
-  document.getElementById('tab-monthly').style.display = tabId === 'monthly' ? 'block' : 'none';
-  document.getElementById('tab-reconciliation').style.display = tabId === 'reconciliation' ? 'block' : 'none';
+const T = localStorage.getItem('yjr_token');
+const H = { 'Authorization':'Bearer '+T, 'Content-Type':'application/json' };
+const F = n => '¥'+Number(n||0).toLocaleString('zh-CN',{minimumFractionDigits:0,maximumFractionDigits:0});
+
+function switchTab(el,id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['daily','monthly','reconciliation'].forEach(k=>document.getElementById('tab-'+k).style.display=k===id?'block':'none');
 }
+
+async function loadDaily(){
+  try{
+    let end = new Date(); end.setDate(end.getDate()+1);
+    let start = new Date(); start.setDate(start.getDate()-6);
+    let se = start.toISOString().slice(0,10), ee = end.toISOString().slice(0,10);
+    let r = await fetch('/api/finance/daily?start_date='+se+'&end_date='+ee,{headers:H});
+    let j = await r.json();
+    if(j.code!==0) throw new Error(j.msg);
+    let d = j.data || [];
+
+    // Summary cards
+    let today = d.length?d[d.length-1]:{};
+    let yesterday = d.length>1?d[d.length-2]:{};
+    let totalRev = d.reduce((s,i)=>s+i.revenue,0);
+    let totalOrd = d.reduce((s,i)=>s+i.total_orders,0);
+    document.getElementById('dailyCards').innerHTML = [
+      {t:'今日营收',v:F(today.revenue||0)},
+      {t:'今日订单',v:today.total_orders||0},
+      {t:'7天总营收',v:F(totalRev)},
+      {t:'7天总订单',v:totalOrd}
+    ].map(c=>`<div class="finance-card"><div class="fc-title">${c.t}</div><div class="fc-value" style="color:var(--gold-dark);">${c.v}</div></div>`).join('');
+
+    // Table
+    let rows = d.map(i=>`<tr><td>${i.date}</td><td class="text-center">${i.total_orders}</td><td class="text-center">${i.paid_orders}</td><td class="text-right" style="font-weight:700;">${F(i.revenue)}</td><td class="text-right">${F(i.avg_order_value)}</td></tr>`).reverse().join('');
+    let foot = `<tr style="font-weight:700;background:#faf8f3;"><td>合计</td><td class="text-center">${totalOrd}</td><td class="text-center">${d.reduce((s,i)=>s+i.paid_orders,0)}</td><td class="text-right">${F(totalRev)}</td><td class="text-right">${F(totalOrd?totalRev/totalOrd:0)}</td></tr>`;
+    document.getElementById('dailyTable').innerHTML = '<thead><tr><th>日期</th><th>订单数</th><th>已支付</th><th>营收</th><th>客单价</th></tr></thead><tbody>'+rows+'</tbody><tfoot>'+foot+'</tfoot>';
+  }catch(e){
+    document.getElementById('dailyCards').innerHTML = '<div class="finance-card"><div class="fc-value" style="font-size:14px;color:var(--error);">加载失败</div></div>';
+  }
+}
+
+async function loadMonthly(){
+  try{
+    let now = new Date();
+    let r = await fetch('/api/finance/monthly?year='+now.getFullYear()+'&month='+(now.getMonth()+1),{headers:H});
+    let j = await r.json();
+    if(j.code!==0) throw new Error(j.msg);
+    let d = j.data||{};
+
+    document.getElementById('monthlyCards').innerHTML = [
+      {t:'本月营收',v:F(d.revenue||0)},
+      {t:'本月订单',v:d.total_orders||0},
+      {t:'已支付',v:d.paid_orders||0},
+      {t:'客单价',v:F(d.avg_order_value||0)}
+    ].map(c=>`<div class="finance-card"><div class="fc-title">${c.t}</div><div class="fc-value" style="color:var(--gold-dark);">${c.v}</div></div>`).join('');
+
+    document.getElementById('monthlyTable').innerHTML = 
+      '<thead><tr><th>指标</th><th class="text-right">数值</th></tr></thead><tbody>'+
+      `<tr><td>总订单</td><td class="text-right">${d.total_orders||0}</td></tr>`+
+      `<tr><td>已支付</td><td class="text-right">${d.paid_orders||0}</td></tr>`+
+      `<tr><td>已完成</td><td class="text-right">${d.completed_orders||0}</td></tr>`+
+      `<tr><td>已取消</td><td class="text-right">${d.cancelled_orders||0}</td></tr>`+
+      `<tr style="font-weight:700;"><td>营收</td><td class="text-right" style="color:var(--gold-dark);">${F(d.revenue||0)}</td></tr>`+
+      `<tr><td>客单价</td><td class="text-right">${F(d.avg_order_value||0)}</td></tr>`+
+      '</tbody>';
+  }catch(e){
+    document.getElementById('monthlyCards').innerHTML = '<div class="finance-card"><div class="fc-value" style="font-size:14px;color:var(--error);">加载失败</div></div>';
+  }
+}
+
+async function loadRecon(){
+  try{
+    let r = await fetch('/api/finance/reconciliation',{headers:H});
+    let j = await r.json();
+    if(j.code!==0) throw new Error(j.msg);
+    let d = j.data||[], s = j.summary||{};
+
+    // Summary bar
+    let totalAmt = d.reduce((s,i)=>s+(i.total_price||0),0);
+    let html = `<div class="alert alert-success" style="margin-bottom:12px;">📊 对账统计：${d.length} 笔订单，总金额 ${F(totalAmt)}，已支付 ${s.paid_count||0} 笔 ${F(s.paid_amount||0)}，待支付 ${s.pending_count||0} 笔</div>`;
+
+    // Table
+    html += '<div class="table-wrap"><table><thead><tr><th>订单号</th><th>门店</th><th>客人</th><th class="text-right">金额</th><th>状态</th><th>入住日期</th><th>创建时间</th></tr></thead><tbody>';
+    html += d.slice(0,50).map(i=>{
+      let badge = i.status==='paid'?'badge-success':i.status==='pending'?'badge-warning':i.status==='completed'?'badge-info':'badge-error';
+      return `<tr><td>${i.order_no}</td><td>${i.hotel_name}</td><td>${i.guest_name}</td><td class="text-right">${F(i.total_price)}</td><td><span class="badge ${badge}">${i.status}</span></td><td>${i.checkin_date}</td><td>${(i.created_at||'').slice(0,10)}</td></tr>`;
+    }).join('');
+    html += d.length===0?'<tr><td colspan="7" class="loading-row">暂无对账数据</td></tr>':'';
+    html += '</tbody></table></div>';
+    document.getElementById('reconTable').innerHTML = html;
+  }catch(e){
+    document.getElementById('reconTable').innerHTML = '<div class="loading" style="color:var(--error);">加载失败: '+e.message+'</div>';
+  }
+}
+
+function exportCSV(type){
+  let tbl = document.getElementById(type==='daily'?'dailyTable':'reconTable');
+  let csv = []; tbl.querySelectorAll('tr').forEach(r=>{
+    csv.push([].map.call(r.cells,c=>'"'+c.textContent.replace(/"/g,'""')+'"').join(','));
+  });
+  let b = new Blob(['\uFEFF'+csv.join('\n')],{type:'text/csv'});
+  let a = document.createElement('a'); a.href=URL.createObjectURL(b); a.download='finance_'+type+'_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
+}
+
+loadDaily(); loadMonthly(); loadRecon();
 </script>
 </body>
 </html>
