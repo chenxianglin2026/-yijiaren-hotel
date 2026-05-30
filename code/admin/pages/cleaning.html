@@ -4,256 +4,112 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="../css/admin.css">
-
-
+<style>
+  .cleaning-grid { display:grid; grid-template-columns:2fr 1fr; gap:16px; }
+  .task-card { background:var(--bg-card); border-radius:var(--radius); padding:14px 16px; margin-bottom:10px; box-shadow:var(--shadow); display:flex; align-items:center; gap:12px; }
+  .task-status-icon { font-size:24px; width:40px; text-align:center; flex-shrink:0; }
+  .task-body { flex:1; }
+  .task-title { font-size:14px; font-weight:600; color:var(--text-primary); }
+  .task-meta { font-size:12px; color:var(--text-muted); margin-top:4px; display:flex; gap:10px; flex-wrap:wrap; }
+  .task-actions { flex-shrink:0; display:flex; gap:8px; }
+  .cleaner-card { background:#faf8f3; border-radius:var(--radius); padding:12px; text-align:center; }
+  .cleaner-avatar { width:40px; height:40px; border-radius:50%; background:var(--gold); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; margin:0 auto 8px; font-size:16px; }
+  .cleaner-name { font-size:14px; font-weight:600; }
+  .cleaner-tasks { font-size:11px; color:var(--text-muted); margin:4px 0; }
+  @media(max-width:768px){ .cleaning-grid{grid-template-columns:1fr;} }
+</style>
 </head>
 <body>
 <div class="page">
   <div class="page-title">保洁派单</div>
 
-  <!-- Stat Row -->
-  <div class="stat-cards">
-    <div class="stat-card">
-      <div class="stat-icon warning" style="background:#fffbe6;">🧹</div>
-      <div class="stat-info">
-        <div class="stat-value">12</div>
-        <div class="stat-label">待派单任务</div>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon blue" style="background:#e8f4fd;">🔄</div>
-      <div class="stat-info">
-        <div class="stat-value">8</div>
-        <div class="stat-label">清洁进行中</div>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon green" style="background:#f0faf0;">✅</div>
-      <div class="stat-info">
-        <div class="stat-value">186</div>
-        <div class="stat-label">今日已完成</div>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon gold" style="background:#fdf5e6;">👥</div>
-      <div class="stat-info">
-        <div class="stat-value">15</div>
-        <div class="stat-label">在岗保洁员</div>
-      </div>
-    </div>
-  </div>
+  <div class="stat-cards" id="statCards"></div>
 
   <div class="cleaning-grid">
-    <!-- Left: Task List -->
     <div>
       <div class="card">
         <div class="card-header">
-          <div class="card-title">待处理任务清单</div>
-          <div>
-            <select class="form-select" style="width:auto;display:inline-block;">
-              <option>全部门店</option>
-              <option>锦绣路旗舰店</option>
-              <option>滨江路店</option>
-              <option>人民路店</option>
-            </select>
-            <button class="btn btn-primary btn-sm" style="margin-left:8px;">+ 新建任务</button>
-          </div>
+          <div class="card-title">保洁工单</div>
+          <div><select class="form-select" id="filterStatus" onchange="loadTasks()" style="width:auto;display:inline-block;">
+            <option value="">全部</option><option value="pending">待派单</option><option value="accepted">已接单</option><option value="in_progress">进行中</option><option value="completed">已完成</option>
+          </select>
+          <button class="btn btn-primary btn-sm" style="margin-left:8px;">+ 新建任务</button></div>
         </div>
-
-        <div class="task-card mb-sm">
-          <div class="task-status pending">🕐</div>
-          <div class="task-body">
-            <div class="task-title">锦绣路旗舰店 · 304号房 退房清洁</div>
-            <div class="task-meta">
-              <span>📍 锦绣路旗舰店</span>
-              <span>🚪 304 (豪华大床房)</span>
-              <span>⏰ 退房 09:30</span>
-              <span class="badge badge-warning">待派单</span>
-            </div>
-          </div>
-          <div class="task-actions">
-            <button class="btn btn-primary btn-sm">派单</button>
-          </div>
-        </div>
-
-        <div class="task-card mb-sm">
-          <div class="task-status pending">🕐</div>
-          <div class="task-body">
-            <div class="task-title">锦绣路旗舰店 · 210号房 退房清洁</div>
-            <div class="task-meta">
-              <span>📍 锦绣路旗舰店</span>
-              <span>🚪 210 (标准双床房)</span>
-              <span>⏰ 退房 10:00</span>
-              <span class="badge badge-warning">待派单</span>
-            </div>
-          </div>
-          <div class="task-actions">
-            <button class="btn btn-primary btn-sm">派单</button>
-          </div>
-        </div>
-
-        <div class="task-card mb-sm">
-          <div class="task-status doing">🧹</div>
-          <div class="task-body">
-            <div class="task-title">滨江路店 · 104号房 退房清洁</div>
-            <div class="task-meta">
-              <span>📍 滨江路店</span>
-              <span>🚪 104 (标准双床房)</span>
-              <span>👤 保洁员: 李阿姨</span>
-              <span>⏱️ 已进行 15分钟</span>
-              <span class="badge badge-info">进行中</span>
-            </div>
-          </div>
-          <div class="task-actions">
-            <button class="btn btn-outline btn-sm">催单</button>
-          </div>
-        </div>
-
-        <div class="task-card mb-sm">
-          <div class="task-status doing">🧹</div>
-          <div class="task-body">
-            <div class="task-title">人民路店 · 207号房 退房清洁</div>
-            <div class="task-meta">
-              <span>📍 人民路店</span>
-              <span>🚪 207 (标准双床房)</span>
-              <span>👤 保洁员: 王大妈</span>
-              <span>⏱️ 已进行 8分钟</span>
-              <span class="badge badge-info">进行中</span>
-            </div>
-          </div>
-          <div class="task-actions">
-            <button class="btn btn-outline btn-sm">催单</button>
-          </div>
-        </div>
-
-        <div class="task-card mb-sm">
-          <div class="task-status done">✅</div>
-          <div class="task-body">
-            <div class="task-title">锦绣路旗舰店 · 103号房 退房清洁</div>
-            <div class="task-meta">
-              <span>📍 锦绣路旗舰店</span>
-              <span>🚪 103 (经济单人间)</span>
-              <span>👤 保洁员: 赵阿姨</span>
-              <span>⏱️ 耗时 22分钟</span>
-              <span class="badge badge-success">已完成</span>
-            </div>
-          </div>
-          <div class="task-actions">
-            <button class="btn btn-success btn-sm">验收</button>
-          </div>
-        </div>
-
-        <div class="task-card mb-sm">
-          <div class="task-status done">✅</div>
-          <div class="task-body">
-            <div class="task-title">滨江路店 · 205号房 退房清洁</div>
-            <div class="task-meta">
-              <span>📍 滨江路店</span>
-              <span>🚪 205 (舒适双床房)</span>
-              <span>👤 保洁员: 刘阿姨</span>
-              <span>⏱️ 耗时 18分钟</span>
-              <span class="badge badge-success">已完成</span>
-            </div>
-          </div>
-          <div class="task-actions">
-            <button class="btn btn-success btn-sm">验收</button>
-          </div>
-        </div>
-
-        <div class="task-card mb-sm">
-          <div class="task-status done">✅</div>
-          <div class="task-body">
-            <div class="task-title">人民路店 · 103号房 退房清洁</div>
-            <div class="task-meta">
-              <span>📍 人民路店</span>
-              <span>🚪 103 (经济单人间)</span>
-              <span>👤 保洁员: 张大姐</span>
-              <span>⏱️ 耗时 15分钟</span>
-              <span class="badge badge-success">已完成</span>
-            </div>
-          </div>
-          <div class="task-actions">
-            <button class="btn btn-success btn-sm">验收</button>
-          </div>
-        </div>
+        <div id="taskList"></div>
       </div>
     </div>
 
-    <!-- Right: Cleaners -->
     <div>
       <div class="card">
-        <div class="card-header">
-          <div class="card-title">在岗保洁员</div>
-          <button class="btn btn-outline btn-sm">管理排班</button>
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-          <div class="cleaner-card">
-            <div class="cleaner-avatar">赵</div>
-            <div class="cleaner-name">赵阿姨</div>
-            <div class="cleaner-tasks">今日完成 8单</div>
-            <div class="cleaner-status"><span class="badge badge-info">空闲</span></div>
-          </div>
-          <div class="cleaner-card">
-            <div class="cleaner-avatar">李</div>
-            <div class="cleaner-name">李阿姨</div>
-            <div class="cleaner-tasks">今日完成 6单</div>
-            <div class="cleaner-status"><span class="badge badge-processing">作业中</span></div>
-          </div>
-          <div class="cleaner-card">
-            <div class="cleaner-avatar">王</div>
-            <div class="cleaner-name">王大妈</div>
-            <div class="cleaner-tasks">今日完成 5单</div>
-            <div class="cleaner-status"><span class="badge badge-processing">作业中</span></div>
-          </div>
-          <div class="cleaner-card">
-            <div class="cleaner-avatar">刘</div>
-            <div class="cleaner-name">刘阿姨</div>
-            <div class="cleaner-tasks">今日完成 9单</div>
-            <div class="cleaner-status"><span class="badge badge-info">空闲</span></div>
-          </div>
-          <div class="cleaner-card">
-            <div class="cleaner-avatar">张</div>
-            <div class="cleaner-name">张大姐</div>
-            <div class="cleaner-tasks">今日完成 7单</div>
-            <div class="cleaner-status"><span class="badge badge-info">空闲</span></div>
-          </div>
-          <div class="cleaner-card">
-            <div class="cleaner-avatar">陈</div>
-            <div class="cleaner-name">陈阿姨</div>
-            <div class="cleaner-tasks">今日完成 4单</div>
-            <div class="cleaner-status"><span class="badge badge-warning">休息中</span></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Stats -->
-      <div class="card mt-md">
-        <div class="card-title">今日清洁统计</div>
-        <table style="margin-top:12px;">
-          <thead>
-            <tr><th>门店</th><th class="text-center">总任务</th><th class="text-center">已完成</th><th class="text-center">进行中</th><th class="text-center">待派单</th><th class="text-center">完成率</th></tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>锦绣路旗舰店</td>
-              <td class="text-center">10</td><td class="text-center">7</td><td class="text-center">1</td><td class="text-center">2</td>
-              <td class="text-center"><span class="badge badge-success">70%</span></td>
-            </tr>
-            <tr>
-              <td>滨江路店</td>
-              <td class="text-center">6</td><td class="text-center">5</td><td class="text-center">1</td><td class="text-center">0</td>
-              <td class="text-center"><span class="badge badge-success">83%</span></td>
-            </tr>
-            <tr>
-              <td>人民路店</td>
-              <td class="text-center">5</td><td class="text-center">4</td><td class="text-center">1</td><td class="text-center">0</td>
-              <td class="text-center"><span class="badge badge-success">80%</span></td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="card-header"><div class="card-title">今日清洁统计</div></div>
+        <table id="statsTable" style="margin-top:8px;"></table>
       </div>
     </div>
   </div>
 </div>
+
+<script>
+const T=localStorage.getItem('yjr_token'),H={'Authorization':'Bearer '+T};
+const STATUS_ICON={pending:'🕐',accepted:'📋',in_progress:'🧹',completed:'✅'};
+const STATUS_BADGE={pending:'badge-warning',accepted:'badge-info',in_progress:'badge-processing',completed:'badge-success'};
+const STATUS_TEXT={pending:'待派单',accepted:'已接单',in_progress:'进行中',completed:'已完成'};
+
+async function loadTasks(){
+  let st=document.getElementById('filterStatus').value;
+  let url='/api/cleaning/tasks'+(st?'?status='+st:'');
+  try{
+    let r=await fetch(url,{headers:H});
+    let j=await r.json();
+    if(j.code&&j.code!==0) throw new Error(j.msg);
+    let items=j.data?.items||j.data||[], total=items.length;
+    let pending=items.filter(i=>i.status==='pending').length;
+    let doing=items.filter(i=>i.status==='in_progress'||i.status==='accepted').length;
+    let done=items.filter(i=>i.status==='completed').length;
+
+    document.getElementById('statCards').innerHTML=[
+      {icon:'🧹',cls:'gold',val:pending,label:'待派单'},
+      {icon:'🔄',cls:'blue',val:doing,label:'进行中'},
+      {icon:'✅',cls:'green',val:done,label:'已完成'},
+      {icon:'📋',cls:'gold',val:total,label:'总工单'}
+    ].map(s=>`<div class="stat-card"><div class="stat-icon ${s.cls}">${s.icon}</div><div class="stat-info"><div class="stat-value">${s.val}</div><div class="stat-label">${s.label}</div></div></div>`).join('');
+
+    document.getElementById('taskList').innerHTML=items.length?items.map(t=>{
+      let id=t.task_no||'#'+t.id;
+      return `<div class="task-card">
+        <div class="task-status-icon">${STATUS_ICON[t.status]||'📋'}</div>
+        <div class="task-body">
+          <div class="task-title">${t.hotel_name||''} · ${t.room_name||t.room_no||id} ${t.description||'清洁任务'}</div>
+          <div class="task-meta">
+            <span>📍 ${t.hotel_name||'-'}</span>
+            <span>🚪 ${t.room_name||t.room_no||'-'}</span>
+            ${t.cleaner_name?'<span>👤 '+t.cleaner_name+'</span>':''}
+            <span class="badge ${STATUS_BADGE[t.status]||''}">${STATUS_TEXT[t.status]||t.status}</span>
+          </div>
+        </div>
+        <div class="task-actions">
+          ${t.status==='pending'?'<button class="btn btn-primary btn-sm">派单</button>':''}
+          ${t.status==='in_progress'?'<button class="btn btn-outline btn-sm">催单</button>':''}
+          ${t.status==='completed'?'<button class="btn btn-success btn-sm">验收</button>':''}
+        </div></div>`;
+    }).join('') : '<div style="text-align:center;color:var(--text-muted);padding:30px;">暂无保洁工单</div>';
+
+    // Stats table grouped by hotel
+    let hotelMap={}; items.forEach(t=>{
+      let h=t.hotel_name||'未知';
+      hotelMap[h]=hotelMap[h]||{total:0,pending:0,doing:0,done:0};
+      hotelMap[h].total++;
+      if(t.status==='pending') hotelMap[h].pending++;
+      if(t.status==='in_progress'||t.status==='accepted') hotelMap[h].doing++;
+      if(t.status==='completed') hotelMap[h].done++;
+    });
+    let rows=Object.entries(hotelMap).map(([h,s])=>
+      `<tr><td>${h}</td><td class="text-center">${s.total}</td><td class="text-center">${s.done}</td><td class="text-center">${s.doing}</td><td class="text-center">${s.pending}</td><td class="text-center"><span class="badge ${s.total?s.done/s.total>=0.8?'badge-success':'badge-warning':''}">${s.total?Math.round(s.done/s.total*100):0}%</span></td></tr>`).join('');
+    document.getElementById('statsTable').innerHTML='<thead><tr><th>门店</th><th class="text-center">总任务</th><th class="text-center">已完成</th><th class="text-center">进行中</th><th class="text-center">待派单</th><th class="text-center">完成率</th></tr></thead><tbody>'+rows+'</tbody>';
+  }catch(e){
+    document.getElementById('taskList').innerHTML='<div style="text-align:center;color:var(--error);padding:30px;">加载失败: '+e.message+'</div>';
+  }
+}
+loadTasks();
+</script>
 </body>
 </html>
