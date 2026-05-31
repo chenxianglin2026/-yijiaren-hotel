@@ -4,67 +4,46 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>伊家人 - 登录</title>
-<link rel="stylesheet" href="../css/admin.css">
 <style>
-.login-page { display:flex; align-items:center; justify-content:center; min-height:100vh; background:linear-gradient(135deg, #1e1c18 0%, #2c2416 100%); }
-.login-box { background:#fff; border-radius:16px; padding:40px; width:380px; box-shadow:0 20px 60px rgba(0,0,0,0.3); }
-.login-box h1 { text-align:center; font-size:22px; color:#2c2416; margin-bottom:8px; }
-.login-box .sub { text-align:center; font-size:13px; color:#968c7a; margin-bottom:28px; }
-.login-box .logo { text-align:center; font-size:48px; margin-bottom:12px; }
-.btn-block { width:100%; justify-content:center; padding:12px; font-size:15px; }
-.error-msg { color:#f5222d; font-size:13px; text-align:center; margin-top:12px; display:none; }
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(135deg,#1e1c18 0%,#2c2416 100%);min-height:100vh;display:flex;align-items:center;justify-content:center}
+.box{background:#fff;border-radius:16px;padding:40px;width:360px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.box h1{text-align:center;font-size:22px;color:#2c2416;margin-bottom:4px}
+.box .sub{text-align:center;font-size:13px;color:#968c7a;margin-bottom:24px}
+.box .logo{text-align:center;font-size:48px;margin-bottom:8px}
+.fg{margin-bottom:14px}
+.fg label{display:block;font-size:13px;color:#6b5e4a;margin-bottom:4px}
+.fg input{width:100%;padding:10px 12px;border:1px solid #e5ded0;border-radius:6px;font-size:14px;outline:none}
+.fg input:focus{border-color:#c8a052;box-shadow:0 0 0 3px rgba(200,160,82,.12)}
+.btn{width:100%;padding:12px;background:#c8a052;color:#fff;border:none;border-radius:6px;font-size:15px;cursor:pointer;margin-top:4px}
+.btn:hover{background:#9a7a32}
+.err{color:#f5222d;font-size:13px;text-align:center;margin-top:12px;display:none}
 </style>
 </head>
 <body>
-<div class="login-page">
-  <div class="login-box">
-    <div class="logo">🏨</div>
-    <h1>伊家人酒店管理系统</h1>
-    <div class="sub">请登录管理后台</div>
-    <form id="loginForm">
-      <div class="form-group">
-        <label class="form-label">用户名</label>
-        <input class="form-input" id="username" placeholder="请输入用户名" autocomplete="username" required>
-      </div>
-      <div class="form-group">
-        <label class="form-label">密码</label>
-        <input class="form-input" id="password" type="password" placeholder="请输入密码" autocomplete="current-password" required>
-      </div>
-      <button type="submit" class="btn btn-primary btn-block">登 录</button>
-    </form>
-    <div class="error-msg" id="error"></div>
-  </div>
+<div class="box">
+  <div class="logo">🏨</div>
+  <h1>伊家人酒店管理系统</h1>
+  <div class="sub">请登录管理后台</div>
+  <form id="f">
+    <div class="fg"><label>用户名</label><input id="u" placeholder="请输入用户名" required></div>
+    <div class="fg"><label>密码</label><input id="p" type="password" placeholder="请输入密码" required></div>
+    <button type="submit" class="btn">登 录</button>
+  </form>
+  <div class="err" id="e"></div>
 </div>
-
 <script>
-const API = '/api/auth/login';
-
-document.getElementById('loginForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const username = document.getElementById('username').value;
-  const password = document.getElementById('password').value;
-  const errEl = document.getElementById('error');
-  errEl.style.display = 'none';
-
-  try {
-    const res = await fetch(API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    });
-    const json = await res.json();
-    if (json.code === 0 && json.data && json.data.access_token) {
-      localStorage.setItem('yjr_token', json.data.access_token);
-      localStorage.setItem('yjr_user', JSON.stringify(json.data.user || {}));
-      location.href = '/';
-    } else {
-      errEl.textContent = json.msg || '登录失败';
-      errEl.style.display = 'block';
-    }
-  } catch (err) {
-    errEl.textContent = '网络错误，请重试';
-    errEl.style.display = 'block';
-  }
+document.getElementById('f').addEventListener('submit',async function(ev){
+  ev.preventDefault();
+  var u=document.getElementById('u').value,p=document.getElementById('p').value;
+  document.getElementById('e').style.display='none';
+  try{
+    var r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+    var j=await r.json();
+    var t=j.access_token||(j.data&&j.data.access_token);
+    if(t){localStorage.setItem('yjr_token',t);location.href='/';}
+    else{var el=document.getElementById('e');el.textContent=j.msg||j.detail||'登录失败';el.style.display='block';}
+  }catch(x){var el=document.getElementById('e');el.textContent='网络错误';el.style.display='block';}
 });
 </script>
 </body>
