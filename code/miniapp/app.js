@@ -15,7 +15,7 @@ App({
     // 附近门店列表
     nearbyStores: [],
     // API 基础地址
-    apiBase: 'https://api.yijiaren.com/v1',
+    apiBase: 'http://43.163.5.90:8001/api',
     // 当前定位
     location: {
       lat: 30.2375,
@@ -67,7 +67,7 @@ App({
       success(loginRes) {
         if (loginRes.code) {
           wx.request({
-            url: `${that.globalData.apiBase}/auth/wechat-login`,
+            url: `${that.globalData.apiBase}/auth/wx-login`,
             method: 'POST',
             data: { code: loginRes.code },
             success(res) {

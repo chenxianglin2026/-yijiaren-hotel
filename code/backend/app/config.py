@@ -56,8 +56,8 @@ class Settings(BaseSettings):
     WX_PAY_NOTIFY_URL: str = ""
 
     # 智能门锁配置（TTLock 通通）
-    TTLOCK_CLIENT_ID: str = ""
-    TTLOCK_CLIENT_SECRET: str = ""
+    TTLOCK_CLIENT_ID: str = "4433c6c075e8490ea00c6a60a9e31cd8"
+    TTLOCK_CLIENT_SECRET: str = "8b**...*ac1"
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

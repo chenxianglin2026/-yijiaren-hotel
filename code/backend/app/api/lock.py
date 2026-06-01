@@ -18,8 +18,8 @@ from app.config import settings
 
 router = APIRouter(prefix="/api/lock", tags=["智能门锁"])
 
-CLIENT_ID_PH = "{{TTLOCK_CLIENT_ID}}"
-SECRET_PH = "{{TTLOCK_CLIENT_SECRET}}"
+CLIENT_ID_PH = "4433c6c075e8490ea00c6a60a9e31cd8"
+SECRET_PH = "8b**...*ac1"
 TOKEN_PH = "{{TTLOCK_ACCESS_TOKEN}}"
 MAC_PH = "{{LOCK_MAC}}"
 
@@ -108,6 +108,6 @@ async def lock_info():
         "platform": "TTLock 通通酒店",
         "docs": "https://hoteldoc.ttlock.com/",
         "api": "https://api.ttlock.com/v3",
-        "configured": TTLockConfig.CLIENT_ID != CLIENT_ID_PH,
+        "configured": True,
         "need": "登录 https://open.ttlock.com 创建应用获取 client_id + client_secret"
     })
