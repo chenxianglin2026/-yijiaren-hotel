@@ -55,6 +55,11 @@ class Settings(BaseSettings):
     WX_PAY_PRIVATE_KEY: str = ""
     WX_PAY_NOTIFY_URL: str = ""
 
+    # 智能门锁配置
+    LOCK_APP_KEY: str = ""
+    LOCK_APP_SECRET: str = ""
+    LOCK_BASE_URL: str = ""
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
 
