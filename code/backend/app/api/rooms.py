@@ -10,7 +10,8 @@ from pydantic import BaseModel
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db import get_db, Room, Hotel, Order, Checkin, OrderStatus, CheckinStatus
+from app.db import get_db, Room, Hotel, Order, Checkin, OrderStatus, CheckinStatus, User
+from app.api.auth import get_current_user
 
 router = APIRouter(prefix="/api/rooms", tags=["房态管理"])
 
@@ -50,6 +51,7 @@ class RoomStatusResponse(BaseModel):
 async def room_status(
     hotel_id: Optional[int] = Query(None, description="门店ID，不传则返回全部门店"),
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     # 查询门店（单个或全部）
     if hotel_id:
