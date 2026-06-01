@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.db import init_db
-from app.api import auth, hotels, orders, checkin, rooms, cleaning, dashboard, finance, devices
+from app.api import auth, hotels, orders, checkin, rooms, cleaning, dashboard, finance, devices, payment
 
 
 @asynccontextmanager
@@ -48,6 +48,7 @@ app.include_router(cleaning.router)
 app.include_router(dashboard.router)
 app.include_router(finance.router)
 app.include_router(devices.router)
+app.include_router(payment.router)
 
 
 # 健康检查

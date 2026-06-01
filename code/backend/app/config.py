@@ -48,6 +48,13 @@ class Settings(BaseSettings):
     WX_APPID: str = ""
     WX_SECRET: str = ""
 
+    # 微信支付配置
+    WX_MCHID: str = ""
+    WX_PAY_KEY: str = ""
+    WX_PAY_SERIAL: str = ""
+    WX_PAY_PRIVATE_KEY: str = ""
+    WX_PAY_NOTIFY_URL: str = ""
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
 
