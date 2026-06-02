@@ -6,22 +6,31 @@
 <link rel="stylesheet" href="../css/admin.css">
 <style>
   .quick-actions { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px; }
-  .chart-section { display:grid; grid-template-columns:2fr 1fr; gap:20px; }
-  .alert-list { list-style:none; }
-  .alert-list li { padding:10px 0; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; font-size:13px; }
-  .alert-list li:last-child { border-bottom:none; }
-  .alert-list .alert-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-  .alert-list .alert-dot.warn { background:var(--warning); }
-  .alert-list .alert-dot.info { background:var(--info); }
-  .alert-list .alert-dot.err { background:var(--error); }
-  .alert-list .alert-time { font-size:11px; color:var(--text-muted); margin-left:auto; white-space:nowrap; }
-  .progress-bar { height:8px; background:#f0f0f0; border-radius:4px; margin-top:8px; overflow:hidden; }
-  .progress-bar .progress-fill { height:100%; border-radius:4px; background:linear-gradient(90deg, #c8a052, #e0c882); }
+  .chart-section { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px; }
+  .chart-bars { display:flex; align-items:flex-end; gap:8px; height:160px; padding:0 10px; }
+  .chart-bar-col { flex:1; display:flex; flex-direction:column; align-items:center; }
+  .chart-bar-fill { width:100%; max-width:50px; border-radius:4px 4px 0 0; background:linear-gradient(180deg, #c8a052, #e0c882); transition:height .4s; min-height:2px; }
+  .chart-bar-fill.occ { background:linear-gradient(180deg, #4a90d9, #7ab3f0); }
+  .chart-bar-label { font-size:10px; color:var(--text-muted); margin-top:4px; }
+  .chart-bar-val { font-size:10px; color:var(--gold-dark); margin-bottom:2px; font-weight:600; }
+  .trend-compare { display:flex; gap:24px; margin:8px 0; }
+  .trend-compare-item { display:flex; align-items:center; gap:6px; font-size:12px; }
+  .trend-up { color:#22c55e; }
+  .trend-down { color:#ef4444; }
+  .activity-list { list-style:none; max-height:320px; overflow-y:auto; }
+  .activity-list li { padding:8px 0; border-bottom:1px solid var(--border); display:flex; align-items:flex-start; gap:10px; font-size:12px; }
+  .activity-list li:last-child { border-bottom:none; }
+  .activity-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; margin-top:3px; }
+  .activity-dot.order { background:#c8a052; }
+  .activity-dot.checkin { background:#22c55e; }
+  .activity-time { font-size:10px; color:var(--text-muted); white-space:nowrap; min-width:40px; }
+  .activity-hotel { font-size:10px; color:var(--text-muted); margin-left:auto; white-space:nowrap; }
   .today-summary { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:16px; }
   .summary-item { text-align:center; padding:12px; background:#faf8f3; border-radius:6px; }
   .summary-item .num { font-size:22px; font-weight:700; color:var(--gold-dark); }
   .summary-item .lbl { font-size:11px; color:var(--text-muted); margin-top:2px; }
-  .loading { text-align:center; padding:40px; color:var(--text-muted); }
+  .summary-item .sub { font-size:10px; margin-top:2px; }
+  .loading, .empty { text-align:center; padding:24px; color:var(--text-muted); font-size:13px; }
 </style>
 </head>
 <body>
@@ -40,103 +49,164 @@
     <button class="btn btn-outline">📄 导出日报</button>
   </div>
 
-  <!-- Chart + Alerts -->
+  <!-- Charts Row -->
   <div class="chart-section">
     <div class="card">
-      <div class="card-header"><div class="card-title">近7天营收趋势（元）</div></div>
-      <div class="chart-bar" id="revenueChart">
+      <div class="card-header">
+        <div class="card-title">近7天营收趋势（元）</div>
+      </div>
+      <div class="chart-bars" id="revenueChart">
         <div class="loading">加载中...</div>
       </div>
-      <div id="revenueSummary" style="text-align:center;margin-top:12px;font-size:12px;color:var(--text-muted);"></div>
     </div>
-
     <div class="card">
       <div class="card-header">
-        <div class="card-title">实时报警</div>
-        <span class="badge badge-error" id="alertCount">0条未处理</span>
+        <div class="card-title">近7天入住率（%）</div>
       </div>
-      <ul class="alert-list" id="alertList">
-        <li style="color:var(--text-muted);">暂无报警</li>
-      </ul>
+      <div class="chart-bars" id="occupancyChart">
+        <div class="loading">加载中...</div>
+      </div>
     </div>
   </div>
 
-  <!-- Today Summary -->
-  <div class="card mt-md">
-    <div class="card-header"><div class="card-title" id="summaryTitle">今日运营概览</div></div>
-    <div class="today-summary" id="todaySummary">
-      <div class="loading">加载中...</div>
+  <!-- Activity + Summary Row -->
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">实时动态</div>
+        <span style="font-size:11px;color:var(--text-muted);" id="activityRefresh">--</span>
+      </div>
+      <ul class="activity-list" id="activityList">
+        <li class="empty">载入中...</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title" id="summaryTitle">今日运营概览</div></div>
+      <div class="today-summary" id="todaySummary">
+        <div class="loading">加载中...</div>
+      </div>
     </div>
   </div>
 
 </div>
 
 <script>
-// ---- Token helper ----
 const token = localStorage.getItem('yjr_token');
 const headers = { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
 
-// ---- Format helpers ----
-function fmtMoney(n) { return '¥' + Number(n || 0).toLocaleString('zh-CN', {minimumFractionDigits:0,maximumFractionDigits:0}); }
-function fmtDate(d) { return d.getMonth()+1 + '月' + d.getDate() + '日'; }
+function fmtMoney(n) { return '¥' + Number(n||0).toLocaleString('zh-CN', {minimumFractionDigits:0,maximumFractionDigits:0}); }
+function fmtDate(d) { return d.getMonth()+1+'月'+d.getDate()+'日'; }
 
-// ---- Load dashboard stats ----
 async function loadDashboard() {
   try {
-    const res = await fetch('/api/dashboard/stats', { headers });
-    const json = await res.json();
-    if (json.code !== 0) throw new Error(json.msg);
-    const d = json.data;
+    const [statsRes, activityRes] = await Promise.all([
+      fetch('/api/dashboard/stats', { headers }),
+      fetch('/api/dashboard/activity?limit=15', { headers })
+    ]);
+    const stats = (await statsRes.json()).data;
+    const activities = (await activityRes.json()).data || [];
 
-    // Stat cards
-    document.getElementById('statCards').innerHTML = [
-      { icon:'📋', cls:'gold', val:d.orders_today, label:'今日订单数' },
-      { icon:'🏠', cls:'green', val:d.occupancy_rate + '%', label:'入住率', sub:d.occupied_rooms + '/' + d.total_rooms + '间' },
-      { icon:'💰', cls:'blue', val:fmtMoney(d.revenue_today), label:'今日营收' },
-      { icon:'🧹', cls:'red', val:d.pending_cleaning_count, label:'待清洁' },
-    ].map(s => `
-      <div class="stat-card">
-        <div class="stat-icon ${s.cls}">${s.icon}</div>
-        <div class="stat-info">
-          <div class="stat-value">${s.val}</div>
-          <div class="stat-label">${s.label}</div>
-          ${s.sub ? '<div class="stat-change" style="color:var(--text-muted);">'+s.sub+'</div>' : ''}
-        </div>
-      </div>`).join('');
+    renderStatCards(stats);
+    renderRevenueChart(stats.revenue_trend || []);
+    renderOccupancyChart(stats.occupancy_trend || []);
+    renderActivity(activities);
+    renderTodaySummary(stats);
 
-    // Today summary
-    const today = new Date();
-    document.getElementById('summaryTitle').textContent = '今日运营概览 ' + today.getFullYear() + '年' + fmtDate(today) + ' ' + ['日','一','二','三','四','五','六'][today.getDay()];
-    document.getElementById('todaySummary').innerHTML = [
-      { num:d.orders_today, lbl:'总订单' },
-      { num:d.checked_in_count, lbl:'已入住' },
-      { num:d.total_rooms - d.occupied_rooms, lbl:'空房' },
-      { num:d.occupancy_rate + '%', lbl:'入住率' },
-      { num:d.pending_cleaning_count, lbl:'待清洁' },
-      { num:fmtMoney(d.revenue_today), lbl:'今日营收' },
-      { num:d.revenue_today > 0 && d.orders_today > 0 ? fmtMoney(Math.round(d.revenue_today/d.orders_today)) : '¥0', lbl:'平均房价' },
-      { num:d.hotel_name || '全部门店', lbl:'当前门店' },
-    ].map(i => `<div class="summary-item"><div class="num">${i.num}</div><div class="lbl">${i.lbl}</div></div>`).join('');
-
-    // Revenue chart placeholder (real chart needs history API)
-    document.getElementById('revenueChart').innerHTML = 
-      '<div style="display:flex;align-items:center;justify-content:center;height:180px;color:var(--text-muted);">📊 营收图表API开发中</div>';
-    document.getElementById('revenueSummary').textContent = '当前入住 ' + d.checked_in_count + ' 间 | 总房间 ' + d.total_rooms + ' 间';
-
-    // Alerts
-    document.getElementById('alertCount').textContent = d.pending_cleaning_count + '条待清洁';
-    document.getElementById('alertList').innerHTML = d.pending_cleaning_count > 0 
-      ? '<li><span class="alert-dot warn"></span><span>有 ' + d.pending_cleaning_count + ' 间房待清洁</span><span class="alert-time">现在</span></li>'
-      : '<li style="color:var(--text-muted);">暂无报警</li>';
-
+    document.getElementById('activityRefresh').textContent = new Date().toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
   } catch (err) {
     document.getElementById('statCards').innerHTML = '<div class="loading" style="color:var(--error);">加载失败: ' + err.message + '</div>';
   }
 }
 
+function renderStatCards(d) {
+  const vsOrders = d.orders_today - (d.orders_yesterday||0);
+  const vsRevenue = d.revenue_today - (d.revenue_yesterday||0);
+
+  function trendHtml(v) {
+    if (v > 0) return '<span class="trend-up">↑' + v + '</span>';
+    if (v < 0) return '<span class="trend-down">↓' + Math.abs(v) + '</span>';
+    return '<span style="color:var(--text-muted);">持平</span>';
+  }
+
+  document.getElementById('statCards').innerHTML = [
+    { icon:'📋', cls:'gold', val:d.orders_today, label:'今日订单数', sub:'vs 昨日 ' + trendHtml(vsOrders) },
+    { icon:'🏠', cls:'green', val:d.occupancy_rate+'%', label:'入住率', sub:d.occupied_rooms+'/'+d.total_rooms+'间' },
+    { icon:'💰', cls:'blue', val:fmtMoney(d.revenue_today), label:'今日营收', sub:'vs 昨日 ' + trendHtml(vsRevenue) },
+    { icon:'🧹', cls:'red', val:d.pending_cleaning_count, label:'待清洁' },
+  ].map(s => `
+    <div class="stat-card">
+      <div class="stat-icon ${s.cls}">${s.icon}</div>
+      <div class="stat-info">
+        <div class="stat-value">${s.val}</div>
+        <div class="stat-label">${s.label}</div>
+        ${s.sub ? '<div class="stat-change" style="font-size:11px;">'+s.sub+'</div>' : ''}
+      </div>
+    </div>`).join('');
+}
+
+function renderRevenueChart(trend) {
+  if (!trend.length) {
+    document.getElementById('revenueChart').innerHTML = '<div class="empty">暂无数据</div>';
+    return;
+  }
+  const max = Math.max(...trend.map(t => t.value), 1);
+  document.getElementById('revenueChart').innerHTML = trend.map(t => `
+    <div class="chart-bar-col">
+      <div class="chart-bar-val">${t.value > 0 ? '¥'+(t.value/10000).toFixed(1)+'w' : ''}</div>
+      <div class="chart-bar-fill" style="height:${Math.max(t.value/max*140, 2)}px;" title="${t.label}: ¥${t.value.toLocaleString()}"></div>
+      <div class="chart-bar-label">${t.label}</div>
+    </div>`).join('');
+}
+
+function renderOccupancyChart(trend) {
+  if (!trend.length) {
+    document.getElementById('occupancyChart').innerHTML = '<div class="empty">暂无数据</div>';
+    return;
+  }
+  document.getElementById('occupancyChart').innerHTML = trend.map(t => `
+    <div class="chart-bar-col">
+      <div class="chart-bar-val">${t.value}%</div>
+      <div class="chart-bar-fill occ" style="height:${Math.max(t.value/100*140, 2)}px;" title="${t.label}: ${t.value}%"></div>
+      <div class="chart-bar-label">${t.label}</div>
+    </div>`).join('');
+}
+
+function renderActivity(activities) {
+  const el = document.getElementById('activityList');
+  if (!activities.length) {
+    el.innerHTML = '<li class="empty">暂无动态</li>';
+    return;
+  }
+  const icons = { order: '📋', checkin: '🚪', checkout: '🏃', cleaning: '🧹' };
+  el.innerHTML = activities.map(a => `
+    <li>
+      <div class="activity-dot ${a.type}"></div>
+      <span>${icons[a.type]||'📌'} ${a.content}</span>
+      <span class="activity-hotel">${a.hotel_name||''}</span>
+      <span class="activity-time">${a.time||''}</span>
+    </li>`).join('');
+}
+
+function renderTodaySummary(d) {
+  const today = new Date();
+  document.getElementById('summaryTitle').textContent =
+    '今日运营概览 ' + today.getFullYear()+'年'+fmtDate(today)+' ' + ['日','一','二','三','四','五','六'][today.getDay()];
+
+  document.getElementById('todaySummary').innerHTML = [
+    { num:d.orders_today, lbl:'总订单' },
+    { num:d.checked_in_count, lbl:'已入住' },
+    { num:d.total_rooms-d.occupied_rooms, lbl:'空房' },
+    { num:d.occupancy_rate+'%', lbl:'入住率' },
+    { num:d.pending_cleaning_count, lbl:'待清洁' },
+    { num:fmtMoney(d.revenue_today), lbl:'今日营收' },
+    { num:d.revenue_today>0&&d.orders_today>0 ? fmtMoney(Math.round(d.revenue_today/d.orders_today)) : '¥0', lbl:'平均房价' },
+    { num:d.hotel_name||'全部门店', lbl:'当前门店' },
+  ].map(i => `<div class="summary-item"><div class="num">${i.num}</div><div class="lbl">${i.lbl}</div></div>`).join('');
+}
+
 loadDashboard();
-// Auto-refresh every 60s
-setInterval(loadDashboard, 60000);
+setInterval(loadDashboard, 30000);
 </script>
 </body>
 </html>

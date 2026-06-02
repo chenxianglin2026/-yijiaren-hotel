@@ -147,6 +147,34 @@ class Order(Base):
     checkins: Mapped[List["Checkin"]] = relationship(back_populates="order")
 
 
+# ── OTA 渠道配置 ─────────────────────────────────────
+class OTAChannel(Base):
+    __tablename__ = "ota_channels"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    channel: Mapped[str] = mapped_column(String(20), unique=True, nullable=False, comment="渠道ID: ctrip/meituan/fliggy")
+    name: Mapped[str] = mapped_column(String(50), comment="渠道名称")
+    api_key: Mapped[Optional[str]] = mapped_column(String(256), comment="API Key")
+    api_secret: Mapped[Optional[str]] = mapped_column(String(256), comment="API Secret")
+    hotel_mapping: Mapped[Optional[str]] = mapped_column(Text, comment="酒店ID映射 JSON {local_hotel_id: ota_hotel_id}")
+    is_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    sync_interval: Mapped[int] = mapped_column(Integer, default=300, comment="同步间隔(秒)")
+    last_sync_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class OTAOrderMapping(Base):
+    __tablename__ = "ota_order_mappings"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    local_order_id: Mapped[int] = mapped_column(ForeignKey("orders.id", ondelete="CASCADE"), index=True)
+    ota_order_id: Mapped[str] = mapped_column(String(100), nullable=False, comment="OTA订单号")
+    channel: Mapped[str] = mapped_column(String(20), nullable=False, comment="渠道ID")
+    raw_data: Mapped[Optional[str]] = mapped_column(Text, comment="OTA原始订单数据 JSON")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 # ── 入住记录模型 ─────────────────────────────────────
 class Checkin(Base):
     __tablename__ = "checkins"
