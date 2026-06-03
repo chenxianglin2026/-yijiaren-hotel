@@ -276,8 +276,8 @@ class TestHotelsAPI:
 class TestRoomsAPI:
     """房态管理接口测试"""
 
-    def test_room_status_all(self):
-        r = client.get(f"{BASE_URL}/api/rooms/status")
+    def test_room_status_all(self, admin_auth):
+        r = client.get(f"{BASE_URL}/api/rooms/status", headers=auth_header(admin_auth))
         assert r.status_code == 200
         data = r.json()
         assert "items" in data
@@ -285,8 +285,8 @@ class TestRoomsAPI:
         assert "available_total" in data
         assert data["total_rooms"] > 0
 
-    def test_room_status_by_hotel(self):
-        r = client.get(f"{BASE_URL}/api/rooms/status", params={"hotel_id": 1})
+    def test_room_status_by_hotel(self, admin_auth):
+        r = client.get(f"{BASE_URL}/api/rooms/status", params={"hotel_id": 1}, headers=auth_header(admin_auth))
         assert r.status_code == 200
         data = r.json()
         assert "items" in data
@@ -297,8 +297,8 @@ class TestRoomsAPI:
         assert "occupied_count" in item
         assert "cleaning_count" in item
 
-    def test_room_status_invalid_hotel(self):
-        r = client.get(f"{BASE_URL}/api/rooms/status", params={"hotel_id": 9999})
+    def test_room_status_invalid_hotel(self, admin_auth):
+        r = client.get(f"{BASE_URL}/api/rooms/status", params={"hotel_id": 9999}, headers=auth_header(admin_auth))
         assert r.status_code == 404
 
 

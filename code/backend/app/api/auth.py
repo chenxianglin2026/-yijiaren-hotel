@@ -205,3 +205,87 @@ async def wx_login(req: WxLoginRequest, db: AsyncSession = Depends(get_db)):
 @router.get("/me", response_model=UserInfo, summary="获取当前用户信息")
 async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+# ── 微信手机号一键登录 ──────────────────────────────
+
+import base64
+import json as _json
+from Crypto.Cipher import AES
+
+class WxPhoneLoginRequest(BaseModel):
+    code: str = Field(..., description="wx.login 返回的 code")
+    encrypted_data: str = Field(..., description="getPhoneNumber 返回的 encryptedData")
+    iv: str = Field(..., description="getPhoneNumber 返回的 iv")
+    nickname: Optional[str] = None
+    avatar_url: Optional[str] = None
+
+
+async def _wx_code2session(code: str) -> dict:
+    """调用微信 code2session 获取 openid + session_key"""
+    import httpx
+    url = f"https://api.weixin.qq.com/sns/jscode2session?appid={settings.WX_APPID}&secret=***&js_code={code}&grant_type=authorization_code"
+    async with httpx.AsyncClient(timeout=10) as client:
+        resp = await client.get(url)
+        data = resp.json()
+        if "errcode" in data and data["errcode"] != 0:
+            raise HTTPException(400, f"微信登录失败: {data.get('errmsg', 'unknown')}")
+        return data
+
+
+def _decrypt_phone(encrypted_data: str, iv: str, session_key: str) -> str:
+    """AES-128-CBC 解密微信手机号"""
+    key = base64.b64decode(session_key)
+    iv_bytes = base64.b64decode(iv)
+    cipher = AES.new(key, AES.MODE_CBC, iv_bytes)
+    raw = cipher.decrypt(base64.b64decode(encrypted_data))
+    # PKCS7 unpad
+    pad = raw[-1]
+    raw = raw[:-pad]
+    data = _json.loads(raw.decode("utf-8"))
+    return data.get("purePhoneNumber") or data.get("phoneNumber", "")
+
+
+@router.post("/wechat-phone-login", response_model=TokenResponse, summary="微信手机号一键登录")
+async def wechat_phone_login(req: WxPhoneLoginRequest, db: AsyncSession = Depends(get_db)):
+    # 开发模式跳过微信 API
+    if settings.DEV_MODE:
+        phone = "13800138000"
+        openid = f"wx_dev_{req.code[:12]}"
+    else:
+        session_data = await _wx_code2session(req.code)
+        openid = session_data["openid"]
+        session_key = session_data["session_key"]
+        phone = _decrypt_phone(req.encrypted_data, req.iv, session_key)
+
+    # 查用户：先按 openid，再按手机号
+    if not settings.DEV_MODE:
+        result = await db.execute(select(User).where(User.wx_openid == openid))
+    else:
+        result = await db.execute(select(User).where(User.phone == phone))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        user = User(
+            username=f"wx_{phone[-8:]}",
+            phone=phone,
+            hashed_password=hash_password(openid if not settings.DEV_MODE else phone),
+            role="guest",
+            nickname=req.nickname or f"用户{phone[-4:]}",
+            avatar_url=req.avatar_url,
+            wx_openid=openid,
+        )
+        db.add(user)
+        await db.flush()
+        await db.refresh(user)
+    else:
+        if req.nickname:
+            user.nickname = req.nickname
+        if req.avatar_url:
+            user.avatar_url = req.avatar_url
+        if not user.wx_openid:
+            user.wx_openid = openid
+        if not user.phone:
+            user.phone = phone
+
+    return _token_response(user)

@@ -178,10 +178,11 @@ Page({
       if (C.DEV_MODE) {
         await this.delay(500)
         const mockList = this.getMockRequests()
+        const enriched = this.enrichRequests(mockList)
         this.setData({
           requestList: loadMore
-            ? [...this.data.requestList, ...mockList]
-            : mockList,
+            ? [...this.data.requestList, ...enriched]
+            : enriched,
           requestPage: page,
           requestHasMore: mockList.length >= C.PAGE_SIZE,
           requestLoading: false,
@@ -193,11 +194,12 @@ Page({
         page,
         page_size: C.PAGE_SIZE,
       })
+      const enriched = this.enrichRequests(res.items)
 
       this.setData({
         requestList: loadMore
-          ? [...this.data.requestList, ...res.items]
-          : res.items,
+          ? [...this.data.requestList, ...enriched]
+          : enriched,
         requestPage: page,
         requestHasMore: res.items.length >= C.PAGE_SIZE,
         requestLoading: false,
@@ -253,6 +255,30 @@ Page({
       confirmColor: '#C8A96E',
       showCancel: false,
       confirmText: '知道了',
+    })
+  },
+
+  // ============== 预处理请求数据（避免 WXML 中复杂表达式） ==============
+  enrichRequests(list) {
+    const icons = { cleaning: '🧹', delivery: '📦', maintenance: '🔧', other: '💁' }
+    const labels = { cleaning: '呼叫保洁', delivery: '客房送物', maintenance: '维修报修', other: '其他服务' }
+    const statusLabels = { pending: '等待处理', accepted: '已接单', processing: '处理中', completed: '已完成' }
+    const statusColors = { pending: '#E8A838', accepted: '#5B8DEF', processing: '#5B8DEF', completed: '#6BAA75' }
+
+    return (list || []).map(item => {
+      const rt = item.request_type || 'other'
+      const st = item.status || 'pending'
+      const raw = item.created_at || ''
+      const displayTime = raw ? raw.slice(0, 16) : ''
+
+      return {
+        ...item,
+        _icon: icons[rt] || '💁',
+        _label: labels[rt] || '其他服务',
+        _statusLabel: statusLabels[st] || st,
+        _statusColor: statusColors[st] || '#999',
+        _displayTime: displayTime,
+      }
     })
   },
 

@@ -44,9 +44,9 @@ class Settings(BaseSettings):
     # CORS
     CORS_ORIGINS: list[str] = ["*"]
 
-    # 微信小程序配置（开发阶段是占位值）
-    WX_APPID: str = ""
-    WX_SECRET: str = ""
+    # 微信小程序配置
+    WX_APPID: str = "wx15932207fb03a5a4"
+    WX_SECRET: str = "97acd5a0ca02fd5b03814fc51a34e9fa"
 
     # 微信支付配置
     WX_MCHID: str = ""

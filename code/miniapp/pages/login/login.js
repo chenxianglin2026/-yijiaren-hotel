@@ -146,43 +146,39 @@ Page({
   onWechatPhoneLogin(e) {
     const that = this
     if (e.detail.errMsg !== 'getPhoneNumber:ok') {
+      wx.showToast({ title: '授权取消', icon: 'none' })
+      return
+    }
+
+    if (!this.data.agreed) {
+      wx.showToast({ title: '请先同意用户协议', icon: 'none' })
       return
     }
 
     wx.showLoading({ title: '登录中...', mask: true })
 
-    // 先获取微信 code
     wx.login({
       success(loginRes) {
-        if (loginRes.code) {
-          // TODO: 真实API
-          // api.post('/auth/wechat-phone-login', {
-          //   code: loginRes.code,
-          //   encryptedData: e.detail.encryptedData,
-          //   iv: e.detail.iv
-          // }).then(res => {
-          //   that.handleLoginSuccess(res)
-          // })
-
-          // 模拟
-          setTimeout(() => {
-            that.handleLoginSuccess({
-              token: 'mock_wx_token_' + Date.now(),
-              userInfo: {
-                nickName: '微信用户',
-                avatarUrl: '',
-                phone: '138****8888'
-              }
-            })
-          }, 1000)
-        } else {
+        if (!loginRes.code) {
           wx.hideLoading()
-          wx.showToast({ title: '登录失败', icon: 'none' })
+          wx.showToast({ title: '微信登录失败', icon: 'none' })
+          return
         }
+
+        api.post('/auth/wechat-phone-login', {
+          code: loginRes.code,
+          encrypted_data: e.detail.encryptedData,
+          iv: e.detail.iv,
+        }).then(res => {
+          that.handleLoginSuccess(res)
+        }).catch(err => {
+          wx.hideLoading()
+          wx.showToast({ title: err.msg || '登录失败', icon: 'none' })
+        })
       },
       fail() {
         wx.hideLoading()
-        wx.showToast({ title: '登录失败', icon: 'none' })
+        wx.showToast({ title: '微信登录失败', icon: 'none' })
       }
     })
   },

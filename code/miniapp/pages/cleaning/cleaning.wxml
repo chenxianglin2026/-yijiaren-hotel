@@ -62,7 +62,7 @@
           </view>
           <text class="task-notes" wx:if="{{item.notes}}">{{item.notes}}</text>
           <text class="task-time" wx:if="{{item.created_at}}">
-            {{item.status==='completed' ? '完成' : '创建'}}：{{item.created_at.slice(0,16).replace('T',' ')}}
+            {{item.status==='completed' ? '完成' : '创建'}}：{{item.created_at.slice(0,16)}}
           </text>
         </view>
 

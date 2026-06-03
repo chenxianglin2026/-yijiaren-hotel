@@ -61,26 +61,20 @@
       <block wx:for="{{requestList}}" wx:key="id">
         <view class="request-card" bindtap="onRequestDetail" data-request="{{item}}">
           <view class="request-left">
-            <text class="request-icon">
-              {{item.request_type === 'cleaning' ? '🧹' : item.request_type === 'delivery' ? '📦' : item.request_type === 'maintenance' ? '🔧' : '💁'}}
-            </text>
+            <text class="request-icon">{{item._icon}}</text>
           </view>
           <view class="request-body">
             <view class="flex-between">
-              <text class="request-type">
-                {{item.request_type === 'cleaning' ? '呼叫保洁' : item.request_type === 'delivery' ? '客房送物' : item.request_type === 'maintenance' ? '维修报修' : '其他服务'}}
-              </text>
+              <text class="request-type">{{item._label}}</text>
               <text
                 class="request-status"
-                style="color:{{item.status === 'completed' ? '#6BAA75' : item.status === 'pending' ? '#E8A838' : '#5B8DEF'}}"
-              >
-                {{item.status === 'pending' ? '等待处理' : item.status === 'accepted' ? '已接单' : item.status === 'processing' ? '处理中' : item.status === 'completed' ? '已完成' : item.status}}
-              </text>
+                style="color:{{item._statusColor}}"
+              >{{item._statusLabel}}</text>
             </view>
             <text class="request-desc">{{item.description}}</text>
             <view class="request-meta">
               <text class="request-room">房号：{{item.room_number}}</text>
-              <text class="request-time">{{(item.created_at || '').slice(0,16).replace('T',' ')}}</text>
+              <text class="request-time">{{item._displayTime}}</text>
             </view>
           </view>
         </view>

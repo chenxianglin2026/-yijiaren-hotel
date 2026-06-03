@@ -1,20 +1,13 @@
 {
-  "description": "伊家人酒店 - 无人智慧酒店系统",
+  "description": "伊家人酒店",
   "setting": {
-    "urlCheck": true,
+    "urlCheck": false,
     "es6": true,
     "postcss": true,
-    "minified": true,
-    "enhance": true,
-    "compileWorklet": false,
-    "uglifyFileName": false,
-    "uploadWithSourceMap": true,
-    "packNpmManually": false,
-    "packNpmRelationList": []
+    "minified": true
   },
   "compileType": "miniprogram",
-  "libVersion": "3.5.0",
+  "libVersion": "2.30.0",
   "appid": "wx15932207fb03a5a4",
-  "projectname": "yijiaren-hotel",
-  "condition": {}
+  "projectname": "yijiaren-hotel"
 }
