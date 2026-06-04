@@ -32,7 +32,7 @@
 }
 
 .location-arrow {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: rgba(255,255,255,0.7);
 }
 
@@ -73,19 +73,19 @@
 
 .search-input {
   flex: 1;
-  font-size: 26rpx;
+  font-size: 28rpx;
   color: #3D3226;
 }
 
 .search-clear {
-  font-size: 26rpx;
+  font-size: 28rpx;
   color: #B0A492;
   padding: 0 10rpx;
 }
 
 .filter-btn {
   margin-left: 20rpx;
-  font-size: 26rpx;
+  font-size: 28rpx;
   color: #8B7E6A;
   padding: 10rpx 20rpx;
   border-radius: 20rpx;
@@ -110,7 +110,7 @@
 }
 
 .filter-label {
-  font-size: 26rpx;
+  font-size: 24rpx;
   color: #3D3226;
   font-weight: 500;
   width: 80rpx;
@@ -198,7 +198,7 @@
 }
 
 .feature-desc {
-  font-size: 20rpx;
+  font-size: 24rpx;
   color: #B0A492;
   margin-top: 4rpx;
 }
@@ -246,7 +246,7 @@
 }
 
 .loading-text {
-  font-size: 26rpx;
+  font-size: 28rpx;
   color: #B0A492;
 }
 
@@ -298,7 +298,7 @@
 }
 
 .room-tag-item {
-  font-size: 20rpx;
+  font-size: 24rpx;
   color: #FFFFFF;
   background: rgba(200, 169, 110, 0.85);
   padding: 4rpx 14rpx;
@@ -310,7 +310,7 @@
 }
 
 .room-type-tag {
-  font-size: 22rpx;
+  font-size: 24rpx;
 }
 
 .room-desc {
@@ -324,7 +324,7 @@
 }
 
 .meta-item {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #8B7E6A;
 }
 
@@ -334,7 +334,7 @@
 }
 
 .price-original {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #B0A492;
 }
 
@@ -345,13 +345,13 @@
 }
 
 .room-stock {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #C56C6C;
   font-weight: 500;
 }
 
 .btn-sm {
   padding: 12rpx 32rpx;
-  font-size: 26rpx;
+  font-size: 28rpx;
   border-radius: 30rpx;
 }

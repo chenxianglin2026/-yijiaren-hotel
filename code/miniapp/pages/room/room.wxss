@@ -30,7 +30,7 @@
 }
 
 .swiper-counter-text {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #FFFFFF;
   background: rgba(0,0,0,0.45);
   padding: 6rpx 20rpx;
@@ -129,7 +129,7 @@
 .legend-dot.high { background: #C56C6C; }
 
 .legend-text {
-  font-size: 20rpx;
+  font-size: 24rpx;
   color: #B0A492;
 }
 
@@ -142,7 +142,7 @@
 .cal-week-day {
   flex: 1;
   text-align: center;
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #B0A492;
   padding: 8rpx 0;
 }
@@ -183,7 +183,7 @@
 }
 
 .cal-day-price {
-  font-size: 18rpx;
+  font-size: 24rpx;
   font-weight: 500;
   margin-top: 2rpx;
 }
@@ -195,7 +195,7 @@
 /* ---- 房间描述 ---- */
 .room-desc {
   line-height: 1.7;
-  font-size: 26rpx;
+  font-size: 28rpx;
 }
 
 /* ---- 区块标签 ---- */
@@ -227,7 +227,7 @@
 }
 
 .highlight-text {
-  font-size: 26rpx;
+  font-size: 28rpx;
   color: #3D3226;
   line-height: 1.5;
 }
@@ -250,13 +250,13 @@
 }
 
 .detail-label {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #B0A492;
   margin-bottom: 8rpx;
 }
 
 .detail-value {
-  font-size: 26rpx;
+  font-size: 28rpx;
   color: #3D3226;
   font-weight: 500;
 }
@@ -311,7 +311,7 @@
 }
 
 .review-tag {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #8B7E6A;
   background: #F8F5EF;
   padding: 4rpx 14rpx;
@@ -341,11 +341,11 @@
 }
 
 .review-user {
-  font-size: 26rpx;
+  font-size: 28rpx;
 }
 
 .review-date {
-  font-size: 22rpx;
+  font-size: 24rpx;
 }
 
 .review-score-sm {
@@ -392,7 +392,7 @@
 }
 
 .btn-outline {
-  font-size: 26rpx;
+  font-size: 28rpx;
   padding: 14rpx 28rpx;
 }
 

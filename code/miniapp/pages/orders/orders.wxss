@@ -53,7 +53,7 @@
   min-width: 32rpx;
   height: 32rpx;
   padding: 0 8rpx;
-  font-size: 20rpx;
+  font-size: 24rpx;
   color: #FFFFFF;
   background: #C56C6C;
   border-radius: 16rpx;
@@ -105,7 +105,7 @@
 }
 
 .summary-label {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #B0A492;
   margin-top: 8rpx;
 }
@@ -156,7 +156,7 @@
 }
 
 .order-date {
-  font-size: 22rpx;
+  font-size: 24rpx;
 }
 
 .order-status {
@@ -224,7 +224,7 @@
 
 .btn-sm {
   padding: 10rpx 28rpx;
-  font-size: 24rpx;
+  font-size: 28rpx;
   border-radius: 24rpx;
 }
 
