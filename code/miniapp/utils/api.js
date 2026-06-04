@@ -5,7 +5,7 @@
  */
 
 const { DEV_MODE } = require('./const')
-const BASE_URL = 'http://43.163.5.90:8001'
+const BASE_URL = 'http://127.0.0.1:8001'  // 本地调试; 上线改回 43.163.5.90:8001
 
 // 请求队列，用于并发请求时的 token 刷新
 let isRefreshing = false
@@ -104,7 +104,7 @@ const request = (options) => {
       },
       fail(err) {
         if (showLoading) wx.hideLoading()
-        console.error('[API] Network error:', err)
+        if (DEV_MODE) console.error('[API] Network error:', err)
         wx.showToast({ title: '网络异常，请检查网络', icon: 'none' })
         reject({ code: -1, msg: '网络异常', error: err })
       }

@@ -97,7 +97,7 @@ Page({
         })
       })
       .catch(err => {
-        console.error('[Orders] 加载订单失败:', err)
+        if (C.DEV_MODE) console.error('[Orders] 加载订单失败:', err)
         that.setData({ loading: false, hasMore: false })
         wx.showToast({ title: '加载失败，请重试', icon: 'none' })
       })

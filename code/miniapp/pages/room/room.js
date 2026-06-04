@@ -66,7 +66,7 @@ Page({
         that.buildPriceCalendar()
       })
       .catch(err => {
-        console.error('[Room] 加载房型详情失败:', err)
+        if (C.DEV_MODE) console.error('[Room] 加载房型详情失败:', err)
         that.setData({ loading: false })
         wx.showToast({ title: '加载失败，请重试', icon: 'none' })
       })

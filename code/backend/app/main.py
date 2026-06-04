@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.db import init_db
@@ -51,6 +52,12 @@ app.include_router(devices.router)
 app.include_router(payment.router)
 app.include_router(lock.router)
 app.include_router(ota.router)
+
+# 托管管理后台静态文件（本地调试用，生产由nginx处理）
+import os
+admin_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'admin')
+if os.path.exists(admin_path):
+    app.mount("/admin", StaticFiles(directory=admin_path, html=True), name="admin")
 
 
 # 健康检查

@@ -158,7 +158,7 @@ Page({
         app.switchStore(firstHotel)
       }
     } catch (err) {
-      console.error('[首页] 加载酒店列表失败:', err)
+      if (C.DEV_MODE) console.error('[首页] 加载酒店列表失败:', err)
     }
   },
 
@@ -211,7 +211,7 @@ Page({
         filteredRooms: null
       })
     } catch (err) {
-      console.error('[首页] 加载房型失败:', err)
+      if (C.DEV_MODE) console.error('[首页] 加载房型失败:', err)
       that.setData({
         loading: false,
         roomList: []

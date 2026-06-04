@@ -72,7 +72,7 @@ Page({
       const res = await api.get('/api/cleaning/my-tasks')
       // 从列表中计算，或请求专门统计接口
     } catch (e) {
-      console.error('加载统计失败:', e)
+      if (C.DEV_MODE) console.error('加载统计失败:', e)
     }
   },
 
@@ -144,7 +144,7 @@ Page({
         })
       }
     } catch (e) {
-      console.error('加载工单失败:', e)
+      if (C.DEV_MODE) console.error('加载工单失败:', e)
       this.setData({ loading: false })
       if (!loadMore) {
         this.setData({ taskList: [] })
@@ -288,7 +288,7 @@ Page({
             photoUrls = uploadRes.url || this.data.checkinPhotoUrl
           } catch (e) {
             // 上传失败也用本地路径
-            console.warn('照片上传失败，使用本地路径', e)
+            if (C.DEV_MODE) console.warn('照片上传失败，使用本地路径', e)
           }
         }
 

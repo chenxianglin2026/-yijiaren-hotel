@@ -113,9 +113,9 @@ async def create_payment(
         "outTradeNo": out_trade_no,
     }
 
-    # 更新订单状态为"支付中"
-    order.status = "paying"
-    await db.commit()
+    # 订单状态保持 pending，等待支付回调通知更新
+    # 注：真实微信支付成功后通过 /notify 回调更新为 paid
+    await db.flush()
 
     return PayResponse(data={"prepay_id": mock_prepay_id, "pay_params": pay_params, "out_trade_no": out_trade_no})
 
@@ -124,7 +124,10 @@ async def create_payment(
 async def payment_notify(request: Request, db: AsyncSession = Depends(get_db)):
     """接收微信支付异步通知"""
     body = await request.body()
-    data = json.loads(body) if body else {}
+    try:
+        data = json.loads(body) if body else {}
+    except json.JSONDecodeError:
+        raise HTTPException(400, "无效的请求数据格式")
 
     # TODO: 验签
     event_type = data.get("event_type", "")
@@ -174,6 +177,6 @@ async def refund_order(
     order.status = OrderStatus.CANCELLED
     order.cancel_reason = reason or "用户申请退款"
     order.cancelled_at = datetime.utcnow()
-    await db.commit()
+    await db.flush()
 
     return PayResponse(msg="退款申请已提交")

@@ -1,5 +1,6 @@
 const app = getApp()
 const api = require('../../utils/api')
+const C = require('../../utils/const')
 
 Page({
   data: {
@@ -118,27 +119,30 @@ Page({
 
     wx.showLoading({ title: '登录中...', mask: true })
 
-    // TODO: 接入真实登录接口
-    // api.post('/auth/login', {
-    //   phone: phoneNumber,
-    //   code: verifyCode
-    // }).then(res => {
-    //   this.handleLoginSuccess(res)
-    // }).catch(() => {
-    //   wx.hideLoading()
-    // })
-
-    // 模拟登录成功
-    setTimeout(() => {
-      this.handleLoginSuccess({
-        token: 'mock_token_' + Date.now(),
-        userInfo: {
-          nickName: '酒店住客',
-          avatarUrl: '',
-          phone: phoneNumber
-        }
+    // 模拟登录成功（仅 DEV_MODE）
+    if (C.DEV_MODE) {
+      setTimeout(() => {
+        this.handleLoginSuccess({
+          token: 'mock_token_' + Date.now(),
+          userInfo: {
+            nickName: '酒店住客',
+            avatarUrl: '',
+            phone: phoneNumber
+          }
+        })
+      }, 1000)
+    } else {
+      // 生产环境：调用真实登录接口
+      api.post('/auth/login', {
+        phone: phoneNumber,
+        code: verifyCode
+      }).then(res => {
+        this.handleLoginSuccess(res)
+      }).catch(err => {
+        wx.hideLoading()
+        wx.showToast({ title: err.msg || '登录失败', icon: 'none' })
       })
-    }, 1000)
+    }
   },
 
   // 微信手机号一键登录

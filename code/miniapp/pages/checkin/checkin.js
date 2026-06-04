@@ -98,7 +98,7 @@ Page({
         that.startQrTimer()
       })
       .catch(err => {
-        console.error('[Checkin] 加载入住信息失败:', err)
+        if (C.DEV_MODE) console.error('[Checkin] 加载入住信息失败:', err)
         that.setData({ loading: false, hasActiveOrder: false })
         wx.showToast({ title: '暂无入住信息', icon: 'none' })
       })

@@ -50,7 +50,7 @@ Page({
         that.setData({ store: normalized, loading: false })
       })
       .catch(err => {
-        console.error('[Hotel] 加载门店详情失败:', err)
+        if (C.DEV_MODE) console.error('[Hotel] 加载门店详情失败:', err)
         that.setData({ loading: false })
         wx.showToast({ title: '加载失败，请重试', icon: 'none' })
       })

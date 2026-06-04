@@ -1,5 +1,6 @@
 const app = getApp()
 const api = require('../../utils/api')
+const C = require('../../utils/const')
 
 Page({
   data: {
@@ -100,14 +101,24 @@ Page({
   },
 
   loadOrderStats() {
-    // TODO: app.request({ url: '/orders/stats' })
-    this.setData({
-      orderStats: {
-        pending: 1,
-        paid: 1,
-        completed: 1
-      }
-    })
+    if (C.DEV_MODE) {
+      this.setData({
+        orderStats: { pending: 1, paid: 1, completed: 1 }
+      })
+      return
+    }
+    // 生产环境：调用真实统计接口
+    api.get('/api/orders', { page: 1, page_size: 1 })
+      .then(res => {
+        this.setData({
+          orderStats: {
+            pending: res.pending_count || 0,
+            paid: res.paid_count || 0,
+            completed: res.completed_count || 0
+          }
+        })
+      })
+      .catch(() => {})
   },
 
   // ========== 登录 ==========

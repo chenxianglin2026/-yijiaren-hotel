@@ -205,7 +205,7 @@ Page({
         requestLoading: false,
       })
     } catch (e) {
-      console.error('加载请求失败:', e)
+      if (C.DEV_MODE) console.error('加载请求失败:', e)
       this.setData({ requestLoading: false })
     }
   },
