@@ -1,4 +1,5 @@
 const app = getApp()
+const api = require('../../utils/api')
 
 Page({
   data: {
@@ -56,129 +57,50 @@ Page({
     const { currentTab, page } = this.data
     this.setData({ loading: true })
 
-    const mockOrders = [
-      {
-        id: 'YD20240528001',
-        roomName: '雅致大床房',
-        roomImage: '/images/room-double.png',
-        storeName: '伊家人酒店·西湖店',
-        checkInDate: '2024-05-28',
-        checkOutDate: '2024-05-30',
-        nights: 2,
-        roomCount: 1,
-        guestName: '陈先生',
-        price: 298,
-        totalPrice: 596,
-        status: 'staying',
-        statusLabel: '入住中',
-        createTime: '2024-05-27 14:30',
-        roomNumber: '806'
-      },
-      {
-        id: 'YD20240525002',
-        roomName: '尊享套房',
-        roomImage: '/images/room-suite.png',
-        storeName: '伊家人酒店·西湖店',
-        checkInDate: '2024-06-10',
-        checkOutDate: '2024-06-12',
-        nights: 2,
-        roomCount: 1,
-        guestName: '陈先生',
-        price: 598,
-        totalPrice: 1196,
-        status: 'pending',
-        statusLabel: '待付款',
-        createTime: '2024-05-25 09:15',
-        remainTime: 1800
-      },
-      {
-        id: 'YD20240523003',
-        roomName: '豪华双床房',
-        roomImage: '/images/room-twin.png',
-        storeName: '伊家人酒店·钱江店',
-        checkInDate: '2024-06-15',
-        checkOutDate: '2024-06-17',
-        nights: 2,
-        roomCount: 1,
-        guestName: '陈先生',
-        price: 368,
-        totalPrice: 736,
-        status: 'paid',
-        statusLabel: '已预订',
-        createTime: '2024-05-23 11:00',
-        roomNumber: ''
-      },
-      {
-        id: 'YD20240520004',
-        roomName: '舒适单人间',
-        roomImage: '/images/room-single.png',
-        storeName: '伊家人酒店·西溪店',
-        checkInDate: '2024-05-20',
-        checkOutDate: '2024-05-22',
-        nights: 2,
-        roomCount: 1,
-        guestName: '陈先生',
-        price: 198,
-        totalPrice: 396,
-        status: 'completed',
-        statusLabel: '已完成',
-        createTime: '2024-05-18 16:00',
-        roomNumber: '302'
-      },
-      {
-        id: 'YD20240515005',
-        roomName: '亲子家庭房',
-        roomImage: '/images/room-family.png',
-        storeName: '伊家人酒店·西湖店',
-        checkInDate: '2024-05-15',
-        checkOutDate: '2024-05-16',
-        nights: 1,
-        roomCount: 1,
-        guestName: '陈先生',
-        price: 428,
-        totalPrice: 428,
-        status: 'cancelled',
-        statusLabel: '已取消',
-        createTime: '2024-05-14 10:30',
-        cancelTime: '2024-05-14 20:00'
-      }
-    ]
-
-    // 按tab过滤
-    let filtered = mockOrders
+    const params = { page, page_size: 20 }
     if (currentTab !== 'all') {
-      filtered = mockOrders.filter(o => o.status === currentTab)
+      params.status = currentTab
     }
 
-    // 计算各状态数量
-    const counts = {
-      pending: mockOrders.filter(o => o.status === 'pending').length,
-      paid: mockOrders.filter(o => o.status === 'paid').length,
-      staying: mockOrders.filter(o => o.status === 'staying').length,
-      completed: mockOrders.filter(o => o.status === 'completed').length,
-      cancelled: mockOrders.filter(o => o.status === 'cancelled').length
-    }
+    api.get('/api/orders', params)
+      .then(res => {
+        const orders = res.items || res.orders || res || []
+        const list = Array.isArray(orders) ? orders : []
 
-    // 更新tab计数
-    const tabs = that.data.tabs.map(t => ({
-      ...t,
-      count: t.key === 'all' ? mockOrders.length : (counts[t.key] || 0)
-    }))
-
-    setTimeout(() => {
-      that.setData({
-        orders: page === 1 ? filtered : [...that.data.orders, ...filtered],
-        loading: false,
-        hasMore: false,
-        tabs,
-        summary: {
-          pending: counts.pending,
-          booked: counts.paid,
-          staying: counts.staying,
-          completed: counts.completed
+        // 计算各状态数量
+        const allOrders = page === 1 ? list : list  // 第一页时重新算tab counts
+        const counts = {}
+        if (page === 1 && currentTab === 'all') {
+          // 如果是全部tab第一页，后端可能返回各状态计数
+          counts.pending = res.pending_count || 0
+          counts.paid = res.paid_count || 0
+          counts.staying = res.staying_count || 0
+          counts.completed = res.completed_count || 0
         }
+
+        const tabs = that.data.tabs.map(t => ({
+          ...t,
+          count: t.key === 'all' ? (res.total || list.length) : (counts[t.key] || 0)
+        }))
+
+        that.setData({
+          orders: page === 1 ? list : [...that.data.orders, ...list],
+          loading: false,
+          hasMore: list.length >= 20,
+          tabs,
+          summary: {
+            pending: counts.pending || 0,
+            booked: counts.paid || 0,
+            staying: counts.staying || 0,
+            completed: counts.completed || 0
+          }
+        })
       })
-    }, 500)
+      .catch(err => {
+        console.error('[Orders] 加载订单失败:', err)
+        that.setData({ loading: false, hasMore: false })
+        wx.showToast({ title: '加载失败，请重试', icon: 'none' })
+      })
   },
 
   // ========== 订单操作 ==========

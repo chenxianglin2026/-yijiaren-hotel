@@ -4,6 +4,7 @@
  * 封装 wx.request，提供统一的请求/响应拦截、Token 管理、错误处理
  */
 
+const { DEV_MODE } = require('./const')
 const BASE_URL = 'http://43.163.5.90:8001'
 
 // 请求队列，用于并发请求时的 token 刷新
@@ -43,7 +44,7 @@ const request = (options) => {
 
     const requestUrl = url.startsWith('http') ? url : `${BASE_URL}${url}`
 
-    console.log(`[API] ${method} ${requestUrl}`, data)
+    if (DEV_MODE) console.log(`[API] ${method} ${requestUrl}`, data)
 
     wx.request({
       url: requestUrl,
@@ -56,7 +57,7 @@ const request = (options) => {
 
         const { statusCode, data: resData } = res
 
-        console.log(`[API] Response ${statusCode}:`, resData)
+        if (DEV_MODE) console.log(`[API] Response ${statusCode}:`, resData)
 
         // 处理不同的 HTTP 状态码
         switch (statusCode) {

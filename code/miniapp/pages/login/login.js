@@ -83,7 +83,6 @@ Page({
 
     // 模拟发送
     wx.showToast({ title: '验证码已发送', icon: 'success' })
-    console.log('[Login] 模拟验证码: 123456')
   },
 
   // 倒计时

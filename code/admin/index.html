@@ -50,6 +50,9 @@
 
       <div class="nav-group">
         <div class="nav-group-title">系统设置</div>
+        <div class="nav-item" data-page="monitor.html" data-title="监控看板">
+          <span class="nav-icon">🛡️</span> 监控看板
+        </div>
         <div class="nav-item" data-page="pages/devices.html" data-title="设备监控">
           <span class="nav-icon">📡</span> 设备监控
         </div>
@@ -71,6 +74,9 @@
         🏠 首页 / <span id="pageBreadcrumb">仪表盘</span>
       </div>
       <div class="header-actions">
+        <select id="storeSelector" style="padding:4px 8px;border:1px solid #e5ded0;border-radius:4px;font-size:12px;margin-right:12px;background:#fff;color:#6b5e4a;">
+          <option value="">全部门店</option>
+        </select>
         <div class="header-time" id="headerTime">--</div>
         <div class="header-user">
           <div class="avatar">张</div>
@@ -113,19 +119,43 @@
   // Navigation
   navItems.forEach(function(item) {
     item.addEventListener('click', function() {
-      // Remove active from all
       navItems.forEach(function(n) { n.classList.remove('active'); });
-      // Activate current
       item.classList.add('active');
-
       const page = item.getAttribute('data-page');
       const title = item.getAttribute('data-title');
-
-      // Update iframe
       iframe.src = page;
       breadcrumb.textContent = title;
     });
   });
+
+  // Store switcher
+  async function loadStores() {
+    try {
+      const res = await fetch('/api/hotels', { headers: {'Authorization':'Bearer '+token} });
+      const data = await res.json();
+      const sel = document.getElementById('storeSelector');
+      (data.items || data || []).forEach(function(h) {
+        const opt = document.createElement('option');
+        opt.value = h.id;
+        opt.textContent = h.name;
+        sel.appendChild(opt);
+      });
+    } catch(e) { console.log('Store load error:', e); }
+  }
+  loadStores();
+
+  document.getElementById('storeSelector').addEventListener('change', function() {
+    const hotelId = this.value;
+    localStorage.setItem('selectedHotelId', hotelId);
+    // Reload current iframe page with hotel context
+    iframe.contentWindow.postMessage({ type: 'hotelChange', hotelId: hotelId }, '*');
+    iframe.src = iframe.src; // force refresh
+  });
+
+  // Expose selected hotel to iframe pages
+  window.getSelectedHotel = function() {
+    return localStorage.getItem('selectedHotelId') || '';
+  };
 })();
 </script>
 </body>

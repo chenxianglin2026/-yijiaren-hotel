@@ -15,7 +15,7 @@ App({
     // 附近门店列表
     nearbyStores: [],
     // API 基础地址
-    apiBase: 'http://43.163.5.90:8001/api',
+    apiBase: 'http://43.163.5.90:8001',
     // 当前定位
     location: {
       lat: 30.2375,
@@ -44,7 +44,7 @@ App({
   checkLogin() {
     const that = this
     wx.request({
-      url: `${this.globalData.apiBase}/user/profile`,
+      url: `${this.globalData.apiBase}/api/user/profile`,
       header: { Authorization: `Bearer ${this.globalData.token}` },
       success(res) {
         if (res.data.code === 0) {
@@ -67,7 +67,7 @@ App({
       success(loginRes) {
         if (loginRes.code) {
           wx.request({
-            url: `${that.globalData.apiBase}/auth/wx-login`,
+            url: `${that.globalData.apiBase}/api/auth/wx-login`,
             method: 'POST',
             data: { code: loginRes.code },
             success(res) {
@@ -99,7 +99,7 @@ App({
       return
     }
     wx.request({
-      url: `${this.globalData.apiBase}/auth/bind-phone`,
+      url: `${this.globalData.apiBase}/api/auth/bind-phone`,
       method: 'POST',
       header: { Authorization: `Bearer ${this.globalData.token}` },
       data: {

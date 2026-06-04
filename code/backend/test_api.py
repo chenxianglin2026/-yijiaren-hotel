@@ -155,7 +155,8 @@ except Exception as e:
 
 # ─── 14. GET /api/rooms/status ──────────────
 try:
-    r = client.get(f"{BASE}/api/rooms/status")
+    headers = {"Authorization": f"Bearer {AUTH_TOKEN}"}
+    r = client.get(f"{BASE}/api/rooms/status", headers=headers)
     d = r.json()
     ok = r.status_code == 200 and "items" in d
     log("GET /api/rooms/status", ok, f"items_count={len(d.get('items',[]))}")
@@ -164,7 +165,8 @@ except Exception as e:
 
 # ─── 15. GET /api/rooms/status?hotel_id=1 ───
 try:
-    r = client.get(f"{BASE}/api/rooms/status?hotel_id=1")
+    headers = {"Authorization": f"Bearer {AUTH_TOKEN}"}
+    r = client.get(f"{BASE}/api/rooms/status?hotel_id=1", headers=headers)
     d = r.json()
     ok = r.status_code == 200 and "items" in d
     log("GET /api/rooms/status?hotel_id=1", ok, f"items_count={len(d.get('items',[]))}")

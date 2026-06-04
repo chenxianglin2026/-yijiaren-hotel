@@ -1,4 +1,5 @@
 const app = getApp()
+const api = require('../../utils/api')
 
 Page({
   data: {
@@ -71,41 +72,36 @@ Page({
     const that = this
     this.setData({ loading: true })
 
-    setTimeout(() => {
-      const lockCode = String(Math.floor(100000 + Math.random() * 900000))
+    api.get(`/api/checkin/${orderId}`)
+      .then(order => {
+        const lockCode = order.lock_code || String(Math.floor(100000 + Math.random() * 900000))
+        const normalized = {
+          ...order,
+          lockCode,
+          wifiName: order.wifi_name || 'YJR-Hotel',
+          wifiPassword: order.wifi_password || '',
+          hotelPhone: order.hotel_phone || order.phone || '0571-88886666'
+        }
 
-      const mockOrder = {
-        id: orderId || 'YD20240528001',
-        roomName: '雅致大床房',
-        roomNumber: '806',
-        floor: '8层',
-        checkInDate: '2024-05-28',
-        checkOutDate: '2024-05-30',
-        nights: 2,
-        guestName: '陈先生',
-        price: 298,
-        status: 'paid',
-        lockCode,
-        wifiName: 'YJR-Hotel',
-        wifiPassword: 'yijiaren2024',
-        hotelPhone: '0571-88886666'
-      }
+        that.setData({
+          order: normalized,
+          roomNumber: order.room_number || order.roomNumber || '',
+          floor: order.floor || '',
+          wifiName: normalized.wifiName,
+          wifiPassword: normalized.wifiPassword,
+          lockCode,
+          hasActiveOrder: true,
+          loading: false,
+          checkinStatus: 'active'
+        })
 
-      that.setData({
-        order: mockOrder,
-        roomNumber: mockOrder.roomNumber,
-        floor: mockOrder.floor,
-        wifiName: mockOrder.wifiName,
-        wifiPassword: mockOrder.wifiPassword,
-        lockCode,
-        hasActiveOrder: true,
-        loading: false,
-        checkinStatus: 'active'
+        that.startQrTimer()
       })
-
-      // Start QR timer when QR tab is active
-      that.startQrTimer()
-    }, 800)
+      .catch(err => {
+        console.error('[Checkin] 加载入住信息失败:', err)
+        that.setData({ loading: false, hasActiveOrder: false })
+        wx.showToast({ title: '暂无入住信息', icon: 'none' })
+      })
   },
 
   // ========== 开锁方式切换 ==========
