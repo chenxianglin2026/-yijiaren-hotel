@@ -19,7 +19,7 @@
   width: 140rpx;
   height: 140rpx;
   border-radius: 28rpx;
-  background: linear-gradient(135deg, #C8A96E, #D4B896);
+  background: linear-gradient(135deg, #c8a052, #D4B896);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -78,7 +78,7 @@
 }
 
 .input-wrap:focus-within {
-  border-color: #C8A96E;
+  border-color: #c8a052;
 }
 
 .input-prefix {
@@ -108,7 +108,7 @@
 .code-btn {
   flex-shrink: 0;
   font-size: 26rpx;
-  color: #C8A96E;
+  color: #c8a052;
   padding: 12rpx 24rpx;
   border-radius: 30rpx;
   background: rgba(200, 169, 110, 0.08);
@@ -148,8 +148,8 @@
 }
 
 .checkbox.checked {
-  border-color: #C8A96E;
-  background: #C8A96E;
+  border-color: #c8a052;
+  background: #c8a052;
   color: #FFFFFF;
 }
 
@@ -160,7 +160,7 @@
 }
 
 .agreement-link {
-  color: #C8A96E;
+  color: #c8a052;
 }
 
 /* ---- 登录按钮 ---- */
@@ -169,7 +169,7 @@
   align-items: center;
   justify-content: center;
   height: 96rpx;
-  background: linear-gradient(135deg, #C8A96E, #D4B896);
+  background: linear-gradient(135deg, #c8a052, #D4B896);
   border-radius: 48rpx;
   font-size: 34rpx;
   font-weight: 600;

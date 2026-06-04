@@ -236,7 +236,7 @@ Page({
             wx.showModal({
               title: '清除缓存',
               content: '确定要清除本地缓存吗？不会影响您的订单和账号信息。',
-              confirmColor: '#C8A96E',
+              confirmColor: '#c8a052',
               success(modalRes) {
                 if (modalRes.confirm) {
                   wx.clearStorageSync()
@@ -256,7 +256,7 @@ Page({
               content: '版本：v1.0.0\n\n伊家人酒店致力于为您提供温馨舒适的住宿体验。\n\n旗下拥有西湖店、钱江店、西溪店等多家精品酒店。',
               showCancel: false,
               confirmText: '知道了',
-              confirmColor: '#C8A96E'
+              confirmColor: '#c8a052'
             })
             break
         }

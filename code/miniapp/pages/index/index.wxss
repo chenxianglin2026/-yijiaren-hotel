@@ -11,7 +11,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 16rpx 30rpx;
-  background: linear-gradient(135deg, #C8A96E, #D4B896);
+  background: linear-gradient(135deg, #c8a052, #D4B896);
 }
 
 .location-wrap {
@@ -94,7 +94,7 @@
 
 .filter-btn.active {
   background: rgba(200, 169, 110, 0.12);
-  color: #C8A96E;
+  color: #c8a052;
 }
 
 /* ---- 筛选面板 ---- */
@@ -136,7 +136,7 @@
 
 .filter-tag.active {
   background: rgba(200, 169, 110, 0.15);
-  color: #C8A96E;
+  color: #c8a052;
   font-weight: 500;
 }
 

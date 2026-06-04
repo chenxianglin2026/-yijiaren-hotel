@@ -67,7 +67,7 @@
 
 .store-score {
   font-size: 32rpx;
-  color: #C8A96E;
+  color: #c8a052;
 }
 
 .store-score-label {
@@ -185,7 +185,7 @@
 }
 
 .highlight-dot {
-  color: #C8A96E;
+  color: #c8a052;
   font-size: 24rpx;
   margin-right: 12rpx;
   margin-top: 2rpx;

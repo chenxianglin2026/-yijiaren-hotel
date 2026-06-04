@@ -13,14 +13,14 @@
   ],
   "window": {
     "backgroundTextStyle": "light",
-    "navigationBarBackgroundColor": "#C8A96E",
+    "navigationBarBackgroundColor": "#c8a052",
     "navigationBarTitleText": "伊家人酒店",
     "navigationBarTextStyle": "white",
     "backgroundColor": "#FAF7F2"
   },
   "tabBar": {
     "color": "#8B7E6A",
-    "selectedColor": "#C8A96E",
+    "selectedColor": "#c8a052",
     "backgroundColor": "#FFFFFF",
     "borderStyle": "white",
     "list": [

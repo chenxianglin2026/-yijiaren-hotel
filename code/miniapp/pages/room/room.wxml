@@ -6,7 +6,7 @@
 
   <block wx:if="{{room}}">
     <!-- 图片轮播 -->
-    <swiper class="room-swiper" indicator-dots indicator-color="rgba(255,255,255,0.4)" indicator-active-color="#C8A96E" autoplay circular interval="4000" bindchange="onSwiperChange">
+    <swiper class="room-swiper" indicator-dots indicator-color="rgba(255,255,255,0.4)" indicator-active-color="#c8a052" autoplay circular interval="4000" bindchange="onSwiperChange">
       <swiper-item wx:for="{{images}}" wx:key="*this">
         <view class="room-swiper-image img-placeholder" data-index="{{index}}" bindtap="onImageTap">
           <text class="swiper-img-icon">🖼️</text>

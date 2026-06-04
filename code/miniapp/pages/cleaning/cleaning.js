@@ -172,7 +172,7 @@ Page({
     wx.showModal({
       title: '确认接单',
       content: `确认接取 ${task.room_number} 的${C.TASK_TYPES[task.task_type]?.label || '保洁'}任务？`,
-      confirmColor: '#C8A96E',
+      confirmColor: '#c8a052',
       success: async (res) => {
         if (!res.confirm) return
         wx.showLoading({ title: '接单中...', mask: true })
@@ -201,7 +201,7 @@ Page({
     wx.showModal({
       title: '开始清洁',
       content: `确认开始清洁 ${task.room_number}？`,
-      confirmColor: '#C8A96E',
+      confirmColor: '#c8a052',
       success: async (res) => {
         if (!res.confirm) return
         wx.showLoading({ title: '开始清洁...', mask: true })
@@ -331,7 +331,7 @@ Page({
         task.accepted_at ? `接单时间：${task.accepted_at}` : '',
         task.completed_at ? `完成时间：${task.completed_at}` : '',
       ].filter(Boolean).join('\n'),
-      confirmColor: '#C8A96E',
+      confirmColor: '#c8a052',
       showCancel: false,
       confirmText: '知道了',
     })

@@ -8,7 +8,7 @@
 
 /* ---- 顶部标题 ---- */
 .service-header {
-  background: linear-gradient(135deg, #C8A96E, #D4B896);
+  background: linear-gradient(135deg, #c8a052, #D4B896);
   padding: 40rpx 30rpx 36rpx;
   text-align: center;
 }
@@ -48,7 +48,7 @@
 
 .room-edit {
   font-size: 24rpx;
-  color: #C8A96E;
+  color: #c8a052;
 }
 
 /* ---- 服务网格 ---- */
@@ -132,7 +132,7 @@
 
 .section-more {
   font-size: 24rpx;
-  color: #C8A96E;
+  color: #c8a052;
 }
 
 /* ---- 请求列表 ---- */
@@ -302,8 +302,8 @@
 
 .priority-item.active {
   background: rgba(200, 169, 110, 0.08);
-  border-color: #C8A96E;
-  color: #C8A96E;
+  border-color: #c8a052;
+  color: #c8a052;
   font-weight: 500;
 }
 

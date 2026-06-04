@@ -67,7 +67,7 @@
   </view>
 
   <!-- Banner 轮播 -->
-  <swiper class="banner-swiper" indicator-dots indicator-color="rgba(255,255,255,0.4)" indicator-active-color="#C8A96E" autoplay circular interval="4000">
+  <swiper class="banner-swiper" indicator-dots indicator-color="rgba(255,255,255,0.4)" indicator-active-color="#c8a052" autoplay circular interval="4000">
     <swiper-item wx:for="{{banners}}" wx:key="id">
       <view class="banner-slide img-placeholder">
         <text class="banner-title">{{item.title}}</text>

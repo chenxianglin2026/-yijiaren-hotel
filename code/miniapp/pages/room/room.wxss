@@ -100,7 +100,7 @@
 
 .cal-nav-arrow {
   font-size: 28rpx;
-  color: #C8A96E;
+  color: #c8a052;
   padding: 10rpx 16rpx;
 }
 
@@ -178,7 +178,7 @@
 }
 
 .cal-day-cell.today .cal-day-num {
-  color: #C8A96E;
+  color: #c8a052;
   font-weight: 700;
 }
 
@@ -221,7 +221,7 @@
 
 .highlight-dot {
   font-size: 24rpx;
-  color: #C8A96E;
+  color: #c8a052;
   margin-right: 10rpx;
   flex-shrink: 0;
 }
@@ -294,7 +294,7 @@
 .review-score {
   font-size: 60rpx;
   font-weight: 700;
-  color: #C8A96E;
+  color: #c8a052;
   line-height: 1;
 }
 

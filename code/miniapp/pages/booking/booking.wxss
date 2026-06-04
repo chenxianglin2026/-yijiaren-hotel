@@ -78,7 +78,7 @@
 
 .nights-text {
   font-size: 22rpx;
-  color: #C8A96E;
+  color: #c8a052;
   margin-top: 4rpx;
 }
 
@@ -123,7 +123,7 @@
 
 .calendar-arrow {
   font-size: 28rpx;
-  color: #C8A96E;
+  color: #c8a052;
   padding: 10rpx 20rpx;
 }
 
@@ -161,13 +161,13 @@
 }
 
 .calendar-day.selected {
-  background: linear-gradient(135deg, #C8A96E, #D4B896);
+  background: linear-gradient(135deg, #c8a052, #D4B896);
   color: #FFFFFF;
   font-weight: 600;
 }
 
 .calendar-day.today:not(.selected) {
-  color: #C8A96E;
+  color: #c8a052;
   font-weight: 600;
 }
 
@@ -280,7 +280,7 @@
   padding: 20rpx;
   background: #F8F5EF;
   border-radius: 12rpx;
-  border: 2rpx solid #C8A96E;
+  border: 2rpx solid #c8a052;
 }
 
 .pay-icon {
@@ -297,7 +297,7 @@
 
 .pay-check {
   font-size: 28rpx;
-  color: #C8A96E;
+  color: #c8a052;
   font-weight: 700;
 }
 

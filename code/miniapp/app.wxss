@@ -4,10 +4,10 @@
    ============================ */
 
 /* 颜色变量（注释形式，实际用类） */
-/* 主色 #C8A96E  辅色 #D4B896  背景 #FAF7F2  文字 #3D3226  浅文字 #8B7E6A */
+/* 主色 #c8a052  辅色 #D4B896  背景 #FAF7F2  文字 #3D3226  浅文字 #8B7E6A */
 
 page {
-  --primary: #C8A96E;
+  --primary: #c8a052;
   --primary-light: #D4B896;
   --primary-dark: #A8894E;
   --bg: #FAF7F2;
@@ -56,7 +56,7 @@ page {
 /* ---- 按钮 ---- */
 
 .btn-primary {
-  background: linear-gradient(135deg, #C8A96E, #D4B896);
+  background: linear-gradient(135deg, #c8a052, #D4B896);
   color: #FFFFFF;
   border: none;
   border-radius: 12rpx;
@@ -71,8 +71,8 @@ page {
 
 .btn-outline {
   background: transparent;
-  color: #C8A96E;
-  border: 2rpx solid #C8A96E;
+  color: #c8a052;
+  border: 2rpx solid #c8a052;
   border-radius: 12rpx;
   font-size: 28rpx;
   padding: 16rpx 48rpx;
@@ -81,7 +81,7 @@ page {
 
 .btn-ghost {
   background: rgba(200, 169, 110, 0.1);
-  color: #C8A96E;
+  color: #c8a052;
   border: none;
   border-radius: 12rpx;
   font-size: 26rpx;
@@ -100,7 +100,7 @@ page {
 
 /* ---- 文本 ---- */
 
-.text-primary { color: #C8A96E; }
+.text-primary { color: #c8a052; }
 .text-light   { color: #8B7E6A; }
 .text-dark    { color: #3D3226; }
 .text-sm      { font-size: 24rpx; }
@@ -136,7 +136,7 @@ page {
 
 .tag-gold {
   background: rgba(200, 169, 110, 0.12);
-  color: #C8A96E;
+  color: #c8a052;
 }
 
 .tag-warm {

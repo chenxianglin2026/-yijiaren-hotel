@@ -9,7 +9,7 @@
 /* ---- 统计条 ---- */
 .stats-bar {
   display: flex;
-  background: linear-gradient(135deg, #C8A96E, #D4B896);
+  background: linear-gradient(135deg, #c8a052, #D4B896);
   padding: 30rpx 20rpx;
 }
 
@@ -55,7 +55,7 @@
 }
 
 .tab-item.active {
-  color: #C8A96E;
+  color: #c8a052;
   font-weight: 600;
 }
 
@@ -67,7 +67,7 @@
   transform: translateX(-50%);
   width: 48rpx;
   height: 4rpx;
-  background: #C8A96E;
+  background: #c8a052;
   border-radius: 2rpx;
 }
 
@@ -121,7 +121,7 @@
   font-size: 22rpx;
   padding: 4rpx 14rpx;
   background: rgba(200, 169, 110, 0.12);
-  color: #C8A96E;
+  color: #c8a052;
   border-radius: 6rpx;
 }
 
@@ -167,7 +167,7 @@
 }
 
 .btn-accept {
-  background: linear-gradient(135deg, #C8A96E, #D4B896);
+  background: linear-gradient(135deg, #c8a052, #D4B896);
   color: #FFFFFF;
 }
 
@@ -244,7 +244,7 @@
 
 .checkin-type {
   font-size: 24rpx;
-  color: #C8A96E;
+  color: #c8a052;
   padding: 4rpx 16rpx;
   background: rgba(200, 169, 110, 0.12);
   border-radius: 6rpx;

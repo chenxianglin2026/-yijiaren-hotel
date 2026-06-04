@@ -224,7 +224,7 @@ Page({
           content: '请拨打前台电话：0571-88886666',
           confirmText: '拨打',
           cancelText: '取消',
-          confirmColor: '#C8A96E',
+          confirmColor: '#c8a052',
           success: (res) => {
             if (res.confirm) {
               wx.makePhoneCall({ phoneNumber: '057188886666' })
@@ -252,7 +252,7 @@ Page({
         req.remark ? `处理备注：${req.remark}` : '',
         `时间：${(req.created_at || '').slice(0, 16).replace('T', ' ')}`,
       ].filter(Boolean).join('\n'),
-      confirmColor: '#C8A96E',
+      confirmColor: '#c8a052',
       showCancel: false,
       confirmText: '知道了',
     })

@@ -30,7 +30,7 @@
 }
 
 .tab-item.active {
-  color: #C8A96E;
+  color: #c8a052;
   font-weight: 600;
 }
 
@@ -42,7 +42,7 @@
   transform: translateX(-50%);
   width: 48rpx;
   height: 4rpx;
-  background: #C8A96E;
+  background: #c8a052;
   border-radius: 2rpx;
 }
 
@@ -62,7 +62,7 @@
 }
 
 .tab-item.active .tab-badge {
-  background: #C8A96E;
+  background: #c8a052;
 }
 
 /* ---- 订单统计 ---- */
@@ -173,7 +173,7 @@
 }
 
 .order-status.staying {
-  color: #C8A96E;
+  color: #c8a052;
 }
 
 .order-status.completed {

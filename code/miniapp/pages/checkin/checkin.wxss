@@ -59,7 +59,7 @@
 .room-number {
   font-size: 36rpx;
   font-weight: 700;
-  color: #C8A96E;
+  color: #c8a052;
 }
 
 /* ---- 身份证上传 ---- */
@@ -200,7 +200,7 @@
   transform: translateX(-50%);
   width: 48rpx;
   height: 4rpx;
-  background: #C8A96E;
+  background: #c8a052;
   border-radius: 2rpx;
 }
 
@@ -215,7 +215,7 @@
 }
 
 .unlock-tab.active .unlock-tab-label {
-  color: #C8A96E;
+  color: #c8a052;
   font-weight: 600;
 }
 
@@ -292,7 +292,7 @@
   width: 40rpx;
   height: 40rpx;
   border-radius: 50%;
-  background: #C8A96E;
+  background: #c8a052;
   color: #FFFFFF;
   font-size: 22rpx;
   font-weight: 600;

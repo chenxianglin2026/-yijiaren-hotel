@@ -7,7 +7,7 @@
 
 /* ---- 用户头部 ---- */
 .user-header {
-  background: linear-gradient(135deg, #C8A96E, #D4B896);
+  background: linear-gradient(135deg, #c8a052, #D4B896);
   padding: 40rpx 30rpx 50rpx;
 }
 
@@ -83,7 +83,7 @@
 .coupon-count {
   font-size: 40rpx;
   font-weight: 700;
-  color: #C8A96E;
+  color: #c8a052;
   line-height: 1;
 }
 
