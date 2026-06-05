@@ -62,8 +62,8 @@ class Settings(BaseSettings):
             return f"sqlite:///{db_dir}/yijiaren.db"
         return self.DATABASE_URL.replace("+aiosqlite", "")
 
-    # JWT 配置
-    SECRET_KEY: str = "yijiaren-secret-key-change-in-production-2024"
+    # JWT 配置 — CHANGE IN PRODUCTION: set SECRET_KEY env var
+    SECRET_KEY: str = "yijiaren-secret-key-change-in-production-2024"  # default only for DEV_MODE
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 小时
 
@@ -74,9 +74,9 @@ class Settings(BaseSettings):
         "http://43.163.5.90",
     ]
 
-    # 微信小程序配置
+    # 微信小程序配置 — CHANGE IN PRODUCTION: set WX_APPID, WX_SECRET env vars
     WX_APPID: str = "wx15932207fb03a5a4"
-    WX_SECRET: str = "97acd5a0ca02fd5b03814fc51a34e9fa"
+    WX_SECRET: str = ""  # must be set via env var or .env in production
 
     # 服务器域名（用于构建回调URL等）
     SERVER_DOMAIN: str = ""  # e.g. http://43.163.5.90:8001 or https://your-domain.com
@@ -88,9 +88,9 @@ class Settings(BaseSettings):
     WX_PAY_PRIVATE_KEY: str = ""
     WX_PAY_NOTIFY_URL: str = ""  # 优先使用此项；为空时自动由 SERVER_DOMAIN 拼接
 
-    # 智能门锁配置（TTLock 通通）
-    TTLOCK_CLIENT_ID: str = "4433c6c075e8490ea00c6a60a9e31cd8"
-    TTLOCK_CLIENT_SECRET: str = "8b**...*ac1"
+    # 智能门锁配置（TTLock 通通）— CHANGE IN PRODUCTION: set TTLOCK_CLIENT_ID, TTLOCK_CLIENT_SECRET env vars
+    TTLOCK_CLIENT_ID: str = ""
+    TTLOCK_CLIENT_SECRET: str = ""
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

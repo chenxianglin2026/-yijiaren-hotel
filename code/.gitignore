@@ -3,5 +3,13 @@ node_modules/
 __pycache__/
 *.pyc
 .env
+.env.*
 .DS_Store
 .venv/
+
+# 密钥和凭据文件 — DO NOT COMMIT
+*.pem
+*.p8
+*.key
+credentials/
+secrets/
