@@ -207,6 +207,37 @@ async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
 
 
+@router.get("/users", summary="获取用户列表（管理员）")
+async def list_users(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """管理员查看所有用户列表，敏感字段已脱敏"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="仅管理员可查看用户列表")
+
+    result = await db.execute(select(User).order_by(User.id))
+    users = result.scalars().all()
+
+    return {
+        "code": 0,
+        "data": [
+            {
+                "id": u.id,
+                "username": u.username,
+                "nickname": u.nickname,
+                "phone": u.phone,
+                "role": u.role,
+                "is_active": u.is_active,
+                "created_at": u.created_at.isoformat() if u.created_at else None,
+                "updated_at": u.updated_at.isoformat() if u.updated_at else None,
+            }
+            for u in users
+        ],
+        "total": len(users),
+    }
+
+
 # ── 微信手机号一键登录 ──────────────────────────────
 
 import base64

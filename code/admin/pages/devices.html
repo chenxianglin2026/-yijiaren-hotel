@@ -35,8 +35,8 @@
   <div class="card">
     <div class="card-header"><div class="card-title">设备列表</div></div>
     <div class="device-grid" id="deviceList">
-      <div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:40px;">
-        📡 设备监控功能开发中<br><small>智能门锁、客控面板、传感器等设备接入后将在此显示</small>
+      <div id="device-loading" style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:40px;">
+        加载设备列表...
       </div>
     </div>
   </div>
@@ -45,6 +45,8 @@
 <script>
 const T=localStorage.getItem('yjr_token'),H={'Authorization':'Bearer '+T};
 (async()=>{
+  const loadingEl = document.getElementById('device-loading');
+  const listEl = document.getElementById('deviceList');
   try{
     let r=await fetch('/api/devices/list',{headers:H});
     let j=await r.json();
@@ -53,8 +55,41 @@ const T=localStorage.getItem('yjr_token'),H={'Authorization':'Bearer '+T};
       document.getElementById('totalCount').textContent=items.length;
       document.getElementById('onlineCount').textContent=0;
       document.getElementById('offlineCount').textContent=0;
+
+      if (loadingEl) loadingEl.remove();
+
+      if (items.length === 0) {
+        listEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:40px;">📡 暂无设备<br><small>智能门锁、客控面板、传感器等设备接入后将在此显示</small></div>';
+        return;
+      }
+
+      var html = '';
+      items.forEach(function(d){
+        var statusIcon = '🟢';
+        var statusText = '在线';
+        var statusColor = '#6BAA75';
+        html += '<div class=\"device-card\">'+
+          '<div class=\"dc-header\">'+
+            '<span class=\"dc-icon\">🔒</span>'+
+            '<div><div class=\"dc-name\">'+(d.name||'未命名设备')+'</div>'+
+            '<div class=\"dc-id\">'+(d.device_id||d.id||'--')+'</div></div>'+
+            '<div class=\"dc-status\" style=\"color:'+statusColor+'\">'+statusIcon+' '+statusText+'</div>'+
+          '</div>'+
+          '<div class=\"dc-info\">'+
+            '<div>类型: '+(d.type||'智能门锁')+'</div>'+
+            '<div>门店: '+(d.hotel_name||'--')+'</div>'+
+            '<div>电量: '+(d.battery!=null?d.battery+'%':'--')+'</div>'+
+            '<div>最后在线: '+(d.last_online||'--')+'</div>'+
+          '</div>'+
+        '</div>';
+      });
+      listEl.innerHTML = html;
     }
-  }catch(e){}
+  }catch(e){
+    if (loadingEl) {
+      loadingEl.innerHTML = '📡 设备列表加载失败<br><small>'+e.message+'</small>';
+    }
+  }
 })();
 </script>
 </body>

@@ -160,12 +160,17 @@ Page({
         if (res.confirm) {
           wx.showLoading({ title: '验证中...', mask: true })
           // TODO: 生产环境需接入真实人脸识别 API (微信生物认证 / 第三方 SDK)
-          // 模拟人脸识别过程
-          setTimeout(() => {
+          if (C.DEV_MODE) {
+            // 开发模式：模拟人脸识别
+            setTimeout(() => {
+              wx.hideLoading()
+              that.setData({ faceVerified: true })
+              wx.showToast({ title: '身份验证通过 ✅ (DEV)', icon: 'success' })
+            }, 2000)
+          } else {
             wx.hideLoading()
-            that.setData({ faceVerified: true })
-            wx.showToast({ title: '身份验证通过 ✅', icon: 'success' })
-          }, 2000)
+            wx.showToast({ title: '人脸识别暂未接入，请联系管理员', icon: 'none' })
+          }
         }
       }
     })
@@ -189,20 +194,25 @@ Page({
     this.setData({ lockStatus: 'unlocking', bleConnecting: true })
 
     // TODO: 生产环境需替换为 TTLock 蓝牙 SDK 真实开锁流程
-    // 模拟蓝牙连接开锁过程
-    setTimeout(() => {
-      that.setData({
-        lockStatus: 'unlocked',
-        bleConnecting: false
-      })
-      wx.vibrateShort({ type: 'medium' })
-      wx.showToast({ title: '门锁已打开 🔓', icon: 'success' })
-
-      // 10秒后自动恢复锁定状态
+    if (C.DEV_MODE) {
+      // 开发模式：模拟蓝牙开锁
       setTimeout(() => {
-        that.setData({ lockStatus: 'locked' })
-      }, 10000)
-    }, 1500)
+        that.setData({
+          lockStatus: 'unlocked',
+          bleConnecting: false
+        })
+        wx.vibrateShort({ type: 'medium' })
+        wx.showToast({ title: '门锁已打开 🔓 (DEV)', icon: 'success' })
+
+        // 10秒后自动恢复锁定状态
+        setTimeout(() => {
+          that.setData({ lockStatus: 'locked' })
+        }, 10000)
+      }, 1500)
+    } else {
+      that.setData({ lockStatus: 'locked', bleConnecting: false })
+      wx.showToast({ title: '蓝牙开锁暂未接入，请使用密码开锁', icon: 'none' })
+    }
   },
 
   // ========== 密码开锁 ==========

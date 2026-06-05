@@ -66,11 +66,38 @@
       </div>
     </div>
 
-    <!-- 账号管理 (TODO) -->
+    <!-- 账号管理 -->
     <div class="settings-panel" id="panel-account">
       <div class="settings-section">
-        <h3>管理员账号</h3>
-        <p style="color:#c8a052;font-size:18px;text-align:center;padding:60px 0;">🚧 TODO<br><span style="font-size:14px;color:#999;">账号管理功能待开发</span></p>
+        <h3>管理员账号列表</h3>
+        <div id="account-loading" style="color:#999;padding:20px;">加载中...</div>
+        <div id="account-error" style="display:none;color:#e74c3c;padding:20px;"></div>
+        <div id="account-content" style="display:none;">
+          <div class="settings-toolbar" style="margin-bottom:12px;display:flex;gap:8px;align-items:center;">
+            <input class="form-input" id="account-search" placeholder="搜索用户名/手机号..." style="width:240px;" oninput="filterAccounts()">
+            <span style="font-size:12px;color:var(--text-muted);">共 <b id="account-total">0</b> 个账号</span>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="data-table" id="account-table" style="width:100%;">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>用户名</th>
+                  <th>昵称</th>
+                  <th>手机号</th>
+                  <th>角色</th>
+                  <th>状态</th>
+                  <th>创建时间</th>
+                </tr>
+              </thead>
+              <tbody id="account-tbody">
+              </tbody>
+            </table>
+          </div>
+          <div id="account-empty" style="display:none;text-align:center;color:var(--text-muted);padding:40px;">
+            暂无账号数据
+          </div>
+        </div>
       </div>
     </div>
 
@@ -144,6 +171,77 @@ function switchSetting(el, panelId) {
     document.getElementById('enterprise-error').textContent = '加载失败: ' + err.message;
   });
 })();
+
+// 账号管理 - 加载用户列表
+var allAccounts = [];
+(function loadAccounts() {
+  var token = localStorage.getItem('yjr_token');
+  if (!token) { return; }
+
+  fetch('/api/auth/users', {
+    headers: { 'Authorization': 'Bearer ' + token }
+  })
+  .then(function(res) {
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  })
+  .then(function(result) {
+    allAccounts = result.data || [];
+    document.getElementById('account-loading').style.display = 'none';
+    document.getElementById('account-content').style.display = 'block';
+    renderAccounts(allAccounts);
+  })
+  .catch(function(err) {
+    document.getElementById('account-loading').style.display = 'none';
+    document.getElementById('account-error').style.display = 'block';
+    document.getElementById('account-error').textContent = '加载失败: ' + err.message + ' (需管理员权限)';
+  });
+})();
+
+function renderAccounts(list) {
+  var tbody = document.getElementById('account-tbody');
+  var total = document.getElementById('account-total');
+  var empty = document.getElementById('account-empty');
+  var table = document.getElementById('account-table');
+
+  total.textContent = list.length;
+
+  if (list.length === 0) {
+    empty.style.display = 'block';
+    table.style.display = 'none';
+    return;
+  }
+
+  empty.style.display = 'none';
+  table.style.display = '';
+  tbody.innerHTML = list.map(function(u) {
+    var roleLabel = { admin: '管理员', front_desk: '前台', cleaner: '保洁员', guest: '住客' }[u.role] || u.role;
+    var roleStyle = u.role === 'admin' ? 'color:#c8a052;font-weight:700;' : '';
+    var statusHtml = u.is_active
+      ? '<span style=\"color:#6BAA75;\">● 正常</span>'
+      : '<span style=\"color:#e74c3c;\">● 已禁用</span>';
+    var timeStr = u.created_at ? u.created_at.slice(0, 10) : '--';
+    return '<tr>' +
+      '<td>' + u.id + '</td>' +
+      '<td>' + (u.username || '--') + '</td>' +
+      '<td>' + (u.nickname || '--') + '</td>' +
+      '<td>' + (u.phone || '--') + '</td>' +
+      '<td><span style=\"' + roleStyle + '\">' + roleLabel + '</span></td>' +
+      '<td>' + statusHtml + '</td>' +
+      '<td>' + timeStr + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+function filterAccounts() {
+  var q = document.getElementById('account-search').value.toLowerCase();
+  var filtered = allAccounts.filter(function(u) {
+    return (u.username || '').toLowerCase().indexOf(q) !== -1
+      || (u.phone || '').indexOf(q) !== -1
+      || (u.nickname || '').toLowerCase().indexOf(q) !== -1;
+  });
+  renderAccounts(filtered);
+}
 </script>
 </body>
 </html>
