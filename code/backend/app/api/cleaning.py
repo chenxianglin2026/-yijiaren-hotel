@@ -20,7 +20,12 @@ router = APIRouter(prefix="/api/cleaning", tags=["保洁管理"])
 
 
 # ══════════════════════════════════════════════════════
-# 数据模型（动态扩展，不影响原有 db.py）
+# 数据模型（CleaningTask / ServiceRequest）
+# 定义在 cleaning.py 而非 db.py 的原因：
+#   1. 这两个模型是后续扩展的保洁/服务模块，与核心订单模型独立
+#   2. 保持 db.py 精简，避免无关模块的模型污染核心定义
+#   3. SQLAlchemy 支持跨模块声明，Base.metadata.create_all 会收集所有子类
+#   4. 便于将来将保洁模块拆分为独立微服务时迁移
 # ══════════════════════════════════════════════════════
 
 class CleaningTask(Base):

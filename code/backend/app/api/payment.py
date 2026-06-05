@@ -28,7 +28,8 @@ class WxPayConfig:
     APPID = settings.WX_APPID or "wx15932207fb03a5a4"         # {{PAY_APPID}}
     MCHID = settings.WX_MCHID or "{{PAY_MCHID}}"              # {{PAY_MCHID}}
     API_V3_KEY = settings.WX_PAY_KEY or "{{PAY_API_V3_KEY}}"  # {{PAY_API_V3_KEY}}
-    NOTIFY_URL = settings.WX_PAY_NOTIFY_URL or "http://43.163.5.90:8001/api/payment/notify"
+    _default_notify = f"{settings.SERVER_DOMAIN}/api/payment/notify" if settings.SERVER_DOMAIN else ""
+    NOTIFY_URL = settings.WX_PAY_NOTIFY_URL or _default_notify
     SERIAL_NO = settings.WX_PAY_SERIAL or "{{PAY_SERIAL_NO}}" # {{PAY_SERIAL_NO}}
     PRIVATE_KEY = settings.WX_PAY_PRIVATE_KEY or ""           # {{PAY_PRIVATE_KEY}}
 

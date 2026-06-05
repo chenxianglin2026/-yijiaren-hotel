@@ -78,12 +78,15 @@ class Settings(BaseSettings):
     WX_APPID: str = "wx15932207fb03a5a4"
     WX_SECRET: str = "97acd5a0ca02fd5b03814fc51a34e9fa"
 
+    # 服务器域名（用于构建回调URL等）
+    SERVER_DOMAIN: str = ""  # e.g. http://43.163.5.90:8001 or https://your-domain.com
+
     # 微信支付配置
     WX_MCHID: str = ""
     WX_PAY_KEY: str = ""
     WX_PAY_SERIAL: str = ""
     WX_PAY_PRIVATE_KEY: str = ""
-    WX_PAY_NOTIFY_URL: str = ""
+    WX_PAY_NOTIFY_URL: str = ""  # 优先使用此项；为空时自动由 SERVER_DOMAIN 拼接
 
     # 智能门锁配置（TTLock 通通）
     TTLOCK_CLIENT_ID: str = "4433c6c075e8490ea00c6a60a9e31cd8"

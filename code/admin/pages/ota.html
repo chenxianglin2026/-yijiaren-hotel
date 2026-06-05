@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="../css/admin.css">
+<style>
+  .toggle-switch { position:relative; display:inline-block; width:44px; height:24px; }
+  .toggle-switch input { opacity:0; width:0; height:0; }
+  .toggle-slider { position:absolute; cursor:pointer; inset:0; background:#ccc; border-radius:24px; transition:.3s; }
+  .toggle-slider:before { content:''; position:absolute; height:18px; width:18px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:.3s; }
+  .toggle-switch input:checked + .toggle-slider { background:var(--success); }
+  .toggle-switch input:checked + .toggle-slider:before { transform:translateX(20px); }
+  .log-entry { padding:8px 12px; border-bottom:1px solid var(--border); font-size:13px; }
+  .log-entry .log-time { color:var(--text-muted); font-size:12px; margin-right:8px; }
+  .log-entry .log-chan { font-weight:600; color:var(--gold-dark); margin-right:8px; }
+  .log-entry.log-ok { color:var(--success); }
+  .log-entry.log-err { color:var(--error); }
+  .modal-body textarea.form-input { min-height:80px; resize:vertical; font-family:monospace; font-size:12px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="page-title">OTA渠道管理</div>
+
+  <div class="stat-cards" id="statCards"></div>
+
+  <!-- Toolbar -->
+  <div class="card">
+    <div class="filter-bar">
+      <button class="btn btn-primary btn-sm" onclick="showAddDialog()">+ 添加渠道</button>
+      <button class="btn btn-outline btn-sm" onclick="doAutoSync()" id="btnAutoSync">🔄 自动同步全部</button>
+      <button class="btn btn-outline btn-sm" onclick="doManualSync()">📤 手动同步</button>
+      <button class="btn btn-outline btn-sm" style="margin-left:auto;" onclick="loadChannels()">⟳ 刷新</button>
+    </div>
+  </div>
+
+  <!-- Channel Table -->
+  <div class="card">
+    <div class="table-wrap">
+      <table><thead><tr>
+        <th>渠道</th><th>名称</th><th>API凭证</th><th>同步间隔(秒)</th><th>上次同步</th><th>状态</th><th>操作</th>
+      </tr></thead><tbody id="channelBody"><tr><td colspan="7" class="loading-row">加载中...</td></tr></tbody></table>
+    </div>
+  </div>
+
+  <!-- Sync Log -->
+  <div class="card" id="logCard" style="margin-top:16px;">
+    <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>📋 同步日志</span>
+      <button class="btn btn-outline btn-sm" onclick="clearLogs()">清空</button>
+    </div>
+    <div id="logList" style="max-height:300px;overflow-y:auto;">
+      <div class="log-entry" style="color:var(--text-muted);text-align:center;">暂无同步记录</div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Modal -->
+  <div class="modal-overlay" id="channelModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">添加渠道</div>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>渠道平台 <span style="color:var(--error)">*</span></label>
+          <select class="form-select" id="chChannel">
+            <option value="">请选择</option>
+            <option value="ctrip">携程 (Ctrip)</option>
+            <option value="meituan">美团 (Meituan)</option>
+            <option value="fliggy">飞猪 (Fliggy)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>显示名称</label>
+          <input class="form-input" id="chName" placeholder="如: 携程直连">
+        </div>
+        <div class="form-group">
+          <label>API Key</label>
+          <input class="form-input" id="chApiKey" placeholder="OTA平台分配的API Key">
+        </div>
+        <div class="form-group">
+          <label>API Secret</label>
+          <input class="form-input" type="password" id="chApiSecret" placeholder="OTA平台分配的密钥">
+        </div>
+        <div class="form-group">
+          <label>酒店映射 (JSON: {"本地酒店ID": "OTA酒店ID"})</label>
+          <textarea class="form-input" id="chMapping" placeholder='{"1": "ctrip_hotel_123"}'></textarea>
+        </div>
+        <div class="form-group">
+          <label>同步间隔(秒)</label>
+          <input class="form-input" type="number" id="chInterval" value="300" min="60" max="86400">
+        </div>
+        <input type="hidden" id="chEditId">
+        <input type="hidden" id="chEditChannel">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal()">取消</button>
+        <button class="btn btn-primary" id="btnSave" onclick="saveChannel()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manual Sync Modal -->
+  <div class="modal-overlay" id="syncModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">手动同步房态</div>
+        <button class="modal-close" onclick="closeSyncModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>渠道</label>
+          <select class="form-select" id="syncChannel">
+            <option value="ctrip">携程</option>
+            <option value="meituan">美团</option>
+            <option value="fliggy">飞猪</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>门店ID</label>
+          <input class="form-input" type="number" id="syncHotelId" placeholder="本地酒店ID" value="1">
+        </div>
+        <div class="form-group">
+          <label>房态数据 (JSON数组)</label>
+          <textarea class="form-input" id="syncRooms" placeholder='[{"room_id":1,"date":"2026-06-05","available":5,"price":299}]'></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeSyncModal()">取消</button>
+        <button class="btn btn-primary" onclick="doManualSyncSubmit()">同步</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const T = localStorage.getItem('yjr_token');
+const H = { 'Authorization':'Bearer '+T, 'Content-Type':'application/json' };
+let channels = [];
+let syncLogs = [];
+
+const CH_LABELS = { ctrip:'携程', meituan:'美团', fliggy:'飞猪' };
+const CH_ICONS  = { ctrip:'🏨', meituan:'🍜', fliggy:'✈️' };
+
+function addLog(channel, msg, ok) {
+  let now = new Date();
+  let ts = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0')+':'+now.getSeconds().toString().padStart(2,'0');
+  syncLogs.unshift({ts, channel, msg, ok});
+  if (syncLogs.length > 100) syncLogs.length = 100;
+  renderLogs();
+}
+
+function renderLogs() {
+  let el = document.getElementById('logList');
+  if (!syncLogs.length) {
+    el.innerHTML = '<div class="log-entry" style="color:var(--text-muted);text-align:center;">暂无同步记录</div>';
+    return;
+  }
+  el.innerHTML = syncLogs.map(l =>
+    '<div class="log-entry '+ (l.ok ? 'log-ok' : 'log-err') +'">'+
+    '<span class="log-time">'+l.ts+'</span>'+
+    '<span class="log-chan">['+l.channel+']</span>'+
+    l.msg+'</div>'
+  ).join('');
+}
+
+function clearLogs() { syncLogs=[]; renderLogs(); }
+
+async function loadChannels() {
+  try {
+    let r = await fetch('/api/ota/channels', {headers:H});
+    let j = await r.json();
+    if (j.code !== 0) throw new Error(j.msg);
+    let data = j.data?.channels || j.data || [];
+    channels = data;
+    render();
+  } catch(e) {
+    document.getElementById('channelBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--error);padding:20px;">加载失败: '+e.message+'</td></tr>';
+  }
+}
+
+function render() {
+  let enabled = channels.filter(c=>c.is_enabled).length;
+  let total = channels.length;
+
+  document.getElementById('statCards').innerHTML = [
+    {icon:'🔗',cls:'gold',val:total,label:'已对接渠道'},
+    {icon:'✅',cls:'green',val:enabled,label:'启用中'},
+    {icon:'⏸️',cls:'red',val:total-enabled,label:'已停用'},
+    {icon:'🏨',cls:'blue',val:'携程/美团/飞猪',label:'支持平台'}
+  ].map(s=>'<div class="stat-card"><div class="stat-icon '+s.cls+'">'+s.icon+'</div><div class="stat-info"><div class="stat-value">'+s.val+'</div><div class="stat-label">'+s.label+'</div></div></div>').join('');
+
+  document.getElementById('channelBody').innerHTML = channels.length ? channels.map(c=>{
+    let icon = CH_ICONS[c.channel] || '🔗';
+    let label = c.name || CH_LABELS[c.channel] || c.channel;
+    let credStatus = (c.api_key_set ? '🔑' : '⚠️') + ' Key ' + (c.api_secret_set ? '🔒' : '⚠️') + ' Secret';
+    let checked = c.is_enabled ? 'checked' : '';
+    return '<tr>'+
+      '<td><span style="font-size:18px;">'+icon+'</span> <span style="font-weight:600;">'+label+'</span><br><span style="font-size:11px;color:var(--text-muted);">'+c.channel+'</span></td>'+
+      '<td>'+label+'</td>'+
+      '<td style="font-size:12px;line-height:1.8;">'+credStatus+'</td>'+
+      '<td>'+c.sync_interval+'s</td>'+
+      '<td style="font-size:12px;">'+(c.last_sync_at ? c.last_sync_at.slice(0,16).replace('T',' ') : '未同步')+'</td>'+
+      '<td>'+
+        '<label class="toggle-switch">'+
+        '<input type="checkbox" '+checked+' onchange="toggleChannel(\''+c.channel+'\',this.checked)">'+
+        '<span class="toggle-slider"></span>'+
+        '</label>'+
+        ' <span style="font-size:12px;color:'+(c.is_enabled?'var(--success)':'var(--text-muted)')+';">'+(c.is_enabled?'启用':'停用')+'</span>'+
+      '</td>'+
+      '<td>'+
+        '<button class="btn btn-outline btn-sm" onclick="showEditDialog(\''+c.channel+'\')">编辑</button>'+
+        '<button class="btn btn-outline btn-sm" style="color:var(--error);" onclick="deleteChannel(\''+c.channel+'\')">删除</button>'+
+      '</td>'+
+      '</tr>';
+  }).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px;">暂无对接渠道，点击"添加渠道"开始配置</td></tr>';
+}
+
+// Toggle enable/disable
+async function toggleChannel(channel, enabled) {
+  try {
+    let r = await fetch('/api/ota/channels/'+channel, {
+      method:'PUT', headers:H,
+      body: JSON.stringify({is_enabled: enabled})
+    });
+    let j = await r.json();
+    if (j.code !== 0) throw new Error(j.msg);
+    addLog(channel, enabled?'已启用':'已停用', true);
+    loadChannels();
+  } catch(e) {
+    addLog(channel, '操作失败: '+e.message, false);
+    loadChannels();
+  }
+}
+
+// Manual sync dialog
+function doManualSync() { document.getElementById('syncModal').classList.add('show'); loadHotelsForSync(); }
+function closeSyncModal() { document.getElementById('syncModal').classList.remove('show'); }
+
+async function loadHotelsForSync() {
+  // Pre-populate hotel_id from parent's selected hotel if available
+  let hid = window.parent && window.parent.getSelectedHotel ? window.parent.getSelectedHotel() : '';
+  if (hid) document.getElementById('syncHotelId').value = hid;
+}
+
+async function doManualSyncSubmit() {
+  let channel = document.getElementById('syncChannel').value;
+  let hotelId = parseInt(document.getElementById('syncHotelId').value) || 1;
+  let roomsText = document.getElementById('syncRooms').value.trim();
+  let rooms;
+  try {
+    rooms = roomsText ? JSON.parse(roomsText) : [{room_id:1, date:new Date().toISOString().slice(0,10), available:5, price:299}];
+  } catch(e) { alert('房态数据JSON格式错误'); return; }
+
+  try {
+    let r = await fetch('/api/ota/sync/availability', {
+      method:'POST', headers:H,
+      body: JSON.stringify({hotel_id:hotelId, channel:channel, rooms:rooms})
+    });
+    let j = await r.json();
+    if (j.code !== 0) throw new Error(j.msg);
+    addLog(channel, '手动同步请求成功: '+j.msg, true);
+    closeSyncModal();
+  } catch(e) {
+    addLog(channel, '手动同步失败: '+e.message, false);
+  }
+}
+
+// Auto sync all
+async function doAutoSync() {
+  let btn = document.getElementById('btnAutoSync');
+  btn.disabled = true;
+  btn.textContent = '⏳ 同步中...';
+  try {
+    let r = await fetch('/api/ota/sync/auto', {method:'POST', headers:H});
+    let j = await r.json();
+    if (j.code !== 0) throw new Error(j.msg);
+    addLog('全部', '自动同步完成: '+j.msg, true);
+    loadChannels();
+  } catch(e) {
+    addLog('全部', '自动同步失败: '+e.message, false);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔄 自动同步全部';
+  }
+}
+
+// Add dialog
+function showAddDialog() {
+  document.getElementById('modalTitle').textContent = '添加渠道';
+  document.getElementById('chChannel').value = '';
+  document.getElementById('chChannel').disabled = false;
+  document.getElementById('chName').value = '';
+  document.getElementById('chApiKey').value = '';
+  document.getElementById('chApiSecret').value = '';
+  document.getElementById('chMapping').value = '';
+  document.getElementById('chInterval').value = '300';
+  document.getElementById('chEditId').value = '';
+  document.getElementById('chEditChannel').value = '';
+  document.getElementById('btnSave').textContent = '保存';
+  document.getElementById('channelModal').classList.add('show');
+}
+
+// Edit dialog
+function showEditDialog(channel) {
+  let c = channels.find(x=>x.channel === channel);
+  if (!c) return;
+  document.getElementById('modalTitle').textContent = '编辑渠道 - '+(c.name||CH_LABELS[channel]||channel);
+  document.getElementById('chChannel').value = c.channel;
+  document.getElementById('chChannel').disabled = true;
+  document.getElementById('chName').value = c.name || '';
+  document.getElementById('chApiKey').value = '';
+  document.getElementById('chApiKey').placeholder = c.api_key_set ? '(已设置，留空不修改)' : 'API Key';
+  document.getElementById('chApiSecret').value = '';
+  document.getElementById('chApiSecret').placeholder = c.api_secret_set ? '(已设置，留空不修改)' : 'API Secret';
+  // Hotel mapping
+  let mapping = c.hotel_mapping || {};
+  document.getElementById('chMapping').value = Object.keys(mapping).length ? JSON.stringify(mapping) : '';
+  document.getElementById('chInterval').value = c.sync_interval || 300;
+  document.getElementById('chEditId').value = c.id;
+  document.getElementById('chEditChannel').value = c.channel;
+  document.getElementById('btnSave').textContent = '更新';
+  document.getElementById('channelModal').classList.add('show');
+}
+
+function closeModal() { document.getElementById('channelModal').classList.remove('show'); }
+
+// Save (create or update)
+async function saveChannel() {
+  let isEdit = !!document.getElementById('chEditChannel').value;
+  let channel = isEdit ? document.getElementById('chEditChannel').value : document.getElementById('chChannel').value;
+  let body = {
+    name: document.getElementById('chName').value,
+    sync_interval: parseInt(document.getElementById('chInterval').value) || 300
+  };
+
+  if (!isEdit) {
+    body.channel = channel;
+    if (!body.channel) { alert('请选择渠道平台'); return; }
+  }
+
+  let apiKey = document.getElementById('chApiKey').value;
+  let apiSecret = document.getElementById('chApiSecret').value;
+  if (apiKey) body.api_key = apiKey;
+  if (apiSecret) body.api_secret = apiSecret;
+
+  let mappingText = document.getElementById('chMapping').value.trim();
+  if (mappingText) {
+    try { body.hotel_mapping = JSON.parse(mappingText); }
+    catch(e) { alert('酒店映射JSON格式错误'); return; }
+  }
+
+  let url = isEdit ? '/api/ota/channels/'+channel : '/api/ota/channels';
+  let method = isEdit ? 'PUT' : 'POST';
+
+  try {
+    let r = await fetch(url, {method, headers:H, body: JSON.stringify(body)});
+    let j = await r.json();
+    if (j.code !== 0) throw new Error(j.msg);
+    addLog(channel, isEdit?'已更新':'已添加', true);
+    closeModal();
+    loadChannels();
+  } catch(e) {
+    alert('保存失败: '+e.message);
+  }
+}
+
+// Delete channel
+async function deleteChannel(channel) {
+  if (!confirm('确定删除渠道 '+channel+' 吗？此操作不可恢复。')) return;
+  try {
+    let r = await fetch('/api/ota/channels/'+channel, {method:'DELETE', headers:H});
+    let j = await r.json();
+    if (j.code !== 0) throw new Error(j.msg);
+    addLog(channel, '已删除', true);
+    loadChannels();
+  } catch(e) {
+    alert('删除失败: '+e.message);
+  }
+}
+
+loadChannels();
+</script>
+</body>
+</html>
