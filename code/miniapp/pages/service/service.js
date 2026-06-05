@@ -4,6 +4,7 @@
  */
 const api = require('../../utils/api')
 const C = require('../../utils/const')
+const helper = require('../../utils/helper')
 
 Page({
   data: {
@@ -139,17 +140,13 @@ Page({
     wx.showLoading({ title: '提交中...', mask: true })
 
     try {
-      if (C.DEV_MODE) {
-        await this.delay(600)
-      } else {
-        await api.post('/api/cleaning/service', {
+      await api.post('/api/cleaning/service', {
           hotel_id: this.data.hotelId,
           room_number: formData.roomNumber.trim(),
           request_type: currentService.key,
           description: formData.description.trim(),
           priority: formData.priority,
         })
-      }
 
       wx.hideLoading()
       this.setData({ submitting: false, showForm: false, currentService: null })
@@ -175,21 +172,6 @@ Page({
     this.setData({ requestLoading: true })
 
     try {
-      if (C.DEV_MODE) {
-        await this.delay(500)
-        const mockList = this.getMockRequests()
-        const enriched = this.enrichRequests(mockList)
-        this.setData({
-          requestList: loadMore
-            ? [...this.data.requestList, ...enriched]
-            : enriched,
-          requestPage: page,
-          requestHasMore: mockList.length >= C.PAGE_SIZE,
-          requestLoading: false,
-        })
-        return
-      }
-
       const res = await api.get('/api/cleaning/service', {
         page,
         page_size: C.PAGE_SIZE,
@@ -282,37 +264,4 @@ Page({
     })
   },
 
-  // ============== Mock 数据 ==============
-  getMockRequests() {
-    return [
-      {
-        id: 2001, user_id: 1, hotel_id: 1,
-        room_number: '301', request_type: 'cleaning',
-        description: '需要打扫卫生间，补充沐浴露和洗发水',
-        priority: 'normal', status: 'pending',
-        created_at: '2026-05-29T14:30:00',
-      },
-      {
-        id: 2002, user_id: 1, hotel_id: 1,
-        room_number: '301', request_type: 'delivery',
-        description: '需要2瓶矿泉水、一套牙具',
-        priority: 'normal', status: 'completed',
-        created_at: '2026-05-29T13:00:00',
-        completed_at: '2026-05-29T13:15:00',
-        remark: '已送达房间',
-      },
-      {
-        id: 2003, user_id: 1, hotel_id: 1,
-        room_number: '301', request_type: 'maintenance',
-        description: '空调出风口有异响，制热效果差',
-        priority: 'urgent', status: 'accepted',
-        created_at: '2026-05-29T12:00:00',
-        accepted_at: '2026-05-29T12:05:00',
-      },
-    ]
-  },
-
-  delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms))
-  },
 })

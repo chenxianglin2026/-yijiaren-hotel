@@ -8,8 +8,8 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
-from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, Text, ForeignKey
 from sqlalchemy import select, func
+from sqlalchemy import String, Text, DateTime, ForeignKey
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 

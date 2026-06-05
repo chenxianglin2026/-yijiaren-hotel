@@ -4,6 +4,7 @@
  */
 const api = require('../../utils/api')
 const C = require('../../utils/const')
+const helper = require('../../utils/helper')
 
 Page({
   data: {
@@ -84,22 +85,6 @@ Page({
     this.setData({ loading: true })
 
     try {
-      if (C.DEV_MODE) {
-        // Mock 数据
-        await this.delay(600)
-        const mockTasks = this.getMockTasks(page)
-        const list = loadMore
-          ? [...this.data.taskList, ...mockTasks]
-          : mockTasks
-        this.setData({
-          taskList: list,
-          page,
-          hasMore: mockTasks.length >= C.PAGE_SIZE,
-          loading: false,
-        })
-        return
-      }
-
       const params = {
         page,
         page_size: C.PAGE_SIZE,
@@ -178,11 +163,7 @@ Page({
         wx.showLoading({ title: '接单中...', mask: true })
 
         try {
-          if (C.DEV_MODE) {
-            await this.delay(400)
-          } else {
-            await api.post('/api/cleaning/tasks/accept', { task_id: task.id })
-          }
+          await api.post('/api/cleaning/tasks/accept', { task_id: task.id })
           wx.hideLoading()
           wx.showToast({ title: '接单成功！', icon: 'success' })
           this.loadTasks(false)
@@ -207,11 +188,7 @@ Page({
         wx.showLoading({ title: '开始清洁...', mask: true })
 
         try {
-          if (C.DEV_MODE) {
-            await this.delay(400)
-          } else {
-            await api.post('/api/cleaning/tasks/start', { task_id: task.id })
-          }
+          await api.post('/api/cleaning/tasks/start', { task_id: task.id })
           wx.hideLoading()
           wx.showToast({ title: '已开始清洁', icon: 'success' })
           this.loadTasks(false)
@@ -276,28 +253,24 @@ Page({
     const task = this.data.currentTask
 
     try {
-      if (C.DEV_MODE) {
-        await this.delay(800)
-      } else {
-        // 先上传照片获得 URL，再调用接口
-        let photoUrls = this.data.checkinPhotoUrl
-        // 如果是本地文件，先上传
-        if (this.data.checkinPhoto && !this.data.checkinPhotoUrl.startsWith('http')) {
-          try {
-            const uploadRes = await api.upload('/api/upload', this.data.checkinPhoto, 'file')
-            photoUrls = uploadRes.url || this.data.checkinPhotoUrl
-          } catch (e) {
-            // 上传失败也用本地路径
-            if (C.DEV_MODE) console.warn('照片上传失败，使用本地路径', e)
-          }
+      // 先上传照片获得 URL，再调用接口
+      let photoUrls = this.data.checkinPhotoUrl
+      // 如果是本地文件，先上传
+      if (this.data.checkinPhoto && !this.data.checkinPhotoUrl.startsWith('http')) {
+        try {
+          const uploadRes = await api.upload('/api/upload', this.data.checkinPhoto, 'file')
+          photoUrls = uploadRes.url || this.data.checkinPhotoUrl
+        } catch (e) {
+          // 上传失败也用本地路径
+          if (C.DEV_MODE) console.warn('照片上传失败，使用本地路径', e)
         }
-
-        await api.post('/api/cleaning/tasks/complete', {
-          task_id: task.id,
-          photo_urls: JSON.stringify([photoUrls]),
-          notes: this.data.checkinNote || undefined,
-        })
       }
+
+      await api.post('/api/cleaning/tasks/complete', {
+        task_id: task.id,
+        photo_urls: JSON.stringify([photoUrls]),
+        notes: this.data.checkinNote || undefined,
+      })
 
       wx.hideLoading()
       this.setData({ submitting: false, showCheckin: false, currentTask: null })
@@ -337,72 +310,4 @@ Page({
     })
   },
 
-  // ============== Mock 数据 ==============
-  getMockTasks(page) {
-    const mockList = [
-      {
-        id: 1001, hotel_id: 1, room_number: '301', task_type: 'cleanup',
-        status: 'pending', notes: '客人退房，需全面清洁消毒，更换床品毛巾',
-        created_at: '2026-05-29T10:30:00', accepted_at: null, completed_at: null,
-        cleaner_id: null,
-      },
-      {
-        id: 1002, hotel_id: 1, room_number: '508', task_type: 'daily',
-        status: 'pending', notes: '住客需求日常打扫，补充矿泉水',
-        created_at: '2026-05-29T11:00:00', accepted_at: null, completed_at: null,
-        cleaner_id: null,
-      },
-      {
-        id: 1003, hotel_id: 1, room_number: '712', task_type: 'deep_clean',
-        status: 'pending', notes: 'VIP套房深度保养，地毯清洁打蜡',
-        created_at: '2026-05-29T09:15:00', accepted_at: null, completed_at: null,
-        cleaner_id: null,
-      },
-      {
-        id: 1004, hotel_id: 1, room_number: '206', task_type: 'cleanup',
-        status: 'accepted', notes: '客人已退房',
-        created_at: '2026-05-29T08:45:00', accepted_at: '2026-05-29T08:50:00',
-        completed_at: null, cleaner_id: 10,
-      },
-      {
-        id: 1005, hotel_id: 1, room_number: '415', task_type: 'turndown',
-        status: 'in_progress', notes: '夜床服务，需要更换毛巾和铺夜床',
-        created_at: '2026-05-29T16:00:00', accepted_at: '2026-05-29T16:05:00',
-        completed_at: null, cleaner_id: 10,
-      },
-      {
-        id: 1006, hotel_id: 1, room_number: '102', task_type: 'cleanup',
-        status: 'completed', notes: '退房清洁',
-        created_at: '2026-05-29T07:30:00', accepted_at: '2026-05-29T07:35:00',
-        completed_at: '2026-05-29T08:20:00', cleaner_id: 10,
-        photo_urls: '["/images/clean-102.jpg"]',
-      },
-      {
-        id: 1007, hotel_id: 1, room_number: '220', task_type: 'cleanup',
-        status: 'completed', notes: '退房清洁',
-        created_at: '2026-05-29T09:00:00', accepted_at: '2026-05-29T09:05:00',
-        completed_at: '2026-05-29T09:50:00', cleaner_id: 10,
-        photo_urls: '["/images/clean-220.jpg"]',
-      },
-      {
-        id: 1008, hotel_id: 1, room_number: '330', task_type: 'daily',
-        status: 'completed', notes: '日常打扫',
-        created_at: '2026-05-29T10:00:00', accepted_at: '2026-05-29T10:05:00',
-        completed_at: '2026-05-29T10:35:00', cleaner_id: 10,
-      },
-    ]
-
-    if (this.data.activeTab === 'pending') {
-      return mockList.filter(t => t.status === 'pending')
-    } else if (this.data.activeTab === 'completed') {
-      return mockList.filter(t => t.status === 'completed')
-    }
-    // 'mine' 返回保洁员已接的单
-    return mockList.filter(t => ['accepted', 'in_progress'].includes(t.status))
-  },
-
-  // ============== 工具 ==============
-  delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms))
-  },
 })

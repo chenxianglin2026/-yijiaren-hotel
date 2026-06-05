@@ -159,6 +159,7 @@ Page({
       success(res) {
         if (res.confirm) {
           wx.showLoading({ title: '验证中...', mask: true })
+          // TODO: 生产环境需接入真实人脸识别 API (微信生物认证 / 第三方 SDK)
           // 模拟人脸识别过程
           setTimeout(() => {
             wx.hideLoading()
@@ -187,6 +188,7 @@ Page({
     const that = this
     this.setData({ lockStatus: 'unlocking', bleConnecting: true })
 
+    // TODO: 生产环境需替换为 TTLock 蓝牙 SDK 真实开锁流程
     // 模拟蓝牙连接开锁过程
     setTimeout(() => {
       that.setData({

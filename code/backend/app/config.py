@@ -68,7 +68,11 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 小时
 
     # CORS
-    CORS_ORIGINS: list[str] = ["*"]
+    CORS_ORIGINS: list[str] = [
+        "http://localhost:8000",
+        "http://localhost:3000",
+        "http://43.163.5.90",
+    ]
 
     # 微信小程序配置
     WX_APPID: str = "wx15932207fb03a5a4"

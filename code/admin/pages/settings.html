@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="../css/admin.css">
-
-
 </head>
 <body>
 <div class="page">
@@ -14,7 +12,7 @@
   <div class="settings-layout">
     <!-- Settings Nav -->
     <nav class="settings-nav">
-      <div class="sn-item active" onclick="switchSetting(this, 'basic')">基本信息</div>
+      <div class="sn-item active" onclick="switchSetting(this, 'basic')">企业管理</div>
       <div class="sn-item" onclick="switchSetting(this, 'account')">账号管理</div>
       <div class="sn-item" onclick="switchSetting(this, 'pricing')">价格策略</div>
       <div class="sn-item" onclick="switchSetting(this, 'notification')">通知设置</div>
@@ -22,287 +20,89 @@
       <div class="sn-item" onclick="switchSetting(this, 'logs')">操作日志</div>
     </nav>
 
-    <!-- Basic Info -->
+    <!-- 企业管理 (Basic Info → /api/auth/me) -->
     <div class="settings-panel show" id="panel-basic">
       <div class="settings-section">
         <h3>企业信息</h3>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">企业名称</label>
-            <input class="form-input" value="上海伊家人酒店管理有限公司">
+        <div id="enterprise-loading" style="color:#999;padding:20px;">加载中...</div>
+        <div id="enterprise-content" style="display:none;">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">用户名</label>
+              <input class="form-input" id="ent-username" readonly>
+            </div>
+            <div class="form-group">
+              <label class="form-label">昵称</label>
+              <input class="form-input" id="ent-nickname" readonly>
+            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label">统一社会信用代码</label>
-            <input class="form-input" value="91310115MA7XXXXXXXX">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">角色</label>
+              <input class="form-input" id="ent-role" readonly>
+            </div>
+            <div class="form-group">
+              <label class="form-label">手机号</label>
+              <input class="form-input" id="ent-phone" readonly>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">用户ID</label>
+              <input class="form-input" id="ent-id" readonly>
+            </div>
+            <div class="form-group">
+              <label class="form-label">账号状态</label>
+              <input class="form-input" id="ent-active" readonly>
+            </div>
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">企业地址</label>
-          <input class="form-input" value="上海市浦东新区锦绣路1288号">
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">联系电话</label>
-            <input class="form-input" value="021-58881234">
-          </div>
-          <div class="form-group">
-            <label class="form-label">联系邮箱</label>
-            <input class="form-input" value="admin@yijiaren-hotel.com">
-          </div>
-        </div>
-        <button class="btn btn-primary">保存修改</button>
+        <div id="enterprise-error" style="display:none;color:#e74c3c;padding:20px;"></div>
       </div>
 
       <div class="settings-section">
         <h3>系统参数</h3>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">默认入住时间</label>
-            <select class="form-select">
-              <option>14:00</option>
-              <option>12:00</option>
-              <option>15:00</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">默认退房时间</label>
-            <select class="form-select">
-              <option>12:00</option>
-              <option>14:00</option>
-              <option>10:00</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">清洁超时提醒(分钟)</label>
-            <input class="form-input" type="number" value="45">
-          </div>
-          <div class="form-group">
-            <label class="form-label">布草库存预警阈值(套)</label>
-            <input class="form-input" type="number" value="20">
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">数据保留天数</label>
-          <select class="form-select">
-            <option>365天</option>
-            <option>180天</option>
-            <option>90天</option>
-          </select>
-        </div>
-        <button class="btn btn-primary">保存修改</button>
+        <p style="color:#999;padding:20px;">TODO: 系统参数配置功能待开发</p>
       </div>
     </div>
 
-    <!-- Account Management -->
+    <!-- 账号管理 (TODO) -->
     <div class="settings-panel" id="panel-account">
       <div class="settings-section">
         <h3>管理员账号</h3>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>用户名</th><th>姓名</th><th>角色</th><th>手机号</th><th>状态</th><th>最后登录</th><th>操作</th></tr></thead>
-            <tbody>
-              <tr>
-                <td>zhangjl</td><td>张经理</td><td><span class="badge badge-error">超级管理员</span></td><td>138****6789</td><td><span class="badge badge-success">正常</span></td><td>2026-05-29 14:30</td>
-                <td><button class="btn btn-outline btn-sm">编辑</button></td>
-              </tr>
-              <tr>
-                <td>wangq</td><td>王强</td><td><span class="badge badge-info">门店经理</span></td><td>139****2345</td><td><span class="badge badge-success">正常</span></td><td>2026-05-29 13:15</td>
-                <td><button class="btn btn-outline btn-sm">编辑</button></td>
-              </tr>
-              <tr>
-                <td>lif</td><td>李芳</td><td><span class="badge badge-info">财务</span></td><td>135****6789</td><td><span class="badge badge-success">正常</span></td><td>2026-05-29 10:00</td>
-                <td><button class="btn btn-outline btn-sm">编辑</button></td>
-              </tr>
-              <tr>
-                <td>zhaox</td><td>赵雪</td><td><span class="badge badge-processing">前台</span></td><td>136****4567</td><td><span class="badge badge-success">正常</span></td><td>2026-05-29 08:45</td>
-                <td><button class="btn btn-outline btn-sm">编辑</button></td>
-              </tr>
-              <tr>
-                <td>admin2</td><td>备用管理员</td><td><span class="badge badge-error">超级管理员</span></td><td>150****0000</td><td><span class="badge badge-warning">未激活</span></td><td>--</td>
-                <td><button class="btn btn-outline btn-sm">编辑</button></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <button class="btn btn-primary mt-md">+ 新增账号</button>
+        <p style="color:#c8a052;font-size:18px;text-align:center;padding:60px 0;">🚧 TODO<br><span style="font-size:14px;color:#999;">账号管理功能待开发</span></p>
       </div>
     </div>
 
-    <!-- Pricing -->
+    <!-- 价格策略 (TODO) -->
     <div class="settings-panel" id="panel-pricing">
       <div class="settings-section">
-        <h3>基础价格策略</h3>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>房型</th><th>门店</th><th>平日价</th><th>周末价</th><th>节假日价</th><th>操作</th></tr></thead>
-            <tbody>
-              <tr>
-                <td>豪华大床房</td><td>锦绣路旗舰店</td><td>¥1,280</td><td>¥1,480</td><td>¥1,880</td>
-                <td><button class="btn btn-outline btn-sm">调整</button></td>
-              </tr>
-              <tr>
-                <td>标准双床房</td><td>锦绣路旗舰店</td><td>¥680</td><td>¥780</td><td>¥980</td>
-                <td><button class="btn btn-outline btn-sm">调整</button></td>
-              </tr>
-              <tr>
-                <td>家庭套房</td><td>锦绣路旗舰店</td><td>¥2,580</td><td>¥2,880</td><td>¥3,580</td>
-                <td><button class="btn btn-outline btn-sm">调整</button></td>
-              </tr>
-              <tr>
-                <td>江景套房</td><td>滨江路店</td><td>¥2,880</td><td>¥3,280</td><td>¥3,880</td>
-                <td><button class="btn btn-outline btn-sm">调整</button></td>
-              </tr>
-              <tr>
-                <td>舒适大床房</td><td>人民路店</td><td>¥780</td><td>¥880</td><td>¥1,080</td>
-                <td><button class="btn btn-outline btn-sm">调整</button></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="settings-section">
-        <h3>促销设置</h3>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">连住优惠</label>
-            <select class="form-select">
-              <option>连住3天享9折</option>
-              <option>连住5天享8.5折</option>
-              <option>无优惠</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">早鸟优惠</label>
-            <select class="form-select">
-              <option>提前7天预订享9.5折</option>
-              <option>提前14天预订享9折</option>
-              <option>无优惠</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">会员折扣</label>
-            <select class="form-select">
-              <option>普通会员9.8折 / 金卡9.5折 / 钻石9折</option>
-              <option>普通会员9.5折 / 金卡9折 / 钻石8.5折</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">渠道佣金比例</label>
-            <select class="form-select">
-              <option>携程15% / 美团12% / 飞猪12%</option>
-            </select>
-          </div>
-        </div>
-        <button class="btn btn-primary">保存促销设置</button>
+        <h3>价格策略</h3>
+        <p style="color:#c8a052;font-size:18px;text-align:center;padding:60px 0;">🚧 TODO<br><span style="font-size:14px;color:#999;">价格策略功能待开发</span></p>
       </div>
     </div>
 
-    <!-- Notification -->
+    <!-- 通知设置 (TODO) -->
     <div class="settings-panel" id="panel-notification">
       <div class="settings-section">
-        <h3>通知方式</h3>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>通知类型</th><th>短信</th><th>邮件</th><th>系统内</th><th>微信</th></tr></thead>
-            <tbody>
-              <tr><td>订单确认通知</td><td class="text-center">✅</td><td class="text-center">✅</td><td class="text-center">✅</td><td class="text-center">❌</td></tr>
-              <tr><td>入住提醒</td><td class="text-center">✅</td><td class="text-center">❌</td><td class="text-center">✅</td><td class="text-center">❌</td></tr>
-              <tr><td>退房提醒</td><td class="text-center">✅</td><td class="text-center">❌</td><td class="text-center">✅</td><td class="text-center">❌</td></tr>
-              <tr><td>设备报警</td><td class="text-center">✅</td><td class="text-center">✅</td><td class="text-center">✅</td><td class="text-center">✅</td></tr>
-              <tr><td>清洁任务派发</td><td class="text-center">❌</td><td class="text-center">❌</td><td class="text-center">✅</td><td class="text-center">✅</td></tr>
-              <tr><td>财务报表生成</td><td class="text-center">❌</td><td class="text-center">✅</td><td class="text-center">✅</td><td class="text-center">❌</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <button class="btn btn-primary mt-md">保存通知设置</button>
+        <h3>通知设置</h3>
+        <p style="color:#c8a052;font-size:18px;text-align:center;padding:60px 0;">🚧 TODO<br><span style="font-size:14px;color:#999;">通知设置功能待开发</span></p>
       </div>
     </div>
 
-    <!-- Backup -->
+    <!-- 数据备份 (TODO) -->
     <div class="settings-panel" id="panel-backup">
       <div class="settings-section">
         <h3>数据备份</h3>
-        <div class="alert alert-info">上次备份时间: 2026-05-29 03:00 (自动备份) | 备份大小: 245MB | 备份状态: 成功</div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">自动备份频率</label>
-            <select class="form-select">
-              <option>每天凌晨3:00</option>
-              <option>每12小时</option>
-              <option>每6小时</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">备份保留份数</label>
-            <input class="form-input" type="number" value="30" min="1" max="90">
-          </div>
-        </div>
-        <div style="display:flex;gap:10px;">
-          <button class="btn btn-primary">💾 立即备份</button>
-          <button class="btn btn-outline">📥 下载最新备份</button>
-          <button class="btn btn-outline">📤 恢复数据</button>
-        </div>
-      </div>
-
-      <div class="settings-section">
-        <h3>备份历史</h3>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>备份时间</th><th>类型</th><th>大小</th><th>状态</th><th>操作</th></tr></thead>
-            <tbody>
-              <tr><td>2026-05-29 03:00</td><td>自动备份</td><td>245MB</td><td><span class="badge badge-success">成功</span></td><td><button class="btn btn-outline btn-sm">下载</button></td></tr>
-              <tr><td>2026-05-28 03:00</td><td>自动备份</td><td>238MB</td><td><span class="badge badge-success">成功</span></td><td><button class="btn btn-outline btn-sm">下载</button></td></tr>
-              <tr><td>2026-05-27 03:00</td><td>自动备份</td><td>231MB</td><td><span class="badge badge-success">成功</span></td><td><button class="btn btn-outline btn-sm">下载</button></td></tr>
-              <tr><td>2026-05-26 16:30</td><td>手动备份</td><td>228MB</td><td><span class="badge badge-success">成功</span></td><td><button class="btn btn-outline btn-sm">下载</button></td></tr>
-            </tbody>
-          </table>
-        </div>
+        <p style="color:#c8a052;font-size:18px;text-align:center;padding:60px 0;">🚧 TODO<br><span style="font-size:14px;color:#999;">数据备份功能待开发</span></p>
       </div>
     </div>
 
-    <!-- Logs -->
+    <!-- 操作日志 (TODO) -->
     <div class="settings-panel" id="panel-logs">
       <div class="settings-section">
         <h3>操作日志</h3>
-        <div class="filter-bar">
-          <input class="form-input" placeholder="搜索操作..." style="width:200px;">
-          <select class="form-select" style="width:auto;">
-            <option>全部操作类型</option>
-            <option>登录</option>
-            <option>订单操作</option>
-            <option>门店管理</option>
-            <option>系统设置</option>
-            <option>数据导出</option>
-          </select>
-          <button class="btn btn-outline btn-sm">📥 导出日志</button>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>时间</th><th>操作人</th><th>IP地址</th><th>操作类型</th><th>描述</th></tr></thead>
-            <tbody>
-              <tr><td>2026-05-29 14:35</td><td>张经理</td><td>192.168.1.100</td><td>订单操作</td><td>查看订单 YJR20260529001 详情</td></tr>
-              <tr><td>2026-05-29 14:20</td><td>张经理</td><td>192.168.1.100</td><td>订单操作</td><td>新建订单 YJR20260529015</td></tr>
-              <tr><td>2026-05-29 13:50</td><td>王强</td><td>192.168.1.101</td><td>门店管理</td><td>更新锦绣路旗舰店信息</td></tr>
-              <tr><td>2026-05-29 13:15</td><td>王强</td><td>192.168.1.101</td><td>登录</td><td>门店经理王强登录系统</td></tr>
-              <tr><td>2026-05-29 11:30</td><td>李芳</td><td>192.168.1.102</td><td>数据导出</td><td>导出5月财务报表</td></tr>
-              <tr><td>2026-05-29 10:00</td><td>李芳</td><td>192.168.1.102</td><td>登录</td><td>财务李芳登录系统</td></tr>
-              <tr><td>2026-05-29 08:45</td><td>赵雪</td><td>192.168.1.103</td><td>登录</td><td>前台赵雪登录系统</td></tr>
-              <tr><td>2026-05-29 08:30</td><td>张经理</td><td>192.168.1.100</td><td>登录</td><td>超级管理员张经理登录系统</td></tr>
-              <tr><td>2026-05-29 03:00</td><td>系统</td><td>localhost</td><td>系统操作</td><td>自动备份完成 (245MB)</td></tr>
-              <tr><td>2026-05-28 22:15</td><td>张经理</td><td>192.168.1.100</td><td>系统设置</td><td>修改通知设置</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="pagination">
-          <button class="page-btn active">1</button>
-          <button class="page-btn">2</button>
-          <button class="page-btn">3</button>
-        </div>
+        <p style="color:#c8a052;font-size:18px;text-align:center;padding:60px 0;">🚧 TODO<br><span style="font-size:14px;color:#999;">操作日志功能待开发</span></p>
       </div>
     </div>
   </div>
@@ -315,6 +115,35 @@ function switchSetting(el, panelId) {
   document.querySelectorAll('.settings-panel').forEach(function(p) { p.classList.remove('show'); });
   document.getElementById('panel-' + panelId).classList.add('show');
 }
+
+// 加载企业信息（当前登录用户）
+(function loadEnterpriseInfo() {
+  var token = localStorage.getItem('yjr_token');
+  if (!token) { return; }
+
+  fetch('/api/auth/me', {
+    headers: { 'Authorization': 'Bearer ' + token }
+  })
+  .then(function(res) {
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  })
+  .then(function(user) {
+    document.getElementById('enterprise-loading').style.display = 'none';
+    document.getElementById('enterprise-content').style.display = 'block';
+    document.getElementById('ent-username').value = user.username || '--';
+    document.getElementById('ent-nickname').value = user.nickname || '--';
+    document.getElementById('ent-role').value = user.role || '--';
+    document.getElementById('ent-phone').value = user.phone || '--';
+    document.getElementById('ent-id').value = user.id || '--';
+    document.getElementById('ent-active').value = user.is_active ? '正常' : '已禁用';
+  })
+  .catch(function(err) {
+    document.getElementById('enterprise-loading').style.display = 'none';
+    document.getElementById('enterprise-error').style.display = 'block';
+    document.getElementById('enterprise-error').textContent = '加载失败: ' + err.message;
+  });
+})();
 </script>
 </body>
 </html>
