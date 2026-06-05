@@ -1,0 +1,7 @@
+{
+  "notification": {
+    "order_notify": true,
+    "checkin_notify": false,
+    "alert_notify": true
+  }
+}

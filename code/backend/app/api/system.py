@@ -116,3 +116,73 @@ async def get_backup_info(current_user: User = Depends(get_current_user)):
             "db_type": "SQLite" if settings.DEV_MODE else "PostgreSQL",
         },
     }
+
+
+# ── Settings JSON 文件持久化 ──────────────────────────
+import json as _json
+
+SETTINGS_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "system_settings.json")
+
+DEFAULT_SETTINGS = {
+    "notification": {
+        "order_notify": True,
+        "checkin_notify": True,
+        "alert_notify": False,
+    }
+}
+
+
+def _load_settings() -> dict:
+    """从 JSON 文件加载系统设置"""
+    try:
+        if os.path.exists(SETTINGS_FILE):
+            with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+                saved = _json.load(f)
+            # 合并默认值，确保新字段有默认值
+            merged = DEFAULT_SETTINGS.copy()
+            _deep_merge(merged, saved)
+            return merged
+    except Exception:
+        pass
+    return DEFAULT_SETTINGS.copy()
+
+
+def _save_settings(data: dict):
+    """保存系统设置到 JSON 文件"""
+    os.makedirs(os.path.dirname(SETTINGS_FILE), exist_ok=True)
+    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+        _json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+def _deep_merge(base: dict, override: dict):
+    """深度合并 override 到 base"""
+    for key, value in override.items():
+        if key in base and isinstance(base[key], dict) and isinstance(value, dict):
+            _deep_merge(base[key], value)
+        else:
+            base[key] = value
+
+
+@router.get("/settings", summary="获取系统设置")
+async def get_settings(current_user: User = Depends(get_current_user)):
+    """返回通知配置等系统设置（需认证）"""
+    return {"code": 0, "data": _load_settings()}
+
+
+@router.post("/settings", summary="保存系统设置")
+async def save_settings(payload: dict, current_user: User = Depends(get_current_user)):
+    """保存通知配置等系统设置（需认证）
+
+    请求体示例:
+    {
+        "notification": {
+            "order_notify": true,
+            "checkin_notify": true,
+            "alert_notify": false
+        }
+    }
+    """
+    current = _load_settings()
+    _deep_merge(current, payload)
+    _save_settings(current)
+    return {"code": 0, "msg": "保存成功", "data": current}

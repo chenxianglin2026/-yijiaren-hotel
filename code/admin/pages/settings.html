@@ -149,7 +149,7 @@
           <button class="btn btn-primary btn-sm" onclick="saveNotificationConfig()">💾 保存配置</button>
           <span id="notify-save-status" style="font-size:12px;color:var(--text-muted);display:none;"></span>
         </div>
-        <p style="color:#c8a052;font-size:12px;margin-top:16px;padding:8px 12px;background:#fef9ed;border-radius:6px;border-left:3px solid var(--gold);">🚧 TODO: 通知配置保存功能需要对接后端 /api/system/notification-config 接口</p>
+        <p style="color:#6BAA75;font-size:12px;margin-top:16px;padding:8px 12px;background:#f0faf0;border-radius:6px;border-left:3px solid #6BAA75;">✅ 通知配置已对接后端 POST /api/system/settings，保存后全平台生效</p>
       </div>
     </div>
 
@@ -210,8 +210,9 @@ function switchSetting(el, panelId) {
   document.querySelectorAll('.settings-panel').forEach(function(p) { p.classList.remove('show'); });
   document.getElementById('panel-' + panelId).classList.add('show');
 
-  // 懒加载备份信息
+  // 懒加载各面板数据
   if (panelId === 'backup') { loadBackupInfo(); }
+  if (panelId === 'notification' && !_notificationLoaded) { loadNotificationConfig(); }
 }
 
 // 加载企业信息（当前登录用户）
@@ -319,6 +320,7 @@ function filterAccounts() {
 }
 
 // ── 通知设置 ──────────────────────────────────────────
+var _notificationLoaded = false;
 function markConfigDirty() {
   var statusEl = document.getElementById('notify-save-status');
   statusEl.style.display = 'inline';
@@ -326,20 +328,73 @@ function markConfigDirty() {
   statusEl.textContent = '配置已修改，请保存';
 }
 
+function loadNotificationConfig() {
+  var token = localStorage.getItem('yjr_token');
+  if (!token) { return; }
+
+  fetch('/api/system/settings', {
+    headers: { 'Authorization': 'Bearer ' + token }
+  })
+  .then(function(res) {
+    if (res.status === 401) { window.top.location.href = 'pages/login.html'; return; }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  })
+  .then(function(result) {
+    if (!result || !result.data) return;
+    var notif = result.data.notification || {};
+    document.getElementById('notify-order').checked = notif.order_notify !== false;
+    document.getElementById('notify-checkin').checked = notif.checkin_notify !== false;
+    document.getElementById('notify-alert').checked = notif.alert_notify === true;
+    _notificationLoaded = true;
+    var statusEl = document.getElementById('notify-save-status');
+    statusEl.style.display = 'none';
+  })
+  .catch(function(err) {
+    if (C.DEV_MODE) console.error('加载通知设置失败:', err);
+  });
+}
+
 function saveNotificationConfig() {
+  var token = localStorage.getItem('yjr_token');
+  if (!token) { return; }
+
   var orderOn = document.getElementById('notify-order').checked;
   var checkinOn = document.getElementById('notify-checkin').checked;
   var alertOn = document.getElementById('notify-alert').checked;
   var statusEl = document.getElementById('notify-save-status');
   statusEl.style.display = 'inline';
   statusEl.style.color = '#c8a052';
-  statusEl.textContent = '⚠️ 通知配置保存接口待后端开发 (POST /api/system/notification-config)';
-  // TODO: 对接后端保存接口
-  // fetch('/api/system/notification-config', {
-  //   method: 'POST',
-  //   headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-  //   body: JSON.stringify({ order_notify: orderOn, checkin_notify: checkinOn, alert_notify: alertOn })
-  // })
+  statusEl.textContent = '保存中...';
+
+  fetch('/api/system/settings', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + token,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      notification: {
+        order_notify: orderOn,
+        checkin_notify: checkinOn,
+        alert_notify: alertOn
+      }
+    })
+  })
+  .then(function(res) {
+    if (res.status === 401) { window.top.location.href = 'pages/login.html'; return; }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  })
+  .then(function(result) {
+    statusEl.style.color = '#6BAA75';
+    statusEl.textContent = '✅ 保存成功';
+    setTimeout(function() { statusEl.style.display = 'none'; }, 3000);
+  })
+  .catch(function(err) {
+    statusEl.style.color = '#e74c3c';
+    statusEl.textContent = '❌ 保存失败: ' + err.message;
+  });
 }
 
 // ── 数据备份 ──────────────────────────────────────────

@@ -133,7 +133,7 @@ Page({
       }, 1000)
     } else {
       // 生产环境：调用真实登录接口
-      api.post('/auth/login', {
+      api.post('/api/auth/login', {
         phone: phoneNumber,
         code: verifyCode
       }).then(res => {
@@ -168,7 +168,7 @@ Page({
           return
         }
 
-        api.post('/auth/wechat-phone-login', {
+        api.post('/api/auth/wechat-phone-login', {
           code: loginRes.code,
           encrypted_data: e.detail.encryptedData,
           iv: e.detail.iv,

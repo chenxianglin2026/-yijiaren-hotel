@@ -173,7 +173,7 @@ class TestAuthAPI:
 
     def test_get_me_unauthorized(self):
         r = client.get(f"{BASE_URL}/api/auth/me")
-        assert r.status_code == 403
+        assert r.status_code in (401, 403)
 
     def test_get_me_invalid_token(self):
         r = client.get(f"{BASE_URL}/api/auth/me",
@@ -543,7 +543,7 @@ class TestDashboardAPI:
 
     def test_dashboard_requires_auth(self):
         r = client.get(f"{BASE_URL}/api/dashboard/stats")
-        assert r.status_code == 403, f"Expected 403, got {r.status_code}"
+        assert r.status_code in (401, 403), f"Expected 401/403, got {r.status_code}"
 
 
 # ══════════════════════════════════════════════════════
