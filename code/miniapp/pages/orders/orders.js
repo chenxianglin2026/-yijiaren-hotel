@@ -1,5 +1,6 @@
 const app = getApp()
 const api = require('../../utils/api')
+const C = require('../../utils/const')
 
 Page({
   data: {
@@ -114,6 +115,7 @@ Page({
   },
 
   onPayOrder(e) {
+    const that = this
     const order = e.currentTarget.dataset.order
     wx.showModal({
       title: '确认支付',
@@ -122,18 +124,51 @@ Page({
       success: (res) => {
         if (res.confirm) {
           wx.showLoading({ title: '支付中...' })
-          setTimeout(() => {
-            wx.hideLoading()
-            wx.showToast({ title: '支付成功', icon: 'success' })
-            // 更新订单状态
-            const orders = this.data.orders.map(o => {
-              if (o.id === order.id) {
-                return { ...o, status: 'paid', statusLabel: '已预订' }
-              }
-              return o
-            })
-            this.setData({ orders })
-          }, 1000)
+          if (C.DEV_MODE) {
+            setTimeout(() => {
+              wx.hideLoading()
+              wx.showToast({ title: '支付成功', icon: 'success' })
+              const orders = that.data.orders.map(o => {
+                if (o.id === order.id) {
+                  return { ...o, status: 'paid', statusLabel: '已预订' }
+                }
+                return o
+              })
+              that.setData({ orders })
+            }, 1000)
+          } else {
+            api.post('/api/payment/create', { order_id: order.id })
+              .then(payRes => {
+                wx.hideLoading()
+                const pp = payRes.pay_params
+                wx.requestPayment({
+                  timeStamp: pp.timeStamp,
+                  nonceStr: pp.nonceStr,
+                  package: pp.package,
+                  signType: pp.signType || 'RSA',
+                  paySign: pp.paySign,
+                  success() {
+                    wx.showToast({ title: '支付成功', icon: 'success' })
+                    const orders = that.data.orders.map(o => {
+                      if (o.id === order.id) {
+                        return { ...o, status: 'paid', statusLabel: '已预订' }
+                      }
+                      return o
+                    })
+                    that.setData({ orders })
+                  },
+                  fail(err) {
+                    if (err.errMsg.indexOf('cancel') === -1) {
+                      wx.showToast({ title: '支付失败', icon: 'none' })
+                    }
+                  }
+                })
+              })
+              .catch(err => {
+                wx.hideLoading()
+                wx.showToast({ title: err.msg || '支付失败', icon: 'none' })
+              })
+          }
         }
       }
     })

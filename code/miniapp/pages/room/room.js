@@ -1,5 +1,6 @@
 const app = getApp()
 const api = require('../../utils/api')
+const C = require('../../utils/const')
 
 Page({
   data: {

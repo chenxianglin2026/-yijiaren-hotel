@@ -3,6 +3,7 @@
  * 接入真实后端API：酒店列表 / 房型列表 / 仪表盘统计
  */
 const api = require('../../utils/api')
+const C = require('../../utils/const')
 const app = getApp()
 
 Page({

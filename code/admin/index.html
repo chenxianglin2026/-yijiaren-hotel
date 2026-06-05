@@ -140,7 +140,7 @@
         opt.textContent = h.name;
         sel.appendChild(opt);
       });
-    } catch(e) { console.log('Store load error:', e); }
+    } catch(e) { /* silent fail - store API may not be ready */ }
   }
   loadStores();
 
