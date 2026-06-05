@@ -109,19 +109,81 @@
       </div>
     </div>
 
-    <!-- 通知设置 (TODO) -->
+    <!-- 通知设置 -->
     <div class="settings-panel" id="panel-notification">
       <div class="settings-section">
-        <h3>通知设置</h3>
-        <p style="color:#c8a052;font-size:18px;text-align:center;padding:60px 0;">🚧 TODO<br><span style="font-size:14px;color:#999;">通知设置功能待开发</span></p>
+        <h3>通知开关</h3>
+        <div style="display:flex;flex-direction:column;gap:16px;padding:8px 0;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#faf8f3;border-radius:8px;">
+            <div>
+              <div style="font-size:14px;font-weight:600;color:var(--text-primary);">订单通知</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">新订单创建、取消时推送通知</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="notify-order" checked onchange="markConfigDirty()">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#faf8f3;border-radius:8px;">
+            <div>
+              <div style="font-size:14px;font-weight:600;color:var(--text-primary);">入住提醒</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">客户入住/退房时推送提醒</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="notify-checkin" checked onchange="markConfigDirty()">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#faf8f3;border-radius:8px;">
+            <div>
+              <div style="font-size:14px;font-weight:600;color:var(--text-primary);">异常告警</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">设备离线、订单异常等告警通知</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="notify-alert" onchange="markConfigDirty()">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+        <div style="margin-top:20px;display:flex;align-items:center;gap:12px;">
+          <button class="btn btn-primary btn-sm" onclick="saveNotificationConfig()">💾 保存配置</button>
+          <span id="notify-save-status" style="font-size:12px;color:var(--text-muted);display:none;"></span>
+        </div>
+        <p style="color:#c8a052;font-size:12px;margin-top:16px;padding:8px 12px;background:#fef9ed;border-radius:6px;border-left:3px solid var(--gold);">🚧 TODO: 通知配置保存功能需要对接后端 /api/system/notification-config 接口</p>
       </div>
     </div>
 
-    <!-- 数据备份 (TODO) -->
+    <!-- 数据备份 -->
     <div class="settings-panel" id="panel-backup">
       <div class="settings-section">
-        <h3>数据备份</h3>
-        <p style="color:#c8a052;font-size:18px;text-align:center;padding:60px 0;">🚧 TODO<br><span style="font-size:14px;color:#999;">数据备份功能待开发</span></p>
+        <h3>数据库信息</h3>
+        <div id="backup-loading" style="color:#999;padding:20px;">加载中...</div>
+        <div id="backup-content" style="display:none;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div style="padding:20px;background:#faf8f3;border-radius:8px;text-align:center;">
+              <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">数据库类型</div>
+              <div style="font-size:22px;font-weight:700;color:var(--gold-dark);" id="backup-db-type">--</div>
+            </div>
+            <div style="padding:20px;background:#faf8f3;border-radius:8px;text-align:center;">
+              <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">文件大小</div>
+              <div style="font-size:22px;font-weight:700;color:var(--gold-dark);" id="backup-file-size">--</div>
+            </div>
+            <div style="padding:20px;background:#faf8f3;border-radius:8px;text-align:center;">
+              <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">最后修改时间</div>
+              <div style="font-size:16px;font-weight:600;color:var(--text-primary);" id="backup-last-modified">--</div>
+            </div>
+            <div style="padding:20px;background:#faf8f3;border-radius:8px;text-align:center;">
+              <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">上次备份时间</div>
+              <div style="font-size:16px;font-weight:600;color:var(--text-secondary);" id="backup-last-backup">--</div>
+            </div>
+          </div>
+          <div style="margin-top:20px;display:flex;gap:12px;">
+            <button class="btn btn-outline btn-sm" onclick="loadBackupInfo()">🔄 刷新</button>
+            <button class="btn btn-outline btn-sm" onclick="alert('TODO: 自动备份功能待开发')">📦 手动备份</button>
+          </div>
+          <p style="color:#c8a052;font-size:12px;margin-top:16px;padding:8px 12px;background:#fef9ed;border-radius:6px;border-left:3px solid var(--gold);">🚧 TODO: 自动备份功能待开发，计划支持定时备份到本地/VPS/云存储</p>
+        </div>
+        <div id="backup-error" style="display:none;color:#e74c3c;padding:20px;"></div>
       </div>
     </div>
 
@@ -136,11 +198,20 @@
 </div>
 
 <script>
+// 通用 401 跳转逻辑
+function handleFetchError(res) {
+  if (res.status === 401) { window.top.location.href = 'pages/login.html'; return true; }
+  return false;
+}
+
 function switchSetting(el, panelId) {
   document.querySelectorAll('.sn-item').forEach(function(i) { i.classList.remove('active'); });
   el.classList.add('active');
   document.querySelectorAll('.settings-panel').forEach(function(p) { p.classList.remove('show'); });
   document.getElementById('panel-' + panelId).classList.add('show');
+
+  // 懒加载备份信息
+  if (panelId === 'backup') { loadBackupInfo(); }
 }
 
 // 加载企业信息（当前登录用户）
@@ -152,10 +223,12 @@ function switchSetting(el, panelId) {
     headers: { 'Authorization': 'Bearer ' + token }
   })
   .then(function(res) {
+    if (res.status === 401) { window.top.location.href = 'pages/login.html'; return; }
     if (!res.ok) throw new Error('HTTP ' + res.status);
     return res.json();
   })
   .then(function(user) {
+    if (!user) return;
     document.getElementById('enterprise-loading').style.display = 'none';
     document.getElementById('enterprise-content').style.display = 'block';
     document.getElementById('ent-username').value = user.username || '--';
@@ -182,10 +255,12 @@ var allAccounts = [];
     headers: { 'Authorization': 'Bearer ' + token }
   })
   .then(function(res) {
+    if (res.status === 401) { window.top.location.href = 'pages/login.html'; return; }
     if (!res.ok) throw new Error('HTTP ' + res.status);
     return res.json();
   })
   .then(function(result) {
+    if (!result) return;
     allAccounts = result.data || [];
     document.getElementById('account-loading').style.display = 'none';
     document.getElementById('account-content').style.display = 'block';
@@ -241,6 +316,68 @@ function filterAccounts() {
       || (u.nickname || '').toLowerCase().indexOf(q) !== -1;
   });
   renderAccounts(filtered);
+}
+
+// ── 通知设置 ──────────────────────────────────────────
+function markConfigDirty() {
+  var statusEl = document.getElementById('notify-save-status');
+  statusEl.style.display = 'inline';
+  statusEl.style.color = '#c8a052';
+  statusEl.textContent = '配置已修改，请保存';
+}
+
+function saveNotificationConfig() {
+  var orderOn = document.getElementById('notify-order').checked;
+  var checkinOn = document.getElementById('notify-checkin').checked;
+  var alertOn = document.getElementById('notify-alert').checked;
+  var statusEl = document.getElementById('notify-save-status');
+  statusEl.style.display = 'inline';
+  statusEl.style.color = '#c8a052';
+  statusEl.textContent = '⚠️ 通知配置保存接口待后端开发 (POST /api/system/notification-config)';
+  // TODO: 对接后端保存接口
+  // fetch('/api/system/notification-config', {
+  //   method: 'POST',
+  //   headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+  //   body: JSON.stringify({ order_notify: orderOn, checkin_notify: checkinOn, alert_notify: alertOn })
+  // })
+}
+
+// ── 数据备份 ──────────────────────────────────────────
+function loadBackupInfo() {
+  var token = localStorage.getItem('yjr_token');
+  if (!token) { return; }
+
+  document.getElementById('backup-loading').style.display = 'block';
+  document.getElementById('backup-content').style.display = 'none';
+  document.getElementById('backup-error').style.display = 'none';
+
+  fetch('/api/system/backup-info', {
+    headers: { 'Authorization': 'Bearer ' + token }
+  })
+  .then(function(res) {
+    if (res.status === 401) { window.top.location.href = 'pages/login.html'; return; }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  })
+  .then(function(result) {
+    if (!result) return;
+    var data = result.data || {};
+    document.getElementById('backup-loading').style.display = 'none';
+    document.getElementById('backup-content').style.display = 'block';
+    document.getElementById('backup-db-type').textContent = data.db_type || '--';
+    document.getElementById('backup-file-size').textContent = data.file_size_display || '--';
+    document.getElementById('backup-last-modified').textContent = data.last_modified
+      ? data.last_modified.replace('T', ' ').slice(0, 19)
+      : '--';
+    document.getElementById('backup-last-backup').textContent = data.last_backup
+      ? data.last_backup.replace('T', ' ').slice(0, 19)
+      : '暂无备份';
+  })
+  .catch(function(err) {
+    document.getElementById('backup-loading').style.display = 'none';
+    document.getElementById('backup-error').style.display = 'block';
+    document.getElementById('backup-error').textContent = '加载失败: ' + err.message;
+  });
 }
 </script>
 </body>

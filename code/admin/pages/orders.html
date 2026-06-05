@@ -69,6 +69,7 @@ async function loadOrders(){
 
   try{
     let r = await fetch('/api/orders?'+params,{headers:H});
+    if (r.status === 401) { window.top.location.href = 'pages/login.html'; return; }
     let j = await r.json();
     if(j.code!==0) throw new Error(j.msg);
     let items = j.data?.items || j.data || [];
@@ -130,6 +131,7 @@ function resetFilters(){
 async function showDetail(id){
   try{
     let r = await fetch('/api/orders/'+id,{headers:H});
+    if (r.status === 401) { window.top.location.href = 'pages/login.html'; return; }
     let j = await r.json();
     let o = (j.code===0?j.data:null)||{};
     document.getElementById('detailContent').innerHTML = 

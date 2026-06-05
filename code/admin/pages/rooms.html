@@ -58,6 +58,7 @@ async function loadRooms(hid){
   if(hid) url += '?hotel_id='+hid;
   try{
     let r = await fetch(url,{headers:H});
+    if (r.status === 401) { window.top.location.href = 'pages/login.html'; return; }
     let j = await r.json();
     if(j.code&&j.code!==0) throw new Error(j.msg);
     let d = j.data||j, items = d.items||[];

@@ -42,6 +42,7 @@ async function load(){
       fetch('/api/hotels',{headers:H}),
       fetch('/api/rooms/status',{headers:H})
     ]);
+    if (hr.status === 401 || rr.status === 401) { window.top.location.href = 'pages/login.html'; return; }
     let hj=await hr.json(),rj=await rr.json();
     hotels=(hj.data?.items||hj.data||[]);
     rooms=(rj.data?.items||rj.data||[]);

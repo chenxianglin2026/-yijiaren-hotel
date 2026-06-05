@@ -73,6 +73,7 @@ async function loadDaily(){
     let start = new Date(); start.setDate(start.getDate()-6);
     let se = start.toISOString().slice(0,10), ee = end.toISOString().slice(0,10);
     let r = await fetch('/api/finance/daily?start_date='+se+'&end_date='+ee,{headers:H});
+    if (r.status === 401) { window.top.location.href = 'pages/login.html'; return; }
     let j = await r.json();
     if(j.code!==0) throw new Error(j.msg);
     let d = j.data || [];
@@ -102,6 +103,7 @@ async function loadMonthly(){
   try{
     let now = new Date();
     let r = await fetch('/api/finance/monthly?year='+now.getFullYear()+'&month='+(now.getMonth()+1),{headers:H});
+    if (r.status === 401) { window.top.location.href = 'pages/login.html'; return; }
     let j = await r.json();
     if(j.code!==0) throw new Error(j.msg);
     let d = j.data||{};
@@ -130,6 +132,7 @@ async function loadMonthly(){
 async function loadRecon(){
   try{
     let r = await fetch('/api/finance/reconciliation',{headers:H});
+    if (r.status === 401) { window.top.location.href = 'pages/login.html'; return; }
     let j = await r.json();
     if(j.code!==0) throw new Error(j.msg);
     let d = j.data||[], s = j.summary||{};

@@ -171,6 +171,7 @@ function clearLogs() { syncLogs=[]; renderLogs(); }
 async function loadChannels() {
   try {
     let r = await fetch('/api/ota/channels', {headers:H});
+    if (r.status === 401) { window.top.location.href = 'pages/login.html'; return; }
     let j = await r.json();
     if (j.code !== 0) throw new Error(j.msg);
     let data = j.data?.channels || j.data || [];
@@ -225,6 +226,7 @@ async function toggleChannel(channel, enabled) {
       method:'PUT', headers:H,
       body: JSON.stringify({is_enabled: enabled})
     });
+    if (r.status === 401) { window.top.location.href = 'pages/login.html'; return; }
     let j = await r.json();
     if (j.code !== 0) throw new Error(j.msg);
     addLog(channel, enabled?'已启用':'已停用', true);
@@ -259,6 +261,7 @@ async function doManualSyncSubmit() {
       method:'POST', headers:H,
       body: JSON.stringify({hotel_id:hotelId, channel:channel, rooms:rooms})
     });
+    if (r.status === 401) { window.top.location.href = 'pages/login.html'; return; }
     let j = await r.json();
     if (j.code !== 0) throw new Error(j.msg);
     addLog(channel, '手动同步请求成功: '+j.msg, true);
@@ -275,6 +278,7 @@ async function doAutoSync() {
   btn.textContent = '⏳ 同步中...';
   try {
     let r = await fetch('/api/ota/sync/auto', {method:'POST', headers:H});
+    if (r.status === 401) { window.top.location.href = 'pages/login.html'; return; }
     let j = await r.json();
     if (j.code !== 0) throw new Error(j.msg);
     addLog('全部', '自动同步完成: '+j.msg, true);
@@ -357,6 +361,7 @@ async function saveChannel() {
 
   try {
     let r = await fetch(url, {method, headers:H, body: JSON.stringify(body)});
+    if (r.status === 401) { window.top.location.href = 'pages/login.html'; return; }
     let j = await r.json();
     if (j.code !== 0) throw new Error(j.msg);
     addLog(channel, isEdit?'已更新':'已添加', true);
@@ -372,6 +377,7 @@ async function deleteChannel(channel) {
   if (!confirm('确定删除渠道 '+channel+' 吗？此操作不可恢复。')) return;
   try {
     let r = await fetch('/api/ota/channels/'+channel, {method:'DELETE', headers:H});
+    if (r.status === 401) { window.top.location.href = 'pages/login.html'; return; }
     let j = await r.json();
     if (j.code !== 0) throw new Error(j.msg);
     addLog(channel, '已删除', true);

@@ -104,6 +104,7 @@ async function loadDashboard() {
       fetch('/api/dashboard/stats', { headers }),
       fetch('/api/dashboard/activity?limit=15', { headers })
     ]);
+    if (statsRes.status === 401 || activityRes.status === 401) { window.top.location.href = 'pages/login.html'; return; }
     const stats = (await statsRes.json()).data;
     const activities = (await activityRes.json()).data || [];
 

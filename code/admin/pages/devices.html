@@ -49,6 +49,7 @@ const T=localStorage.getItem('yjr_token'),H={'Authorization':'Bearer '+T};
   const listEl = document.getElementById('deviceList');
   try{
     let r=await fetch('/api/devices/list',{headers:H});
+    if (r.status === 401) { window.top.location.href = 'pages/login.html'; return; }
     let j=await r.json();
     if(j.code===0&&j.data) {
       let items=j.data;
