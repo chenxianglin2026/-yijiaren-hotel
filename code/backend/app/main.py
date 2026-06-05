@@ -12,10 +12,13 @@ from app.db import init_db
 from app.api import auth, hotels, orders, checkin, rooms, cleaning, dashboard, finance, devices, payment, lock, ota, system
 
 
+import time as _time_module
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # 启动时：初始化数据库表
     await init_db()
+    app.state.start_time = _time_module.time()
     print(f"🚀 {settings.APP_NAME} v{settings.APP_VERSION} 启动成功")
     print(f"   DEV_MODE={settings.DEV_MODE}")
     print(f"   数据库: {settings.db_url}")
