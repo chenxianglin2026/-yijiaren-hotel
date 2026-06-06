@@ -21,8 +21,12 @@ from app.api.auth import get_current_user
 
 router = APIRouter(prefix="/api/cameras", tags=["摄像头"])
 
-# ── 简单密码加密（base64 + 固定密钥混淆） ──────────
-_SECRET_KEY = b"yjr_cam_2026_hikvision_k3y!"  # 16+ bytes for XOR
+# ── 简单密码加密（base64 + XOR 混淆） ─────────────
+# TODO: P2 安全: 加密密钥应从环境变量 CAMERA_ENCRYPT_KEY 注入，不要硬编码
+import sys as _sys
+_SECRET_KEY = os.environ.get("CAMERA_ENCRYPT_KEY", "change-me-camera-key").encode()
+if _SECRET_KEY == b"change-me-camera-key":
+    print("[WARN] CAMERA_ENCRYPT_KEY not set, using default (INSECURE)", file=_sys.stderr)
 
 def _encrypt_password(plain: str) -> str:
     """简单加密：XOR + base64"""
