@@ -42,10 +42,14 @@ document.getElementById('f').addEventListener('submit',async function(ev){
     var r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
     var j=await r.json();
     var t=j.access_token||(j.data&&j.data.access_token);
-    if(t){localStorage.setItem('yjr_token',t);location.href='/';}
-    else{var el=document.getElementById('e');el.textContent=j.msg||j.detail||'登录失败';el.style.display='block';}
-  }catch(x){var el=document.getElementById('e');el.textContent='网络错误';el.style.display='block';}
+    if(t){localStorage.setItem('yjr_token',t);localStorage.setItem('yjr_user',u);location.href='/';}
+    else{var el=document.getElementById('e');el.textContent=j.msg||j.detail||'登录失败';el.style.display='block';setTimeout(function(){el.style.display='none';},3000);}
+  }catch(x){var el=document.getElementById('e');el.textContent='网络错误';el.style.display='block';setTimeout(function(){el.style.display='none';},3000);}
 });
+
+// Enter key triggers login from either field
+document.getElementById('u').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('f').dispatchEvent(new Event('submit'));});
+document.getElementById('p').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('f').dispatchEvent(new Event('submit'));});
 </script>
 </body>
 </html>
