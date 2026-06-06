@@ -13,7 +13,7 @@
 - 微信回调: wx_v4.py (端口 8003)
 
 ## Rules
-- 小程序 AppID: wx15932207fb03a5a4, AppSecret: 97acd5a0ca02fd5b03814fc51a34e9fa
+- 小程序 AppID: wx15932207fb03a5a4, AppSecret: ***
 - 管理后台 root = /app/admin, nginx 分发 /api 到 uvicorn:8000
 - 测试 admin / admin123
 - 代码在 ~/projects/yijiaren/code/
