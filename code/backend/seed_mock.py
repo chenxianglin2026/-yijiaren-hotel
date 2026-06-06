@@ -14,7 +14,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.db import Base, User, Hotel, Room, Order, OrderStatus
+from app.db import Base, User, Hotel, Room, Order, OrderStatus, Camera
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -220,12 +220,52 @@ def seed():
             if od["status"] in (OrderStatus.PAID, OrderStatus.CHECKED_IN):
                 od["room"].available_count -= 1
 
+        # ── 5. 创建 2 个示例摄像头（离线状态）──
+        import base64 as _b64
+
+        _SECRET = b"yjr...y!"
+        def _enc_pw(plain):
+            key = _SECRET
+            data = plain.encode("utf-8")
+            enc = bytes([data[i] ^ key[i % len(key)] for i in range(len(data))])
+            return _b64.b64encode(enc).decode()
+
+        cameras_data = [
+            {
+                "name": "大堂入口摄像头",
+                "ip": "192.168.1.64",
+                "port": 554,
+                "username": "admin",
+                "password": _enc_pw("hikvision123"),
+                "channel": 1,
+                "location": "大堂",
+                "status": "offline",
+                "rtsp_url": "rtsp://admin:***@192.168.1.64:554/Streaming/Channels/101",
+                "hotel_id": hotels[0].id,
+            },
+            {
+                "name": "停车场监控摄像头",
+                "ip": "192.168.1.65",
+                "port": 554,
+                "username": "admin",
+                "password": _enc_pw("hikvision456"),
+                "channel": 2,
+                "location": "停车场",
+                "status": "offline",
+                "rtsp_url": "rtsp://admin:***@192.168.1.65:554/Streaming/Channels/201",
+                "hotel_id": hotels[0].id,
+            },
+        ]
+        for cd in cameras_data:
+            session.add(Camera(**cd))
+
         session.commit()
         print("✅ 模拟数据播种完成！")
         print(f"   用户: 3 个 (admin/testuser/zhangsan)")
         print(f"   门店: 3 个")
         print(f"   房型: 15 个 (每家 5 种)")
         print(f"   订单: 4 条")
+        print(f"   摄像头: 2 个 (示例/offline)")
         print(f"\n   测试账号:")
         print(f"   admin / admin123  (管理员)")
         print(f"   testuser / test123  (普通用户)")

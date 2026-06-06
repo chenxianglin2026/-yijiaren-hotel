@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>监控摄像头 - 伊家人酒店</title>
+<link rel="stylesheet" href="../css/admin.css">
+<style>
+  .cameras-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+  .camera-cell {
+    background:var(--bg-card); border-radius:var(--radius); box-shadow:var(--shadow);
+    overflow:hidden; position:relative; aspect-ratio:16/9;
+  }
+  .camera-cell img { width:100%; height:100%; object-fit:cover; display:block; }
+  .camera-overlay {
+    position:absolute; bottom:0; left:0; right:0;
+    background:linear-gradient(transparent,rgba(0,0,0,.7));
+    padding:20px 16px 12px; color:#fff;
+    display:flex; align-items:flex-end; justify-content:space-between;
+  }
+  .camera-info { font-size:13px; }
+  .camera-name { font-weight:700; font-size:14px; }
+  .camera-location { font-size:11px; opacity:0.8; }
+  .camera-status {
+    padding:3px 10px; border-radius:12px; font-size:11px; font-weight:600;
+  }
+  .camera-status.online { background:rgba(82,196,26,.25); color:#95de64; }
+  .camera-status.offline { background:rgba(255,77,79,.25); color:#ff7875; }
+  .camera-actions { position:absolute; top:8px; right:8px; display:flex; gap:4px; opacity:0; transition:opacity .2s; }
+  .camera-cell:hover .camera-actions { opacity:1; }
+  .camera-actions button {
+    background:rgba(0,0,0,.6); color:#fff; border:none; border-radius:4px;
+    padding:4px 8px; font-size:11px; cursor:pointer;
+  }
+  .camera-actions button:hover { background:var(--gold); color:#000; }
+
+  /* Dialog */
+  .dialog-overlay { display:none; position:fixed; top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:1000;justify-content:center;align-items:center; }
+  .dialog-overlay.show { display:flex; }
+  .dialog {
+    background:var(--bg-white); border-radius:var(--radius); padding:24px;
+    width:480px; max-width:90vw; max-height:85vh; overflow-y:auto;
+    box-shadow:0 8px 32px rgba(0,0,0,.2);
+  }
+  .dialog h3 { margin-bottom:16px; color:var(--gold-dark); }
+  .form-group { margin-bottom:12px; }
+  .form-group label { display:block; font-size:12px; color:var(--text-secondary); margin-bottom:4px; font-weight:600; }
+  .form-input, .form-select { width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:6px; font-size:14px; background:#fff; }
+  .form-input:focus, .form-select:focus { border-color:var(--gold); outline:none; box-shadow:0 0 0 2px rgba(200,160,82,.15); }
+  .form-row { display:flex; gap:12px; }
+  .form-row .form-group { flex:1; }
+  .dialog-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:20px; }
+  .btn { padding:8px 20px; border-radius:6px; border:none; font-size:14px; cursor:pointer; font-weight:600; transition:all .2s; }
+  .btn-primary { background:var(--gold); color:#fff; }
+  .btn-primary:hover { background:var(--gold-dark); }
+  .btn-outline { background:transparent; color:var(--text-secondary); border:1px solid var(--border); }
+  .btn-outline:hover { background:var(--bg-content); }
+  .btn-danger { background:var(--error); color:#fff; }
+  .btn-danger:hover { opacity:0.85; }
+  .btn-sm { padding:4px 12px; font-size:12px; }
+
+  .refresh-info { font-size:12px; color:var(--text-muted); }
+  .snapshot-error { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--text-muted); background:var(--bg-content); font-size:13px; }
+
+  @media(max-width:1200px) { .cameras-grid { grid-template-columns:repeat(3,1fr); } }
+  @media(max-width:900px) { .cameras-grid { grid-template-columns:repeat(2,1fr); } }
+  @media(max-width:600px) { .cameras-grid { grid-template-columns:repeat(1,1fr); } }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="page-title">
+    📷 监控摄像头
+    <span class="refresh-info" id="refreshInfo"></span>
+  </div>
+
+  <div class="filter-bar">
+    <select id="filterHotel" class="form-select" style="width:auto;">
+      <option value="">全部门店</option>
+    </select>
+    <button class="btn btn-primary btn-sm" onclick="openAddDialog()">+ 添加摄像头</button>
+    <button class="btn btn-outline btn-sm" onclick="refreshAll()" style="margin-left:auto;">🔄 刷新</button>
+  </div>
+
+  <div class="cameras-grid" id="camerasGrid">
+    <div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:60px;">
+      📷 加载摄像头列表...
+    </div>
+  </div>
+</div>
+
+<!-- 添加/编辑对话框 -->
+<div class="dialog-overlay" id="cameraDialog">
+  <div class="dialog">
+    <h3 id="dialogTitle">添加摄像头</h3>
+    <form id="cameraForm" onsubmit="saveCamera(event)">
+      <input type="hidden" id="camId">
+      <div class="form-row">
+        <div class="form-group">
+          <label>名称 *</label>
+          <input class="form-input" id="camName" required placeholder="如: 大堂入口摄像头">
+        </div>
+        <div class="form-group">
+          <label>位置</label>
+          <select class="form-select" id="camLocation">
+            <option value="">请选择</option>
+            <option value="大堂">大堂</option>
+            <option value="前台">前台</option>
+            <option value="停车场">停车场</option>
+            <option value="走廊">走廊</option>
+            <option value="电梯">电梯</option>
+            <option value="餐厅">餐厅</option>
+            <option value="后门">后门</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>IP地址 *</label>
+          <input class="form-input" id="camIp" required placeholder="如: 192.168.1.64">
+        </div>
+        <div class="form-group">
+          <label>端口</label>
+          <input class="form-input" id="camPort" type="number" value="554" min="1" max="65535">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>用户名</label>
+          <input class="form-input" id="camUser" value="admin" placeholder="admin">
+        </div>
+        <div class="form-group">
+          <label>密码 *</label>
+          <input class="form-input" id="camPass" type="password" required placeholder="摄像头密码">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>通道号</label>
+          <input class="form-input" id="camChannel" type="number" value="1" min="1" max="64">
+        </div>
+        <div class="form-group">
+          <label>所属门店</label>
+          <select class="form-select" id="camHotel">
+            <option value="">不限</option>
+          </select>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-outline" onclick="closeDialog()">取消</button>
+        <button type="submit" class="btn btn-primary" id="dialogSubmitBtn">添加</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const T=localStorage.getItem('yjr_token'),H={'Authorization':'Bearer '+T,'Content-Type':'application/json'};
+
+// 加载门店列表到筛选器和表单
+async function loadHotels() {
+  try {
+    const r = await fetch('/api/hotels?page_size=100', {headers:{'Authorization':'Bearer '+T}});
+    const d = await r.json();
+    const items = d.items || d.data || [];
+    const selectors = [document.getElementById('filterHotel'), document.getElementById('camHotel')];
+    selectors.forEach(sel => {
+      if (!sel) return;
+      const keep = sel.querySelector('option:first-child');
+      sel.innerHTML = '';
+      if (keep) sel.appendChild(keep);
+      items.forEach(h => {
+        const opt = document.createElement('option');
+        opt.value = h.id;
+        opt.textContent = h.name;
+        sel.appendChild(opt);
+      });
+    });
+  } catch(e) { /* ok */ }
+}
+
+// 加载摄像头列表
+async function loadCameras() {
+  const grid = document.getElementById('camerasGrid');
+  const hotelId = document.getElementById('filterHotel').value;
+  try {
+    let url = '/api/cameras';
+    if (hotelId) url += '?hotel_id=' + hotelId;
+    const r = await fetch(url, {headers:H});
+    if (r.status===401) { window.top.location.href='pages/login.html'; return; }
+    const d = await r.json();
+    const items = d.data || [];
+
+    if (items.length === 0) {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:60px;">📷 暂无摄像头<br><small>点击「+ 添加摄像头」开始配置海康威视设备</small></div>';
+    } else {
+      grid.innerHTML = items.map(c => renderCameraCell(c)).join('');
+      // 延迟加载快照
+      items.forEach(c => loadSnapshot(c.id));
+    }
+    document.getElementById('refreshInfo').textContent = '共 ' + items.length + ' 个摄像头';
+  } catch(e) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--error);padding:40px;">加载失败: '+e.message+'</div>';
+  }
+}
+
+function renderCameraCell(c) {
+  const loc = c.location || '未指定';
+  const statusCls = c.status === 'online' ? 'online' : 'offline';
+  const statusTxt = c.status === 'online' ? '在线' : '离线';
+  return '<div class="camera-cell" id="cell-'+c.id+'">'+
+    '<img id="snap-'+c.id+'" src="" alt="'+c.name+'" onerror="this.parentElement.querySelector(\'.snapshot-error\').style.display=\'flex\';this.style.display=\'none\'">'+
+    '<div class="snapshot-error" style="display:none">📷 等待快照...</div>'+
+    '<div class="camera-overlay">'+
+      '<div class="camera-info">'+
+        '<div class="camera-name">'+c.name+'</div>'+
+        '<div class="camera-location">'+loc+' | '+c.ip+':'+c.port+' CH'+c.channel+'</div>'+
+      '</div>'+
+      '<span class="camera-status '+statusCls+'">'+statusTxt+'</span>'+
+    '</div>'+
+    '<div class="camera-actions">'+
+      '<button onclick="openEditDialog('+c.id+')">✏️</button>'+
+      '<button onclick="deleteCamera('+c.id+',\''+c.name+'\')">🗑️</button>'+
+    '</div></div>';
+}
+
+function loadSnapshot(camId) {
+  const img = document.getElementById('snap-'+camId);
+  if (!img) return;
+  img.src = '/api/cameras/'+camId+'/snapshot?t='+Date.now();
+  img.onerror = function() {
+    const errEl = img.parentElement.querySelector('.snapshot-error');
+    if (errEl) { errEl.style.display='flex'; errEl.textContent='📷 快照加载失败'; }
+    img.style.display='none';
+  };
+  img.onload = function() {
+    const errEl = img.parentElement.querySelector('.snapshot-error');
+    if (errEl) errEl.style.display='none';
+    img.style.display='block';
+  };
+}
+
+// 自动轮询快照（每10秒刷新）
+let pollTimer = null;
+function startPolling() {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(() => {
+    document.querySelectorAll('[id^="snap-"]').forEach(img => {
+      const camId = img.id.replace('snap-','');
+      img.src = '/api/cameras/'+camId+'/snapshot?t='+Date.now();
+    });
+  }, 10000);
+}
+
+function refreshAll() {
+  loadCameras().then(() => startPolling());
+}
+
+// 对话框操作
+function openAddDialog() {
+  document.getElementById('dialogTitle').textContent = '添加摄像头';
+  document.getElementById('dialogSubmitBtn').textContent = '添加';
+  document.getElementById('camId').value = '';
+  document.getElementById('camName').value = '';
+  document.getElementById('camLocation').value = '';
+  document.getElementById('camIp').value = '';
+  document.getElementById('camPort').value = '554';
+  document.getElementById('camUser').value = 'admin';
+  document.getElementById('camPass').value = '';
+  document.getElementById('camChannel').value = '1';
+  document.getElementById('camHotel').value = '';
+  document.getElementById('cameraDialog').classList.add('show');
+}
+
+function closeDialog() {
+  document.getElementById('cameraDialog').classList.remove('show');
+}
+
+async function openEditDialog(id) {
+  try {
+    const r = await fetch('/api/cameras', {headers:H});
+    const d = await r.json();
+    const c = (d.data||[]).find(x => x.id === id);
+    if (!c) { alert('摄像头不存在'); return; }
+    document.getElementById('dialogTitle').textContent = '编辑摄像头';
+    document.getElementById('dialogSubmitBtn').textContent = '保存';
+    document.getElementById('camId').value = c.id;
+    document.getElementById('camName').value = c.name;
+    document.getElementById('camLocation').value = c.location || '';
+    document.getElementById('camIp').value = c.ip;
+    document.getElementById('camPort').value = c.port;
+    document.getElementById('camUser').value = c.username;
+    document.getElementById('camPass').value = ''; // 不回显密码
+    document.getElementById('camChannel').value = c.channel;
+    document.getElementById('camHotel').value = c.hotel_id || '';
+    document.getElementById('cameraDialog').classList.add('show');
+  } catch(e) { alert('加载失败: '+e.message); }
+}
+
+async function saveCamera(e) {
+  e.preventDefault();
+  const id = document.getElementById('camId').value;
+  const body = {
+    name: document.getElementById('camName').value,
+    ip: document.getElementById('camIp').value,
+    port: parseInt(document.getElementById('camPort').value)||554,
+    username: document.getElementById('camUser').value || 'admin',
+    password: document.getElementById('camPass').value,
+    channel: parseInt(document.getElementById('camChannel').value)||1,
+    location: document.getElementById('camLocation').value || null,
+    hotel_id: parseInt(document.getElementById('camHotel').value) || null,
+  };
+
+  try {
+    let r;
+    if (id) {
+      // 编辑: 密码为空则不更新
+      if (!body.password) delete body.password;
+      r = await fetch('/api/cameras/'+id, {method:'PUT',headers:H,body:JSON.stringify(body)});
+    } else {
+      if (!body.password) { alert('请输入密码'); return; }
+      r = await fetch('/api/cameras', {method:'POST',headers:H,body:JSON.stringify(body)});
+    }
+    const d = await r.json();
+    if (d.code===0) {
+      closeDialog();
+      loadCameras().then(() => startPolling());
+    } else {
+      alert('操作失败: '+(d.msg||d.detail||'未知错误'));
+    }
+  } catch(e) { alert('请求失败: '+e.message); }
+}
+
+async function deleteCamera(id, name) {
+  if (!confirm('确认删除摄像头「'+name+'」？')) return;
+  try {
+    const r = await fetch('/api/cameras/'+id, {method:'DELETE',headers:H});
+    const d = await r.json();
+    if (d.code===0) {
+      loadCameras().then(() => startPolling());
+    } else {
+      alert('删除失败: '+(d.msg||d.detail||'未知错误'));
+    }
+  } catch(e) { alert('请求失败: '+e.message); }
+}
+
+// 门店筛选变化
+document.getElementById('filterHotel').addEventListener('change', () => {
+  loadCameras().then(() => startPolling());
+});
+
+// 初始化
+loadHotels();
+loadCameras().then(() => startPolling());
+</script>
+</body>
+</html>

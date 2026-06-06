@@ -175,6 +175,25 @@ class OTAOrderMapping(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
+# ── 摄像头模型 ─────────────────────────────────────
+class Camera(Base):
+    __tablename__ = "cameras"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False, comment="摄像头名称")
+    ip: Mapped[str] = mapped_column(String(50), nullable=False, comment="IP地址")
+    port: Mapped[int] = mapped_column(Integer, default=554, comment="RTSP端口")
+    username: Mapped[str] = mapped_column(String(100), default="admin", comment="摄像头用户名")
+    password: Mapped[str] = mapped_column(String(256), nullable=False, comment="加密密码")
+    channel: Mapped[int] = mapped_column(Integer, default=1, comment="通道号")
+    location: Mapped[Optional[str]] = mapped_column(String(50), comment="位置: 大堂/停车场/走廊/电梯/前台/餐厅/后门")
+    status: Mapped[str] = mapped_column(String(20), default="offline", comment="状态: online/offline")
+    rtsp_url: Mapped[Optional[str]] = mapped_column(String(500), comment="RTSP流地址")
+    hotel_id: Mapped[Optional[int]] = mapped_column(ForeignKey("hotels.id", ondelete="SET NULL"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 # ── 入住记录模型 ─────────────────────────────────────
 class Checkin(Base):
     __tablename__ = "checkins"
