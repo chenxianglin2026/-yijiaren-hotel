@@ -157,9 +157,11 @@ async def list_orders(
     if status:
         query = query.where(Order.status == status)
 
-    # 总数
-    count_query = select(func.count()).select_from(query.subquery())
-    total_result = await db.execute(count_query)
+    # 总数 (使用独立查询，不包装selectinload选项)
+    count_q = select(func.count(Order.id)).where(Order.user_id == current_user.id)
+    if status:
+        count_q = count_q.where(Order.status == status)
+    total_result = await db.execute(count_q)
     total = total_result.scalar()
 
     # 分页

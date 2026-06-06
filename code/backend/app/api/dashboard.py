@@ -122,24 +122,26 @@ async def dashboard_stats(
     if stats.total_rooms > 0:
         stats.occupancy_rate = round(stats.occupied_rooms / stats.total_rooms * 100, 1)
 
-    # ── 今日订单数 ──
-    orders_today_result = await db.execute(
-        select(func.count(Order.id)).where(
-            Order.hotel_id.in_(hotel_ids),
-            Order.created_at >= today_start, Order.created_at < today_end,
-        )
+    # ── 今昨日订单+营收合并为一次查询 ──
+    order_stats_result = await db.execute(
+        select(
+            func.count(Order.id).filter(Order.created_at >= today_start).filter(Order.created_at < today_end),
+            func.coalesce(func.sum(Order.total_price).filter(
+                Order.created_at >= today_start, Order.created_at < today_end,
+                Order.status.in_([OrderStatus.PAID, OrderStatus.CHECKED_IN, OrderStatus.COMPLETED]),
+            ), 0.0),
+            func.count(Order.id).filter(Order.created_at >= yesterday_start).filter(Order.created_at < yesterday_end),
+            func.coalesce(func.sum(Order.total_price).filter(
+                Order.created_at >= yesterday_start, Order.created_at < yesterday_end,
+                Order.status.in_([OrderStatus.PAID, OrderStatus.CHECKED_IN, OrderStatus.COMPLETED]),
+            ), 0.0),
+        ).where(Order.hotel_id.in_(hotel_ids))
     )
-    stats.orders_today = orders_today_result.scalar() or 0
-
-    # ── 今日营收 ──
-    revenue_result = await db.execute(
-        select(func.coalesce(func.sum(Order.total_price), 0.0)).where(
-            Order.hotel_id.in_(hotel_ids),
-            Order.created_at >= today_start, Order.created_at < today_end,
-            Order.status.in_([OrderStatus.PAID, OrderStatus.CHECKED_IN, OrderStatus.COMPLETED]),
-        )
-    )
-    stats.revenue_today = round(float(revenue_result.scalar() or 0), 2)
+    o_today, r_today, o_yest, r_yest = order_stats_result.one()
+    stats.orders_today = o_today or 0
+    stats.revenue_today = round(float(r_today or 0), 2)
+    stats.orders_yesterday = o_yest or 0
+    stats.revenue_yesterday = round(float(r_yest or 0), 2)
 
     # ── 待清洁 ──
     from app.api.cleaning import CleaningTask
@@ -150,58 +152,53 @@ async def dashboard_stats(
     )
     stats.pending_cleaning_count = cleaning_result.scalar() or 0
 
-    # ── 昨日同比 ──
-    orders_yesterday_result = await db.execute(
-        select(func.count(Order.id)).where(
+    # ── 近7天营收趋势 (单次GROUP BY查询替代7次循环查询) ──
+    seven_days_ago = today_start - timedelta(days=6)
+    revenue_rows_result = await db.execute(
+        select(
+            func.date(Order.created_at).label("d"),
+            func.coalesce(func.sum(Order.total_price), 0.0)
+        ).where(
             Order.hotel_id.in_(hotel_ids),
-            Order.created_at >= yesterday_start, Order.created_at < yesterday_end,
-        )
-    )
-    stats.orders_yesterday = orders_yesterday_result.scalar() or 0
-
-    revenue_yesterday_result = await db.execute(
-        select(func.coalesce(func.sum(Order.total_price), 0.0)).where(
-            Order.hotel_id.in_(hotel_ids),
-            Order.created_at >= yesterday_start, Order.created_at < yesterday_end,
+            Order.created_at >= seven_days_ago,
+            Order.created_at < today_end,
             Order.status.in_([OrderStatus.PAID, OrderStatus.CHECKED_IN, OrderStatus.COMPLETED]),
-        )
+        ).group_by(func.date(Order.created_at)).order_by(func.date(Order.created_at))
     )
-    stats.revenue_yesterday = round(float(revenue_yesterday_result.scalar() or 0), 2)
+    revenue_map = {str(row.d): float(row[1]) for row in revenue_rows_result}
 
-    # ── 近7天营收趋势 ──
     revenue_trend = []
     for i in range(6, -1, -1):
         d = today - timedelta(days=i)
-        ds = datetime(d.year, d.month, d.day)
-        de = ds + timedelta(days=1)
-        r = await db.execute(
-            select(func.coalesce(func.sum(Order.total_price), 0.0)).where(
-                Order.hotel_id.in_(hotel_ids),
-                Order.created_at >= ds, Order.created_at < de,
-                Order.status.in_([OrderStatus.PAID, OrderStatus.CHECKED_IN, OrderStatus.COMPLETED]),
-            )
-        )
-        val = round(float(r.scalar() or 0), 2)
-        revenue_trend.append(TrendPoint(date=d.isoformat(), value=val, label=f"{d.month}/{d.day}"))
-
+        val = revenue_map.get(d.isoformat(), 0.0)
+        revenue_trend.append(TrendPoint(date=d.isoformat(), value=round(val, 2), label=f"{d.month}/{d.day}"))
     stats.revenue_trend = revenue_trend
 
-    # ── 近7天入住率趋势 ──
+    # ── 近7天入住率趋势 (单次查询 + 累积计算替代7次循环查询) ──
+    checkin_rows_result = await db.execute(
+        select(
+            func.date(Checkin.checkin_time).label("d"),
+            func.count(Checkin.id)
+        ).where(
+            Checkin.hotel_id.in_(hotel_ids),
+            Checkin.status == CheckinStatus.CHECKED_IN,
+            Checkin.checkin_time <= today_end,
+        ).group_by(func.date(Checkin.checkin_time)).order_by(func.date(Checkin.checkin_time))
+    )
+    # 按天累积
+    cum_occ = 0
+    occ_map = {}
+    for row in checkin_rows_result:
+        cum_occ += row[1]
+        occ_map[str(row.d)] = cum_occ
+
     occupancy_trend = []
+    cum = 0
     for i in range(6, -1, -1):
         d = today - timedelta(days=i)
-        end_of_day = datetime(d.year, d.month, d.day, 23, 59, 59)
-        r = await db.execute(
-            select(func.count(Checkin.id)).where(
-                Checkin.hotel_id.in_(hotel_ids),
-                Checkin.status == CheckinStatus.CHECKED_IN,
-                Checkin.checkin_time <= end_of_day,
-            )
-        )
-        occ = r.scalar() or 0
-        rate = round(occ / stats.total_rooms * 100, 1) if stats.total_rooms > 0 else 0
+        cum = occ_map.get(d.isoformat(), cum)  # 继承前一天的累积值(只有新checkin那天才增加)
+        rate = round(cum / stats.total_rooms * 100, 1) if stats.total_rooms > 0 else 0
         occupancy_trend.append(TrendPoint(date=d.isoformat(), value=rate, label=f"{d.month}/{d.day}"))
-
     stats.occupancy_trend = occupancy_trend
 
     return DashboardResponse(data=stats)

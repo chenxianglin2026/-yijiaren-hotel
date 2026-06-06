@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.db import get_db, Hotel, Room
 
@@ -79,7 +80,7 @@ async def list_hotels(
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ):
-    query = select(Hotel).where(Hotel.is_active == True)
+    query = select(Hotel).where(Hotel.is_active == True).options(selectinload(Hotel.rooms))
 
     if city:
         query = query.where(Hotel.city == city)
@@ -97,15 +98,11 @@ async def list_hotels(
     result = await db.execute(query.order_by(Hotel.rating.desc()).offset(offset).limit(page_size))
     hotels = result.scalars().all()
 
-    # 为每个门店查最低价
+    # 从预加载的rooms中计算最低价,避免N+1查询
     items = []
     for h in hotels:
-        min_price = None
-        price_result = await db.execute(
-            select(__import__("sqlalchemy").func.min(Room.price))
-            .where(Room.hotel_id == h.id, Room.is_active == True)
-        )
-        min_price = price_result.scalar()
+        active_rooms = [r for r in h.rooms if r.is_active]
+        min_price = min((r.price for r in active_rooms), default=None)
         items.append(
             HotelBrief(
                 id=h.id,
@@ -124,16 +121,14 @@ async def list_hotels(
 
 @router.get("/{hotel_id}", response_model=HotelDetail, summary="门店详情")
 async def get_hotel_detail(hotel_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Hotel).where(Hotel.id == hotel_id, Hotel.is_active == True))
+    result = await db.execute(
+        select(Hotel).where(Hotel.id == hotel_id, Hotel.is_active == True).options(selectinload(Hotel.rooms))
+    )
     hotel = result.scalar_one_or_none()
     if not hotel:
         raise HTTPException(status_code=404, detail="门店不存在")
 
-    # 查询房型
-    rooms_result = await db.execute(
-        select(Room).where(Room.hotel_id == hotel_id, Room.is_active == True)
-    )
-    rooms = rooms_result.scalars().all()
+    active_rooms = [r for r in hotel.rooms if r.is_active]
 
     return HotelDetail(
         id=hotel.id,
@@ -148,7 +143,7 @@ async def get_hotel_detail(hotel_id: int, db: AsyncSession = Depends(get_db)):
         latitude=hotel.latitude,
         longitude=hotel.longitude,
         rating=hotel.rating,
-        rooms=[RoomOut.model_validate(r) for r in rooms],
+        rooms=[RoomOut.model_validate(r) for r in active_rooms],
     )
 
 
