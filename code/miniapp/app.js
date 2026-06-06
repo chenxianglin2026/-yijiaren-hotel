@@ -15,7 +15,7 @@ App({
     // 附近门店列表
     nearbyStores: [],
     // API 基础地址
-    apiBase: 'http://127.0.0.1:8001',  // 本地调试; 上线改回 43.163.5.90:8001
+    apiBase: require('./utils/const').API_BASE,  // 统一走 const.js 配置
     // 当前定位
     location: {
       lat: 30.2375,

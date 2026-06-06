@@ -45,7 +45,8 @@
   },
   "requiredPrivateInfos": [
     "getLocation",
-    "chooseLocation"
+    "chooseLocation",
+    "getPhoneNumber"
   ],
   "sitemapLocation": "sitemap.json"
 }
