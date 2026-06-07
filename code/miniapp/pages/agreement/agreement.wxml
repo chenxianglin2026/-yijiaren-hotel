@@ -1,0 +1,13 @@
+<view class="page-agreement">
+  <view class="agreement-body">
+    <view wx:for="{{content}}" wx:key="index" class="agreement-block">
+      <text wx:if="{{item.heading}}" class="agreement-heading">{{item.heading}}</text>
+      <text wx:if="{{item.text}}" class="agreement-text">{{item.text}}</text>
+    </view>
+  </view>
+
+  <view class="agreement-footer">
+    <text class="footer-brand">伊家人酒店</text>
+    <text class="footer-rights">© 2025 伊家人酒店 版权所有</text>
+  </view>
+</view>

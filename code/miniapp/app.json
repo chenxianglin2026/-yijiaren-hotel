@@ -9,8 +9,10 @@
     "pages/login/login",
     "pages/mine/mine",
     "pages/cleaning/cleaning",
-    "pages/service/service"
+    "pages/service/service",
+    "pages/agreement/agreement"
   ],
+  "usePrivacyCheck": true,
   "window": {
     "backgroundTextStyle": "light",
     "navigationBarBackgroundColor": "#c8a052",

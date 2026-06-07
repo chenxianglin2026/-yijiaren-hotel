@@ -214,14 +214,8 @@ Page({
 
   // ========== 协议 ==========
   onShowAgreement(e) {
-    const type = e.currentTarget.dataset.type
-    const titles = {
-      service: '用户服务协议',
-      privacy: '隐私政策'
-    }
-    wx.showToast({ title: `${titles[type]}页面开发中`, icon: 'none' })
-    // TODO: 跳转到协议详情页
-    // wx.navigateTo({ url: `/pages/agreement/agreement?type=${type}` })
+    const type = e.currentTarget.dataset.type || 'privacy'
+    wx.navigateTo({ url: `/pages/agreement/agreement?type=${type}` })
   },
 
   // ========== 生命周期 ==========

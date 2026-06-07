@@ -1,0 +1,57 @@
+/* ========== 协议页 ========== */
+
+.page-agreement {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #FAF7F2;
+}
+
+/* ---- 正文区域 ---- */
+.agreement-body {
+  padding: 40rpx 48rpx;
+}
+
+.agreement-block {
+  margin-bottom: 24rpx;
+}
+
+.agreement-heading {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #3D3226;
+  margin-bottom: 16rpx;
+  margin-top: 12rpx;
+  line-height: 1.5;
+}
+
+.agreement-text {
+  display: block;
+  font-size: 28rpx;
+  color: #5A5040;
+  line-height: 1.8;
+  text-indent: 2em;
+  margin-bottom: 8rpx;
+}
+
+/* ---- 底部品牌 ---- */
+.agreement-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48rpx 0 60rpx;
+}
+
+.footer-brand {
+  font-size: 26rpx;
+  color: #c8a052;
+  font-weight: 600;
+  margin-bottom: 8rpx;
+}
+
+.footer-rights {
+  font-size: 22rpx;
+  color: #B0A492;
+}
