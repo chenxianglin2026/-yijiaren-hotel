@@ -4,17 +4,167 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>监控看板 - 伊家人酒店</title>
+<link rel="stylesheet" href="../css/admin.css">
 <style>
-  body { margin:0; font-family: 'PingFang SC','Microsoft YaHei',sans-serif; background:#f7f5f0; color:#6b5e4a; display:flex; align-items:center; justify-content:center; min-height:100vh; }
-  .placeholder { text-align:center; }
-  .placeholder h2 { font-size:22px; margin-bottom:10px; color:#c8a052; }
-  .placeholder p { font-size:14px; color:#999; }
+  .monitor-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:20px; }
+  .monitor-card { background:var(--bg-card); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; text-align:center; }
+  .monitor-card .mc-icon { font-size:28px; margin-bottom:8px; }
+  .monitor-card .mc-val { font-size:24px; font-weight:700; color:var(--gold-dark); }
+  .monitor-card .mc-label { font-size:12px; color:var(--text-muted); margin-top:4px; }
+  .monitor-card .mc-sub { font-size:11px; color:var(--text-secondary); margin-top:4px; }
+  .status-indicator { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; }
+  .status-indicator.ok { background:var(--success); }
+  .status-indicator.warn { background:var(--warning); }
+  .status-indicator.err { background:var(--error); }
+  .log-line { padding:8px 12px; border-bottom:1px solid var(--border); font-size:12px; font-family:monospace; }
+  .log-line .log-ts { color:var(--text-muted); margin-right:10px; }
+  .log-line .log-ok { color:var(--success); }
+  .log-line .log-err { color:var(--error); }
+  .api-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
+  .api-item { padding:12px; background:#faf8f3; border-radius:6px; display:flex; align-items:center; gap:10px; }
+  .api-item .api-name { font-size:13px; font-weight:600; color:var(--text-primary); }
+  .api-item .api-status { margin-left:auto; font-size:12px; }
+  @media(max-width:768px){ .monitor-grid{grid-template-columns:repeat(2,1fr);} }
+  @media(max-width:480px){ .monitor-grid{grid-template-columns:1fr;} }
 </style>
 </head>
 <body>
-<div class="placeholder">
-  <h2>🛡️ 监控看板</h2>
-  <p>监控看板功能开发中，敬请期待。</p>
+<div class="page">
+  <div class="page-title">监控看板</div>
+
+  <!-- System Status -->
+  <div class="monitor-grid" id="systemCards">
+    <div class="monitor-card">
+      <div class="mc-icon">🖥️</div>
+      <div class="mc-val" id="sysStatus">--</div>
+      <div class="mc-label">系统状态</div>
+    </div>
+    <div class="monitor-card">
+      <div class="mc-icon">⏱️</div>
+      <div class="mc-val" id="sysUptime">--</div>
+      <div class="mc-label">运行时间</div>
+    </div>
+    <div class="monitor-card">
+      <div class="mc-icon">📊</div>
+      <div class="mc-val" id="sysVersion">--</div>
+      <div class="mc-label">系统版本</div>
+    </div>
+  </div>
+
+  <!-- API Endpoints Status -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">🔌 API 端点状态</div>
+      <button class="btn btn-outline btn-sm" onclick="checkAllEndpoints()">🔄 刷新</button>
+    </div>
+    <div class="api-grid" id="apiStatus"></div>
+  </div>
+
+  <!-- Dashboard Stats Snapshot -->
+  <div class="stat-cards" id="dashStats"></div>
+
+  <!-- System Info -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">📋 系统信息</div></div>
+    <div id="sysInfo" style="font-size:13px;line-height:2;color:var(--text-secondary);">加载中...</div>
+  </div>
 </div>
+
+<script>
+const T = localStorage.getItem('yjr_token');
+const H = { 'Authorization':'Bearer '+T };
+
+const ENDPOINTS = [
+  { name:'健康检查', url:'/health', method:'GET' },
+  { name:'系统信息', url:'/api/system/info', method:'GET', auth:true },
+  { name:'仪表盘', url:'/api/dashboard/stats', method:'GET', auth:true },
+  { name:'门店列表', url:'/api/hotels', method:'GET', auth:true },
+  { name:'订单列表', url:'/api/orders?page_size=1', method:'GET', auth:true },
+  { name:'房态', url:'/api/rooms/status', method:'GET', auth:true },
+  { name:'保洁任务', url:'/api/cleaning/tasks', method:'GET', auth:true },
+  { name:'财务报表', url:'/api/finance/daily', method:'GET', auth:true },
+];
+
+function formatUptime(seconds) {
+  if (!seconds || seconds < 0) return '--';
+  var d = Math.floor(seconds / 86400);
+  var h = Math.floor((seconds % 86400) / 3600);
+  var m = Math.floor((seconds % 3600) / 60);
+  return (d>0?d+'天 ':'') + h+'小时 '+m+'分';
+}
+
+async function loadSystemInfo() {
+  try {
+    var r = await fetch('/api/system/info', { headers:H });
+    if (r.status === 401) { window.top.location.href = 'pages/login.html'; return; }
+    var j = await r.json();
+    var d = j.data || j;
+    document.getElementById('sysStatus').innerHTML = '<span class="status-indicator ok"></span>正常';
+    document.getElementById('sysVersion').textContent = 'v'+(d.version||'--');
+    document.getElementById('sysUptime').textContent = formatUptime(d.uptime_seconds);
+
+    var info = [];
+    if (d.db_type) info.push('<div><b>数据库:</b> '+d.db_type+(d.db_size?' ('+d.db_size+')':'')+'</div>');
+    if (d.python_version) info.push('<div><b>Python:</b> '+d.python_version+'</div>');
+    if (d.dev_mode!==undefined) info.push('<div><b>开发模式:</b> '+(d.dev_mode?'是':'否')+'</div>');
+    if (d.hotel_count!==undefined) info.push('<div><b>门店数:</b> '+d.hotel_count+'</div>');
+    if (d.room_count!==undefined) info.push('<div><b>房间数:</b> '+d.room_count+'</div>');
+    document.getElementById('sysInfo').innerHTML = info.join('') || '系统信息加载成功';
+  } catch(e) {
+    document.getElementById('sysStatus').innerHTML = '<span class="status-indicator warn"></span>异常';
+    document.getElementById('sysInfo').innerHTML = '<span style="color:var(--error);">加载失败: '+e.message+'</span>';
+  }
+}
+
+async function checkAllEndpoints() {
+  var grid = document.getElementById('apiStatus');
+  grid.innerHTML = ENDPOINTS.map(function(ep) {
+    return '<div class="api-item"><span class="api-name">'+ep.name+'</span><span class="api-status" id="api-'+ep.name.replace(/\s/g,'')+'">⏳</span></div>';
+  }).join('');
+
+  ENDPOINTS.forEach(function(ep) {
+    var id = 'api-'+ep.name.replace(/\s/g,'');
+    var opts = { method: ep.method };
+    if (ep.auth) opts.headers = H;
+    var start = Date.now();
+    fetch(ep.url, opts).then(function(r) {
+      var ms = Date.now() - start;
+      var el = document.getElementById(id);
+      if (r.ok) {
+        el.innerHTML = '<span style="color:var(--success);">✅ '+ms+'ms</span>';
+      } else {
+        el.innerHTML = '<span style="color:var(--error);">❌ '+r.status+'</span>';
+      }
+    }).catch(function() {
+      document.getElementById(id).innerHTML = '<span style="color:var(--error);">❌ 超时</span>';
+    });
+  });
+}
+
+async function loadDashStats() {
+  try {
+    var r = await fetch('/api/dashboard/stats', { headers:H });
+    if (r.status === 401) { window.top.location.href = 'pages/login.html'; return; }
+    var j = await r.json();
+    var d = j.data || {};
+    var F = function(n) { return '¥'+Number(n||0).toLocaleString(); };
+    document.getElementById('dashStats').innerHTML = [
+      { icon:'📋', cls:'gold', val:d.orders_today||0, label:'今日订单' },
+      { icon:'🏠', cls:'green', val:(d.occupancy_rate||0)+'%', label:'入住率' },
+      { icon:'💰', cls:'blue', val:F(d.revenue_today), label:'今日营收' },
+      { icon:'🧹', cls:'red', val:d.pending_cleaning_count||0, label:'待清洁' }
+    ].map(function(s) {
+      return '<div class="stat-card"><div class="stat-icon '+s.cls+'">'+s.icon+'</div><div class="stat-info"><div class="stat-value">'+s.val+'</div><div class="stat-label">'+s.label+'</div></div></div>';
+    }).join('');
+  } catch(e) {
+    document.getElementById('dashStats').innerHTML = '<div class="stat-card" style="grid-column:1/-1;color:var(--error);">加载仪表盘数据失败</div>';
+  }
+}
+
+loadSystemInfo();
+checkAllEndpoints();
+loadDashStats();
+setInterval(checkAllEndpoints, 60000);
+</script>
 </body>
 </html>

@@ -24,7 +24,7 @@
     <div class="settings-panel show" id="panel-basic">
       <div class="settings-section">
         <h3>企业信息</h3>
-        <div id="enterprise-loading" style="color:#999;padding:20px;">加载中...</div>
+        <div id="enterprise-loading" style="color:var(--text-muted);padding:20px;">加载中...</div>
         <div id="enterprise-content" style="display:none;">
           <div class="form-row">
             <div class="form-group">
@@ -57,12 +57,12 @@
             </div>
           </div>
         </div>
-        <div id="enterprise-error" style="display:none;color:#e74c3c;padding:20px;"></div>
+        <div id="enterprise-error" style="display:none;color:var(--error);padding:20px;"></div>
       </div>
 
       <div class="settings-section">
         <h3>系统参数</h3>
-        <p style="color:#999;padding:20px;">TODO: 系统参数配置功能待开发</p>
+        <p style="color:var(--text-muted);padding:20px;">TODO: 系统参数配置功能待开发</p>
       </div>
     </div>
 
@@ -70,8 +70,8 @@
     <div class="settings-panel" id="panel-account">
       <div class="settings-section">
         <h3>管理员账号列表</h3>
-        <div id="account-loading" style="color:#999;padding:20px;">加载中...</div>
-        <div id="account-error" style="display:none;color:#e74c3c;padding:20px;"></div>
+        <div id="account-loading" style="color:var(--text-muted);padding:20px;">加载中...</div>
+        <div id="account-error" style="display:none;color:var(--error);padding:20px;"></div>
         <div id="account-content" style="display:none;">
           <div class="settings-toolbar" style="margin-bottom:12px;display:flex;gap:8px;align-items:center;">
             <input class="form-input" id="account-search" placeholder="搜索用户名/手机号..." style="width:240px;" oninput="filterAccounts()">
@@ -105,7 +105,7 @@
     <div class="settings-panel" id="panel-pricing">
       <div class="settings-section">
         <h3>价格策略</h3>
-        <p style="color:#c8a052;font-size:18px;text-align:center;padding:60px 0;">🚧 TODO<br><span style="font-size:14px;color:#999;">价格策略功能待开发</span></p>
+        <p style="color:var(--gold);font-size:18px;text-align:center;padding:60px 0;">🚧 TODO<br><span style="font-size:14px;color:var(--text-muted);">价格策略功能待开发</span></p>
       </div>
     </div>
 
@@ -149,7 +149,7 @@
           <button class="btn btn-primary btn-sm" onclick="saveNotificationConfig()">💾 保存配置</button>
           <span id="notify-save-status" style="font-size:12px;color:var(--text-muted);display:none;"></span>
         </div>
-        <p style="color:#6BAA75;font-size:12px;margin-top:16px;padding:8px 12px;background:#f0faf0;border-radius:6px;border-left:3px solid #6BAA75;">✅ 通知配置已对接后端 POST /api/system/settings，保存后全平台生效</p>
+        <p style="color:var(--success);font-size:12px;margin-top:16px;padding:8px 12px;background:#f0faf0;border-radius:6px;border-left:3px solid var(--success);">✅ 通知配置已对接后端 POST /api/system/settings，保存后全平台生效</p>
       </div>
     </div>
 
@@ -157,7 +157,7 @@
     <div class="settings-panel" id="panel-backup">
       <div class="settings-section">
         <h3>数据库信息</h3>
-        <div id="backup-loading" style="color:#999;padding:20px;">加载中...</div>
+        <div id="backup-loading" style="color:var(--text-muted);padding:20px;">加载中...</div>
         <div id="backup-content" style="display:none;">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
             <div style="padding:20px;background:#faf8f3;border-radius:8px;text-align:center;">
@@ -181,9 +181,9 @@
             <button class="btn btn-outline btn-sm" onclick="loadBackupInfo()">🔄 刷新</button>
             <button class="btn btn-outline btn-sm" onclick="alert('TODO: 自动备份功能待开发')">📦 手动备份</button>
           </div>
-          <p style="color:#c8a052;font-size:12px;margin-top:16px;padding:8px 12px;background:#fef9ed;border-radius:6px;border-left:3px solid var(--gold);">🚧 TODO: 自动备份功能待开发，计划支持定时备份到本地/VPS/云存储</p>
+          <p style="color:var(--gold);font-size:12px;margin-top:16px;padding:8px 12px;background:#fef9ed;border-radius:6px;border-left:3px solid var(--gold);">🚧 TODO: 自动备份功能待开发，计划支持定时备份到本地/VPS/云存储</p>
         </div>
-        <div id="backup-error" style="display:none;color:#e74c3c;padding:20px;"></div>
+        <div id="backup-error" style="display:none;color:var(--error);padding:20px;"></div>
       </div>
     </div>
 
@@ -191,7 +191,7 @@
     <div class="settings-panel" id="panel-logs">
       <div class="settings-section">
         <h3>操作日志</h3>
-        <p style="color:#c8a052;font-size:18px;text-align:center;padding:60px 0;">🚧 TODO<br><span style="font-size:14px;color:#999;">操作日志功能待开发</span></p>
+        <p style="color:var(--gold);font-size:18px;text-align:center;padding:60px 0;">🚧 TODO<br><span style="font-size:14px;color:var(--text-muted);">操作日志功能待开发</span></p>
       </div>
     </div>
   </div>
@@ -292,10 +292,10 @@ function renderAccounts(list) {
   table.style.display = '';
   tbody.innerHTML = list.map(function(u) {
     var roleLabel = { admin: '管理员', front_desk: '前台', cleaner: '保洁员', guest: '住客' }[u.role] || u.role;
-    var roleStyle = u.role === 'admin' ? 'color:#c8a052;font-weight:700;' : '';
+    var roleStyle = u.role === 'admin' ? 'color:var(--gold);font-weight:700;' : '';
     var statusHtml = u.is_active
-      ? '<span style=\"color:#6BAA75;\">● 正常</span>'
-      : '<span style=\"color:#e74c3c;\">● 已禁用</span>';
+      ? '<span style=\"color:var(--success);\">● 正常</span>'
+      : '<span style=\"color:var(--error);\">● 已禁用</span>';
     var timeStr = u.created_at ? u.created_at.slice(0, 10) : '--';
     return '<tr>' +
       '<td>' + u.id + '</td>' +
@@ -324,7 +324,7 @@ var _notificationLoaded = false;
 function markConfigDirty() {
   var statusEl = document.getElementById('notify-save-status');
   statusEl.style.display = 'inline';
-  statusEl.style.color = '#c8a052';
+  statusEl.style.color = 'var(--gold)';
   statusEl.textContent = '配置已修改，请保存';
 }
 
@@ -364,7 +364,7 @@ function saveNotificationConfig() {
   var alertOn = document.getElementById('notify-alert').checked;
   var statusEl = document.getElementById('notify-save-status');
   statusEl.style.display = 'inline';
-  statusEl.style.color = '#c8a052';
+  statusEl.style.color = 'var(--gold)';
   statusEl.textContent = '保存中...';
 
   fetch('/api/system/settings', {
@@ -387,12 +387,12 @@ function saveNotificationConfig() {
     return res.json();
   })
   .then(function(result) {
-    statusEl.style.color = '#6BAA75';
+    statusEl.style.color = 'var(--success)';
     statusEl.textContent = '✅ 保存成功';
     setTimeout(function() { statusEl.style.display = 'none'; }, 3000);
   })
   .catch(function(err) {
-    statusEl.style.color = '#e74c3c';
+    statusEl.style.color = 'var(--error)';
     statusEl.textContent = '❌ 保存失败: ' + err.message;
   });
 }

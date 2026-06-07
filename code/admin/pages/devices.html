@@ -52,10 +52,15 @@ const T=localStorage.getItem('yjr_token'),H={'Authorization':'Bearer '+T};
     if (r.status === 401) { window.top.location.href = 'pages/login.html'; return; }
     let j=await r.json();
     if(j.code===0&&j.data) {
-      let items=j.data;
+      let items=Array.isArray(j.data)?j.data:(j.data.items||[]);
+      let online=0,offline=0;
+      items.forEach(function(d){
+        if(d.status==='online'||d.is_online) online++;
+        else offline++;
+      });
       document.getElementById('totalCount').textContent=items.length;
-      document.getElementById('onlineCount').textContent=0;
-      document.getElementById('offlineCount').textContent=0;
+      document.getElementById('onlineCount').textContent=online;
+      document.getElementById('offlineCount').textContent=offline;
 
       if (loadingEl) loadingEl.remove();
 
@@ -66,9 +71,10 @@ const T=localStorage.getItem('yjr_token'),H={'Authorization':'Bearer '+T};
 
       var html = '';
       items.forEach(function(d){
-        var statusIcon = '🟢';
-        var statusText = '在线';
-        var statusColor = '#6BAA75';
+        var isOnline = d.status==='online'||d.is_online;
+        var statusIcon = isOnline?'🟢':'🔴';
+        var statusText = isOnline?'在线':'离线';
+        var statusColor = isOnline?'var(--success)':'var(--error)';
         html += '<div class=\"device-card\">'+
           '<div class=\"dc-header\">'+
             '<span class=\"dc-icon\">🔒</span>'+
