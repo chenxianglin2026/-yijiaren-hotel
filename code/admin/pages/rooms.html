@@ -21,10 +21,32 @@
   .room-card-new .rc-stat .n { font-size:20px; font-weight:700; color:var(--gold-dark); }
   .room-card-new .rc-stat .l { font-size:10px; color:var(--text-muted); }
   .rc-booked{border-left-color:#faad14} .rc-occupied{border-left-color:var(--info)} .rc-vacant{border-left-color:var(--success)} .rc-mixed{border-left-color:var(--gold)}
+  /* occupancy progress */
+  .rc-progress { margin-top:10px; }
+  .rc-progress-header { display:flex; justify-content:space-between; font-size:11px; color:var(--text-muted); margin-bottom:4px; }
+  .rc-progress-header .rate { font-weight:700; color:var(--gold-dark); }
+  .rc-progress-bar { height:6px; background:#f0f0f0; border-radius:3px; overflow:hidden; }
+  .rc-progress-fill { height:100%; border-radius:3px; transition:width .5s ease; }
+  .rc-progress-fill.low { background:linear-gradient(90deg, #52c41a, #73d13d); }
+  .rc-progress-fill.mid { background:linear-gradient(90deg, #faad14, #ffc53d); }
+  .rc-progress-fill.high { background:linear-gradient(90deg, #f5222d, #ff4d4f); }
   .summary-bar { display:flex; gap:16px; margin-bottom:20px; }
   .summary-item-bar { flex:1; text-align:center; padding:12px; background:var(--bg-card); border-radius:var(--radius); box-shadow:var(--shadow); }
   .summary-item-bar .n { font-size:24px; font-weight:700; }
   .summary-item-bar .l { font-size:11px; color:var(--text-muted); }
+  /* responsive */
+  @media(max-width:768px){
+    .room-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+    .summary-bar{flex-wrap:wrap;gap:8px}
+    .summary-item-bar{flex:1 1 calc(50% - 8px);min-width:120px}
+    .room-toolbar{gap:8px}
+  }
+  @media(max-width:480px){
+    .room-grid{grid-template-columns:1fr}
+    .summary-item-bar{flex:1 1 100%}
+    .summary-item-bar .n{font-size:20px}
+    .room-toolbar .hs-btn{font-size:11px;padding:4px 10px}
+  }
 </style>
 </head>
 <body>
@@ -83,12 +105,16 @@ async function loadRooms(hid){
     // Room cards
     document.getElementById('roomGrid').innerHTML = items.length ? items.map(r=>{
       let cls = r.available_count>r.total_count*0.5?'rc-vacant':r.occupied_count>r.total_count*0.5?'rc-occupied':r.booked_count>r.total_count*0.5?'rc-booked':'rc-mixed';
+      let occRate = r.total_count > 0 ? Math.round((r.occupied_count + r.booked_count) / r.total_count * 100) : 0;
+      let rateCls = occRate < 50 ? 'low' : occRate < 80 ? 'mid' : 'high';
       return '<div class="room-card-new '+cls+'"><div class="rc-name">'+r.name+'</div><div class="rc-type">'+r.room_type+' · '+F(r.price)+'/晚 · '+(r.bed_type||'')+'</div><div class="rc-stats">'+
         '<div class="rc-stat"><div class="n" style="color:var(--success);">'+r.available_count+'</div><div class="l">空闲</div></div>'+
         '<div class="rc-stat"><div class="n" style="color:#faad14;">'+r.booked_count+'</div><div class="l">预订</div></div>'+
         '<div class="rc-stat"><div class="n" style="color:var(--info);">'+r.occupied_count+'</div><div class="l">入住</div></div>'+
         '<div class="rc-stat"><div class="n" style="color:var(--warning);">'+r.cleaning_count+'</div><div class="l">清洁</div></div>'+
-      '</div></div>';
+      '</div>'+
+      '<div class="rc-progress"><div class="rc-progress-header"><span>入住率</span><span class="rate">'+occRate+'%</span></div><div class="rc-progress-bar"><div class="rc-progress-fill '+rateCls+'" style="width:'+occRate+'%;"></div></div></div>'+
+      '</div>';
     }).join('') : '<div style="color:var(--text-muted);grid-column:1/-1;text-align:center;padding:40px;">暂无房态数据</div>';
   }catch(e){
     document.getElementById('roomGrid').innerHTML = '<div style="color:var(--error);grid-column:1/-1;text-align:center;padding:40px;">加载失败: '+e.message+'</div>';
