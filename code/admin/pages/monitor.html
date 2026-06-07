@@ -24,8 +24,13 @@
   .api-item { padding:12px; background:#faf8f3; border-radius:6px; display:flex; align-items:center; gap:10px; }
   .api-item .api-name { font-size:13px; font-weight:600; color:var(--text-primary); }
   .api-item .api-status { margin-left:auto; font-size:12px; }
-  @media(max-width:768px){ .monitor-grid{grid-template-columns:repeat(2,1fr);} }
-  @media(max-width:480px){ .monitor-grid{grid-template-columns:1fr;} }
+  .pool-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .pool-card { padding:12px; background:#faf8f3; border-radius:6px; text-align:center; }
+  .pool-card .pool-val { font-size:20px; font-weight:700; color:var(--gold-dark); }
+  .pool-card .pool-label { font-size:11px; color:var(--text-muted); margin-top:4px; }
+  .error-empty { padding:20px; text-align:center; color:var(--success); font-size:14px; }
+  @media(max-width:768px){ .monitor-grid{grid-template-columns:repeat(2,1fr);} .pool-grid{grid-template-columns:repeat(2,1fr);} }
+  @media(max-width:480px){ .monitor-grid{grid-template-columns:1fr;} .pool-grid{grid-template-columns:1fr;} }
 </style>
 </head>
 <body>
@@ -60,8 +65,28 @@
     <div class="api-grid" id="apiStatus"></div>
   </div>
 
+  <!-- DB Connection Pool -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">🗄️ 数据库连接池</div>
+      <button class="btn btn-outline btn-sm" onclick="loadDbPool()">🔄 刷新</button>
+    </div>
+    <div class="pool-grid" id="dbPoolCards"></div>
+  </div>
+
   <!-- Dashboard Stats Snapshot -->
   <div class="stat-cards" id="dashStats"></div>
+
+  <!-- Recent Error Logs -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">🐞 最近错误日志</div>
+      <button class="btn btn-outline btn-sm" onclick="loadErrorLogs()">🔄 刷新</button>
+    </div>
+    <div id="errorLogs" style="max-height:360px;overflow-y:auto;">
+      <div style="padding:12px;color:var(--text-muted);">加载中...</div>
+    </div>
+  </div>
 
   <!-- System Info -->
   <div class="card">
@@ -104,11 +129,12 @@ async function loadSystemInfo() {
     document.getElementById('sysUptime').textContent = formatUptime(d.uptime_seconds);
 
     var info = [];
-    if (d.db_type) info.push('<div><b>数据库:</b> '+d.db_type+(d.db_size?' ('+d.db_size+')':'')+'</div>');
-    if (d.python_version) info.push('<div><b>Python:</b> '+d.python_version+'</div>');
+    if (d.db_type) info.push('<div><b>数据库:</b> '+d.db_type+(d.db_size_display?' ('+d.db_size_display+')':'')+'</div>');
+    if (d.python_version) info.push('<div><b>Python:</b> '+d.python_version.split('\\n')[0]+'</div>');
     if (d.dev_mode!==undefined) info.push('<div><b>开发模式:</b> '+(d.dev_mode?'是':'否')+'</div>');
     if (d.hotel_count!==undefined) info.push('<div><b>门店数:</b> '+d.hotel_count+'</div>');
     if (d.room_count!==undefined) info.push('<div><b>房间数:</b> '+d.room_count+'</div>');
+    if (d.container) info.push('<div><b>运行环境:</b> '+d.container+'</div>');
     document.getElementById('sysInfo').innerHTML = info.join('') || '系统信息加载成功';
   } catch(e) {
     document.getElementById('sysStatus').innerHTML = '<span class="status-indicator warn"></span>异常';
@@ -119,11 +145,11 @@ async function loadSystemInfo() {
 async function checkAllEndpoints() {
   var grid = document.getElementById('apiStatus');
   grid.innerHTML = ENDPOINTS.map(function(ep) {
-    return '<div class="api-item"><span class="api-name">'+ep.name+'</span><span class="api-status" id="api-'+ep.name.replace(/\s/g,'')+'">⏳</span></div>';
+    return '<div class="api-item"><span class="api-name">'+ep.name+'</span><span class="api-status" id="api-'+ep.name.replace(/\\s/g,'')+'">⏳</span></div>';
   }).join('');
 
   ENDPOINTS.forEach(function(ep) {
-    var id = 'api-'+ep.name.replace(/\s/g,'');
+    var id = 'api-'+ep.name.replace(/\\s/g,'');
     var opts = { method: ep.method };
     if (ep.auth) opts.headers = H;
     var start = Date.now();
@@ -133,7 +159,7 @@ async function checkAllEndpoints() {
       if (r.ok) {
         el.innerHTML = '<span style="color:var(--success);">✅ '+ms+'ms</span>';
       } else {
-        el.innerHTML = '<span style="color:var(--error);">❌ '+r.status+'</span>';
+        el.innerHTML = '<span style="color:var(--error);">❌ '+r.status+' ('+ms+'ms)</span>';
       }
     }).catch(function() {
       document.getElementById(id).innerHTML = '<span style="color:var(--error);">❌ 超时</span>';
@@ -161,9 +187,52 @@ async function loadDashStats() {
   }
 }
 
+async function loadErrorLogs() {
+  var el = document.getElementById('errorLogs');
+  try {
+    var r = await fetch('/api/system/errors', { headers:H });
+    if (r.status === 401) { window.top.location.href = 'pages/login.html'; return; }
+    var j = await r.json();
+    var logs = j.data || [];
+    if (!logs.length) {
+      el.innerHTML = '<div class="error-empty">✅ 暂无错误日志</div>';
+      return;
+    }
+    el.innerHTML = logs.map(function(log) {
+      var cls = log.status >= 500 ? 'log-err' : 'log-err';
+      return '<div class="log-line"><span class="log-ts">'+log.ts+'</span><span class="'+cls+'">['+log.status+'] '+log.endpoint+'</span><br><span style="color:var(--text-secondary);">'+log.message+'</span></div>';
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div style="padding:12px;color:var(--error);">加载错误日志失败: '+e.message+'</div>';
+  }
+}
+
+async function loadDbPool() {
+  var el = document.getElementById('dbPoolCards');
+  try {
+    var r = await fetch('/api/system/db-pool', { headers:H });
+    if (r.status === 401) { window.top.location.href = 'pages/login.html'; return; }
+    var j = await r.json();
+    var d = j.data || {};
+    var items = [
+      { val: d.db_type||'--', label: '数据库类型' },
+      { val: d.pool_size!==null&&d.pool_size!==undefined ? d.pool_size : '--', label: '连接池大小' },
+      { val: d.checked_in!==null&&d.checked_in!==undefined ? d.checked_in : '--', label: '使用中连接' },
+      { val: d.pool_type||'--', label: '连接池类型' }
+    ];
+    el.innerHTML = items.map(function(it) {
+      return '<div class="pool-card"><div class="pool-val">'+it.val+'</div><div class="pool-label">'+it.label+'</div></div>';
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="pool-card" style="grid-column:1/-1;color:var(--error);">加载连接池状态失败</div>';
+  }
+}
+
 loadSystemInfo();
 checkAllEndpoints();
 loadDashStats();
+loadErrorLogs();
+loadDbPool();
 setInterval(checkAllEndpoints, 60000);
 </script>
 </body>

@@ -3,16 +3,22 @@
 数据库备份信息、系统状态、系统信息等
 """
 import os
+import sys
 import time as _time_module
 from datetime import datetime
+from collections import deque
 
 from fastapi import APIRouter, Depends, Request
+from sqlalchemy import text
 
 from app.config import settings
-from app.db import User
+from app.db import User, get_async_engine
 from app.api.auth import get_current_user
 
 router = APIRouter(prefix="/api/system", tags=["系统管理"])
+
+# ── 全局错误日志环形缓冲区（最近50条） ──────────────
+_error_log_ring: deque = deque(maxlen=50)
 
 
 def _get_db_size_info():
@@ -81,6 +87,19 @@ async def get_system_info(request: Request):
     db_file, file_size, size_display, last_modified, db_exists = _get_db_size_info()
     container = _detect_container()
 
+    # 查询门店数和房间数
+    hotel_count = 0
+    room_count = 0
+    try:
+        engine = get_async_engine()
+        async with engine.connect() as conn:
+            r = await conn.execute(text("SELECT COUNT(*) FROM hotels WHERE is_active=1"))
+            hotel_count = r.scalar() or 0
+            r = await conn.execute(text("SELECT COUNT(*) FROM rooms WHERE is_active=1"))
+            room_count = r.scalar() or 0
+    except Exception:
+        pass
+
     return {
         "code": 0,
         "data": {
@@ -95,8 +114,63 @@ async def get_system_info(request: Request):
             "db_exists": db_exists,
             "db_type": "SQLite" if settings.DEV_MODE else "PostgreSQL",
             "container": container,
+            "python_version": sys.version,
+            "hotel_count": hotel_count,
+            "room_count": room_count,
         },
     }
+
+
+# ── 错误日志公共函数 ──────────────────────────────
+
+def log_error(endpoint: str, message: str, status_code: int = 500):
+    """记录错误到环形缓冲区（供中间件或其他模块调用）"""
+    _error_log_ring.append({
+        "ts": datetime.now().isoformat(),
+        "endpoint": endpoint,
+        "message": str(message)[:500],
+        "status": status_code,
+    })
+
+
+@router.get("/errors", summary="获取最近错误日志")
+async def get_error_logs(current_user: User = Depends(get_current_user)):
+    """返回最近50条错误日志（环形缓冲区）"""
+    logs = list(_error_log_ring)
+    # 返回最近10条，按时间倒序
+    recent = logs[-10:] if len(logs) > 10 else logs
+    recent.reverse()
+    return {"code": 0, "data": recent, "total": len(logs)}
+
+
+@router.get("/db-pool", summary="获取数据库连接池状态")
+async def get_db_pool_status(current_user: User = Depends(get_current_user)):
+    """返回数据库连接池状态信息"""
+    engine = get_async_engine()
+    pool = engine.pool
+    # SQLAlchemy 不同 pool 类型有不同接口，安全获取
+    pool_info: dict = {
+        "db_type": "SQLite" if settings.DEV_MODE else "PostgreSQL",
+    }
+    try:
+        pool_info["pool_size"] = getattr(pool, "size", lambda: -1)()
+    except Exception:
+        pool_info["pool_size"] = None
+    try:
+        pool_info["checked_in"] = getattr(pool, "checkedin", lambda: -1)()
+    except Exception:
+        pool_info["checked_in"] = None
+    try:
+        pool_info["overflow"] = getattr(pool, "overflow", lambda: -1)()
+    except Exception:
+        pool_info["overflow"] = None
+    try:
+        pool_info["total"] = getattr(pool, "total", lambda: -1)()
+    except Exception:
+        pool_info["total"] = None
+    pool_info["pool_type"] = type(pool).__name__
+
+    return {"code": 0, "data": pool_info}
 
 
 @router.get("/backup-info", summary="获取数据库备份信息")

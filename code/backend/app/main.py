@@ -42,6 +42,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ── 全局异常捕获 → 错误日志环形缓冲区 ─────────────
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import JSONResponse
+import traceback as _traceback
+
+class ErrorLogMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        try:
+            response = await call_next(request)
+            return response
+        except Exception as e:
+            endpoint = request.url.path
+            system.log_error(endpoint, f"{type(e).__name__}: {str(e)}", 500)
+            return JSONResponse(
+                status_code=500,
+                content={"code": 1, "msg": f"服务器内部错误: {str(e)}"},
+            )
+
+app.add_middleware(ErrorLogMiddleware)
+
 # 注册路由
 app.include_router(auth.router)
 app.include_router(hotels.router)
