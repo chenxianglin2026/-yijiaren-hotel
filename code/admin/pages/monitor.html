@@ -24,7 +24,7 @@
   .api-item { padding:12px; background:#faf8f3; border-radius:6px; display:flex; align-items:center; gap:10px; }
   .api-item .api-name { font-size:13px; font-weight:600; color:var(--text-primary); }
   .api-item .api-status { margin-left:auto; font-size:12px; }
-  .pool-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .pool-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
   .pool-card { padding:12px; background:#faf8f3; border-radius:6px; text-align:center; }
   .pool-card .pool-val { font-size:20px; font-weight:700; color:var(--gold-dark); }
   .pool-card .pool-label { font-size:11px; color:var(--text-muted); margin-top:4px; }
@@ -103,11 +103,15 @@ const ENDPOINTS = [
   { name:'健康检查', url:'/health', method:'GET' },
   { name:'系统信息', url:'/api/system/info', method:'GET', auth:true },
   { name:'仪表盘', url:'/api/dashboard/stats', method:'GET', auth:true },
+  { name:'性能对比', url:'/api/dashboard/perf', method:'GET', auth:true },
   { name:'门店列表', url:'/api/hotels', method:'GET', auth:true },
   { name:'订单列表', url:'/api/orders?page_size=1', method:'GET', auth:true },
   { name:'房态', url:'/api/rooms/status', method:'GET', auth:true },
   { name:'保洁任务', url:'/api/cleaning/tasks', method:'GET', auth:true },
   { name:'财务报表', url:'/api/finance/daily', method:'GET', auth:true },
+  { name:'设备列表', url:'/api/devices/list', method:'GET', auth:true },
+  { name:'DB连接池', url:'/api/system/db-pool', method:'GET', auth:true },
+  { name:'错误日志', url:'/api/system/errors', method:'GET', auth:true },
 ];
 
 function formatUptime(seconds) {
@@ -214,11 +218,15 @@ async function loadDbPool() {
     if (r.status === 401) { window.top.location.href = 'pages/login.html'; return; }
     var j = await r.json();
     var d = j.data || {};
+    var statusColor = d.status==='healthy'?'var(--success)':(d.status==='warning'?'var(--warning)':'var(--error)');
     var items = [
       { val: d.db_type||'--', label: '数据库类型' },
-      { val: d.pool_size!==null&&d.pool_size!==undefined ? d.pool_size : '--', label: '连接池大小' },
-      { val: d.checked_in!==null&&d.checked_in!==undefined ? d.checked_in : '--', label: '使用中连接' },
-      { val: d.pool_type||'--', label: '连接池类型' }
+      { val: d.pool_size!=null&&d.pool_size!==undefined ? d.pool_size : '--', label: '连接池大小' },
+      { val: d.checked_in!=null&&d.checked_in!==undefined ? d.checked_in : '--', label: '空闲连接' },
+      { val: d.checked_out!=null&&d.checked_out!==undefined ? d.checked_out : '--', label: '使用中连接' },
+      { val: d.usage_pct!=null ? d.usage_pct+'%' : '--', label: '使用率' },
+      { val: d.pool_type||'--', label: '连接池类型' },
+      { val: '<span style=\"color:'+statusColor+';\">'+(d.status_msg||d.status||'--')+'</span>', label: '状态评估' },
     ];
     el.innerHTML = items.map(function(it) {
       return '<div class="pool-card"><div class="pool-val">'+it.val+'</div><div class="pool-label">'+it.label+'</div></div>';

@@ -145,32 +145,78 @@ async def get_error_logs(current_user: User = Depends(get_current_user)):
 
 @router.get("/db-pool", summary="获取数据库连接池状态")
 async def get_db_pool_status(current_user: User = Depends(get_current_user)):
-    """返回数据库连接池状态信息"""
+    """返回数据库连接池详细状态信息"""
     engine = get_async_engine()
     pool = engine.pool
-    # SQLAlchemy 不同 pool 类型有不同接口，安全获取
+
     pool_info: dict = {
         "db_type": "SQLite" if settings.DEV_MODE else "PostgreSQL",
+        "pool_type": type(pool).__name__,
     }
-    try:
-        pool_info["pool_size"] = getattr(pool, "size", lambda: -1)()
-    except Exception:
-        pool_info["pool_size"] = None
-    try:
-        pool_info["checked_in"] = getattr(pool, "checkedin", lambda: -1)()
-    except Exception:
-        pool_info["checked_in"] = None
-    try:
-        pool_info["overflow"] = getattr(pool, "overflow", lambda: -1)()
-    except Exception:
-        pool_info["overflow"] = None
-    try:
-        pool_info["total"] = getattr(pool, "total", lambda: -1)()
-    except Exception:
-        pool_info["total"] = None
-    pool_info["pool_type"] = type(pool).__name__
+
+    # 尝试获取连接池各项指标
+    _safe_get(pool_info, pool, "size", "pool_size")
+    _safe_get(pool_info, pool, "checkedin", "checked_in")
+    _safe_get(pool_info, pool, "checkedout", "checked_out")
+    _safe_get(pool_info, pool, "overflow", "overflow")
+    _safe_get(pool_info, pool, "total", "total")
+    _safe_get(pool_info, pool, "connections", "connections")
+
+    # 计算使用率
+    total_conn = pool_info.get("total")
+    checked_out = pool_info.get("checked_out")
+    if total_conn and checked_out is not None and total_conn > 0:
+        pool_info["usage_pct"] = round(checked_out / total_conn * 100, 1)
+    else:
+        pool_info["usage_pct"] = None
+
+    # 空闲连接数
+    checked_in = pool_info.get("checked_in")
+    if checked_in is not None and pool_info.get("checked_out") is not None:
+        pool_info["idle"] = checked_in
+    else:
+        pool_info["idle"] = None
+
+    # 连接池状态评估
+    usage = pool_info.get("usage_pct")
+    if usage is not None:
+        if usage >= 95:
+            pool_info["status"] = "critical"
+            pool_info["status_msg"] = f"连接池使用率 {usage}%，即将耗尽"
+        elif usage >= 80:
+            pool_info["status"] = "warning"
+            pool_info["status_msg"] = f"连接池使用率 {usage}%，接近满载"
+        else:
+            pool_info["status"] = "healthy"
+            pool_info["status_msg"] = f"连接池使用率 {usage}%，运行正常"
+    else:
+        # SQLite 单连接模式
+        pool_info["status"] = "healthy"
+        pool_info["status_msg"] = "SQLite 单连接模式，无需连接池"
+
+    # 添加数据库连接URL（隐藏密码）
+    db_url = settings.db_url
+    if "@" in db_url:
+        safe_url = db_url.split("@")[0].split("://")[0] + "://***@" + db_url.split("@")[1]
+    else:
+        safe_url = db_url.split("///")[0] + "///***"
+    pool_info["db_url_safe"] = safe_url
+
+    # 添加 DEV_MODE 信息
+    pool_info["dev_mode"] = settings.DEV_MODE
 
     return {"code": 0, "data": pool_info}
+
+
+def _safe_get(target: dict, obj, attr_name: str, key: str):
+    """安全地从对象获取属性值，异常时设为 None"""
+    try:
+        val = getattr(obj, attr_name, None)
+        if callable(val):
+            val = val()
+        target[key] = val if val is not None and val != -1 else None
+    except Exception:
+        target[key] = None
 
 
 @router.get("/backup-info", summary="获取数据库备份信息")

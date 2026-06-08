@@ -215,6 +215,28 @@ class Checkin(Base):
     hotel: Mapped["Hotel"] = relationship(back_populates="checkins")
 
 
+# ── 设备模型 ─────────────────────────────────────────
+class Device(Base):
+    """物联网设备：智能门锁、客控面板、传感器等"""
+    __tablename__ = "devices"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    device_id: Mapped[str] = mapped_column(String(100), unique=True, index=True, nullable=False, comment="设备唯一ID")
+    name: Mapped[str] = mapped_column(String(200), nullable=False, comment="设备名称")
+    device_type: Mapped[str] = mapped_column(String(50), default="smart_lock", comment="smart_lock/control_panel/sensor/gateway/charger")
+    hotel_id: Mapped[Optional[int]] = mapped_column(ForeignKey("hotels.id", ondelete="SET NULL"), index=True)
+    room_number: Mapped[Optional[str]] = mapped_column(String(20), comment="关联房间号")
+    status: Mapped[str] = mapped_column(String(20), default="offline", index=True, comment="online/offline/alert")
+    battery: Mapped[Optional[int]] = mapped_column(Integer, comment="电量百分比 0-100")
+    firmware_version: Mapped[Optional[str]] = mapped_column(String(50), comment="固件版本")
+    ip_address: Mapped[Optional[str]] = mapped_column(String(50), comment="设备IP地址")
+    last_online: Mapped[Optional[datetime]] = mapped_column(DateTime, comment="最后在线时间")
+    extra: Mapped[Optional[str]] = mapped_column(Text, comment="扩展字段 JSON")
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 # ── 引擎 & 会话工厂 ──────────────────────────────────
 _async_engine = None
 _async_session_factory = None

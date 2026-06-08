@@ -14,7 +14,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.db import Base, User, Hotel, Room, Order, OrderStatus, Camera
+from app.db import Base, User, Hotel, Room, Order, OrderStatus, Camera, Device
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -259,6 +259,108 @@ def seed():
         for cd in cameras_data:
             session.add(Camera(**cd))
 
+        # ── 9. 插入模拟设备数据 ──
+        devices_data = [
+            {
+                "device_id": "LOCK-001",
+                "name": "101房间智能门锁",
+                "device_type": "smart_lock",
+                "hotel_id": hotels[0].id,
+                "room_number": "101",
+                "status": "online",
+                "battery": 85,
+                "firmware_version": "v2.3.1",
+                "ip_address": "192.168.1.101",
+                "last_online": datetime.utcnow(),
+            },
+            {
+                "device_id": "LOCK-002",
+                "name": "102房间智能门锁",
+                "device_type": "smart_lock",
+                "hotel_id": hotels[0].id,
+                "room_number": "102",
+                "status": "online",
+                "battery": 63,
+                "firmware_version": "v2.3.0",
+                "ip_address": "192.168.1.102",
+                "last_online": datetime.utcnow(),
+            },
+            {
+                "device_id": "LOCK-003",
+                "name": "201房间智能门锁",
+                "device_type": "smart_lock",
+                "hotel_id": hotels[0].id,
+                "room_number": "201",
+                "status": "offline",
+                "battery": 15,
+                "firmware_version": "v2.2.0",
+                "ip_address": "192.168.1.201",
+                "last_online": datetime.utcnow() - timedelta(days=3),
+            },
+            {
+                "device_id": "PANEL-001",
+                "name": "大堂客控面板",
+                "device_type": "control_panel",
+                "hotel_id": hotels[0].id,
+                "room_number": None,
+                "status": "online",
+                "battery": None,
+                "firmware_version": "v1.5.0",
+                "ip_address": "192.168.1.10",
+                "last_online": datetime.utcnow(),
+            },
+            {
+                "device_id": "SENSOR-001",
+                "name": "走廊温湿度传感器",
+                "device_type": "sensor",
+                "hotel_id": hotels[0].id,
+                "room_number": None,
+                "status": "online",
+                "battery": 92,
+                "firmware_version": "v1.0.3",
+                "ip_address": "192.168.1.50",
+                "last_online": datetime.utcnow(),
+            },
+            {
+                "device_id": "CHARGER-001",
+                "name": "停车场充电桩A1",
+                "device_type": "charger",
+                "hotel_id": hotels[1].id,
+                "room_number": None,
+                "status": "online",
+                "battery": None,
+                "firmware_version": "v3.1.0",
+                "ip_address": "192.168.2.100",
+                "last_online": datetime.utcnow(),
+            },
+            {
+                "device_id": "LOCK-101",
+                "name": "301房间智能门锁",
+                "device_type": "smart_lock",
+                "hotel_id": hotels[1].id,
+                "room_number": "301",
+                "status": "alert",
+                "battery": 5,
+                "firmware_version": "v2.1.0",
+                "ip_address": "192.168.2.201",
+                "last_online": datetime.utcnow() - timedelta(hours=1),
+            },
+            {
+                "device_id": "GW-001",
+                "name": "主楼网关",
+                "device_type": "gateway",
+                "hotel_id": hotels[0].id,
+                "room_number": None,
+                "status": "online",
+                "battery": None,
+                "firmware_version": "v4.0.2",
+                "ip_address": "192.168.1.1",
+                "last_online": datetime.utcnow(),
+            },
+        ]
+        for dd in devices_data:
+            session.add(Device(**dd))
+
         session.commit()
         print("✅ 模拟数据播种完成！")
         print(f"   用户: 3 个 (admin/testuser/zhangsan)")
@@ -266,6 +368,7 @@ def seed():
         print(f"   房型: 15 个 (每家 5 种)")
         print(f"   订单: 4 条")
         print(f"   摄像头: 2 个 (示例/offline)")
+        print(f"   设备: 8 个 (门锁x4, 面板x1, 传感器x1, 充电桩x1, 网关x1)")
         print(f"\n   测试账号:")
         print(f"   admin / admin123  (管理员)")
         print(f"   testuser / test123  (普通用户)")

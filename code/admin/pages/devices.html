@@ -44,7 +44,8 @@
 
 <script>
 const T=localStorage.getItem('yjr_token'),H={'Authorization':'Bearer '+T};
-(async()=>{
+
+async function loadDevices() {
   const loadingEl = document.getElementById('device-loading');
   const listEl = document.getElementById('deviceList');
   try{
@@ -58,7 +59,7 @@ const T=localStorage.getItem('yjr_token'),H={'Authorization':'Bearer '+T};
         if(d.status==='online'||d.is_online) online++;
         else offline++;
       });
-      document.getElementById('totalCount').textContent=items.length;
+      document.getElementById('totalCount').textContent=j.total||items.length;
       document.getElementById('onlineCount').textContent=online;
       document.getElementById('offlineCount').textContent=offline;
 
@@ -75,18 +76,21 @@ const T=localStorage.getItem('yjr_token'),H={'Authorization':'Bearer '+T};
         var statusIcon = isOnline?'🟢':'🔴';
         var statusText = isOnline?'在线':'离线';
         var statusColor = isOnline?'var(--success)':'var(--error)';
-        html += '<div class=\"device-card\">'+
-          '<div class=\"dc-header\">'+
-            '<span class=\"dc-icon\">🔒</span>'+
-            '<div><div class=\"dc-name\">'+(d.name||'未命名设备')+'</div>'+
-            '<div class=\"dc-id\">'+(d.device_id||d.id||'--')+'</div></div>'+
-            '<div class=\"dc-status\" style=\"color:'+statusColor+'\">'+statusIcon+' '+statusText+'</div>'+
+        var typeNames = {smart_lock:'智能门锁',control_panel:'客控面板',sensor:'传感器',gateway:'网关',charger:'充电桩'};
+        var typeName = typeNames[d.device_type]||d.type||'智能门锁';
+        html += '<div class="device-card">'+
+          '<div class="dc-header">'+
+            '<span class="dc-icon">🔒</span>'+
+            '<div><div class="dc-name">'+(d.name||'未命名设备')+'</div>'+
+            '<div class="dc-id">'+(d.device_id||d.id||'--')+'</div></div>'+
+            '<div class="dc-status" style="color:'+statusColor+'">'+statusIcon+' '+statusText+'</div>'+
           '</div>'+
-          '<div class=\"dc-info\">'+
-            '<div>类型: '+(d.type||'智能门锁')+'</div>'+
+          '<div class="dc-info">'+
+            '<div>类型: '+typeName+'</div>'+
             '<div>门店: '+(d.hotel_name||'--')+'</div>'+
-            '<div>电量: '+(d.battery!=null?d.battery+'%':'--')+'</div>'+
+            '<div>电量: '+(d.battery!=null?d.battery+'%':'--')+(d.battery!=null&&d.battery<20?' ⚠️低电量':'')+'</div>'+
             '<div>最后在线: '+(d.last_online||'--')+'</div>'+
+            (d.room_number?'<div>房间: '+d.room_number+'</div>':'')+
           '</div>'+
         '</div>';
       });
@@ -97,7 +101,11 @@ const T=localStorage.getItem('yjr_token'),H={'Authorization':'Bearer '+T};
       loadingEl.innerHTML = '📡 设备列表加载失败<br><small>'+e.message+'</small>';
     }
   }
-})();
+}
+
+// 首次加载 + 每30秒自动刷新
+loadDevices();
+setInterval(loadDevices, 30000);
 </script>
 </body>
 </html>
