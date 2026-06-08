@@ -477,6 +477,7 @@ async def complete_service_request(
 async def service_stats(
     hotel_id: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """获取各类型待处理数量统计"""
     query = select(ServiceRequest).where(ServiceRequest.status == "pending")
@@ -513,6 +514,7 @@ class CleanerInfo(BaseModel):
 async def list_cleaners(
     hotel_id: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """获取保洁员列表及其工单统计"""
     query = select(User).where(User.role == "cleaner", User.is_active == True)

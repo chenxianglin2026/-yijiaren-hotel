@@ -24,7 +24,7 @@ from sqlalchemy.orm import selectinload
 
 from app.db import get_db, User, Hotel, Room, Order, Checkin, OTAChannel, OTAOrderMapping
 from app.db import OrderStatus, CheckinStatus
-from app.api.auth import get_current_user
+from app.api.auth import get_current_user, hash_password
 from app.config import settings
 
 logger = logging.getLogger("ota")
@@ -441,7 +441,7 @@ async def _create_order_from_ota(
             username=f"ota_{payload.guest_phone}",
             phone=payload.guest_phone,
             nickname=payload.guest_name,
-            hashed_password="ota_external",  # OTA 用户无需密码登录
+            hashed_password=hash_password(f"ota_{payload.guest_phone}"),  # OTA 用户无需密码登录，用手机号+随机盐哈希
             role="guest",
         )
         db.add(user)
