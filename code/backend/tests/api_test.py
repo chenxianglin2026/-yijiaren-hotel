@@ -202,7 +202,7 @@ class TestHotelsAPI:
     def test_list_hotels(self):
         r = client.get(f"{BASE_URL}/api/hotels")
         assert r.status_code == 200
-        data = r.json()
+        data = r.json()["data"]
         assert data["total"] == 3
         assert len(data["items"]) == 3
         # 每个item应包含必要字段
@@ -217,14 +217,14 @@ class TestHotelsAPI:
     def test_list_hotels_filter_city(self):
         r = client.get(f"{BASE_URL}/api/hotels", params={"city": "杭州"})
         assert r.status_code == 200
-        data = r.json()
+        data = r.json()["data"]
         assert data["total"] == 1
         assert "西湖" in data["items"][0]["name"]
 
     def test_list_hotels_filter_keyword(self):
         r = client.get(f"{BASE_URL}/api/hotels", params={"keyword": "三里屯"})
         assert r.status_code == 200
-        data = r.json()
+        data = r.json()["data"]
         assert data["total"] >= 1
         names = [h["name"] for h in data["items"]]
         assert any("三里屯" in n for n in names)
@@ -232,7 +232,7 @@ class TestHotelsAPI:
     def test_list_hotels_pagination(self):
         r = client.get(f"{BASE_URL}/api/hotels", params={"page": 1, "page_size": 2})
         assert r.status_code == 200
-        data = r.json()
+        data = r.json()["data"]
         assert len(data["items"]) <= 2
         assert data["total"] == 3
 
