@@ -3,7 +3,7 @@
 创建订单 / 查询订单 / 取消订单
 """
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -37,6 +37,7 @@ class OrderOut(BaseModel):
     hotel_name: Optional[str] = None
     room_id: int
     room_name: Optional[str] = None
+    room_type: Optional[str] = None
     room_count: int
     checkin_date: date
     checkout_date: date
@@ -142,25 +143,58 @@ async def create_order(
     )
 
 
-@router.get("", response_model=OrderListResponse, summary="查询我的订单")
+@router.get("", response_model=OrderListResponse, summary="查询订单列表")
 async def list_orders(
+    keyword: Optional[str] = Query(None, description="搜索订单号/客人姓名"),
     status: Optional[str] = Query(None, description="订单状态筛选"),
+    start_date: Optional[str] = Query(None, description="开始日期 YYYY-MM-DD"),
+    end_date: Optional[str] = Query(None, description="结束日期 YYYY-MM-DD"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    query = select(Order).where(Order.user_id == current_user.id).options(
-        selectinload(Order.hotel), selectinload(Order.room)
-    )
+    # Admin/front_desk can see all orders; normal users see only their own
+    if current_user.role in ("admin", "front_desk"):
+        query = select(Order).options(
+            selectinload(Order.hotel), selectinload(Order.room)
+        )
+        count_q = select(func.count(Order.id))
+    else:
+        query = select(Order).where(Order.user_id == current_user.id).options(
+            selectinload(Order.hotel), selectinload(Order.room)
+        )
+        count_q = select(func.count(Order.id)).where(Order.user_id == current_user.id)
 
     if status:
         query = query.where(Order.status == status)
-
-    # 总数 (使用独立查询，不包装selectinload选项)
-    count_q = select(func.count(Order.id)).where(Order.user_id == current_user.id)
-    if status:
         count_q = count_q.where(Order.status == status)
+
+    if keyword:
+        query = query.where(
+            (Order.order_no.contains(keyword)) | (Order.guest_name.contains(keyword))
+        )
+        count_q = count_q.where(
+            (Order.order_no.contains(keyword)) | (Order.guest_name.contains(keyword))
+        )
+
+    # Date range filter
+    if start_date:
+        try:
+            sd = datetime.strptime(start_date, "%Y-%m-%d")
+            query = query.where(Order.created_at >= sd)
+            count_q = count_q.where(Order.created_at >= sd)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="日期格式错误，请使用 YYYY-MM-DD")
+    if end_date:
+        try:
+            ed = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)
+            query = query.where(Order.created_at < ed)
+            count_q = count_q.where(Order.created_at < ed)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="日期格式错误，请使用 YYYY-MM-DD")
+
+    # 总数
     total_result = await db.execute(count_q)
     total = total_result.scalar()
 
@@ -171,13 +205,14 @@ async def list_orders(
 
     items = []
     for o in orders:
-        # 获取酒店和房型名称
         hotel_name = None
         room_name = None
+        room_type = None
         if o.hotel:
             hotel_name = o.hotel.name
         if o.room:
             room_name = o.room.name
+            room_type = o.room.room_type
 
         items.append(
             OrderOut(
@@ -187,6 +222,7 @@ async def list_orders(
                 hotel_name=hotel_name,
                 room_id=o.room_id,
                 room_name=room_name,
+                room_type=room_type,
                 room_count=o.room_count,
                 checkin_date=o.checkin_date,
                 checkout_date=o.checkout_date,
@@ -212,10 +248,14 @@ async def get_order(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    # Admin/front_desk can view any order; normal users see only their own
+    if current_user.role in ("admin", "front_desk"):
+        query = select(Order).where(Order.id == order_id)
+    else:
+        query = select(Order).where(Order.id == order_id, Order.user_id == current_user.id)
+    
     result = await db.execute(
-        select(Order).where(Order.id == order_id, Order.user_id == current_user.id).options(
-            selectinload(Order.hotel), selectinload(Order.room)
-        )
+        query.options(selectinload(Order.hotel), selectinload(Order.room))
     )
     order = result.scalar_one_or_none()
     if not order:
@@ -228,6 +268,7 @@ async def get_order(
         hotel_name=order.hotel.name if order.hotel else None,
         room_id=order.room_id,
         room_name=order.room.name if order.room else None,
+        room_type=order.room.room_type if order.room else None,
         room_count=order.room_count,
         checkin_date=order.checkin_date,
         checkout_date=order.checkout_date,
@@ -251,10 +292,14 @@ async def cancel_order(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    # Admin/front_desk can cancel any order; normal users only their own
+    if current_user.role in ("admin", "front_desk"):
+        query = select(Order).where(Order.id == order_id)
+    else:
+        query = select(Order).where(Order.id == order_id, Order.user_id == current_user.id)
+    
     result = await db.execute(
-        select(Order).where(Order.id == order_id, Order.user_id == current_user.id).options(
-            selectinload(Order.hotel), selectinload(Order.room)
-        )
+        query.options(selectinload(Order.hotel), selectinload(Order.room))
     )
     order = result.scalar_one_or_none()
     if not order:

@@ -84,11 +84,17 @@ class CleaningTaskCreate(BaseModel):
 
 class CleaningTaskOut(BaseModel):
     id: int
+    task_no: Optional[str] = None
     hotel_id: int
+    hotel_name: Optional[str] = None
     room_number: str
+    room_name: Optional[str] = None
+    room_no: Optional[str] = None
     task_type: str
     status: str
+    description: Optional[str] = None
     cleaner_id: Optional[int] = None
+    cleaner_name: Optional[str] = None
     notes: Optional[str] = None
     photo_urls: Optional[str] = None
     created_at: Optional[datetime] = None
@@ -210,9 +216,35 @@ async def list_cleaning_tasks(
     )
     tasks = result.scalars().all()
 
+    # 批量查询酒店名称和保洁员名称
+    hotel_ids = list(set(t.hotel_id for t in tasks if t.hotel_id))
+    cleaner_ids = list(set(t.cleaner_id for t in tasks if t.cleaner_id))
+    
+    hotel_map = {}
+    if hotel_ids:
+        hotel_result = await db.execute(select(Hotel).where(Hotel.id.in_(hotel_ids)))
+        for h in hotel_result.scalars().all():
+            hotel_map[h.id] = h.name
+    
+    cleaner_map = {}
+    if cleaner_ids:
+        cleaner_result = await db.execute(select(User).where(User.id.in_(cleaner_ids)))
+        for u in cleaner_result.scalars().all():
+            cleaner_map[u.id] = u.nickname or u.username
+
+    def _enrich_task(t):
+        data = CleaningTaskOut.model_validate(t)
+        data.task_no = f"#{t.id}"
+        data.hotel_name = hotel_map.get(t.hotel_id)
+        data.room_no = t.room_number
+        data.room_name = t.room_number
+        data.cleaner_name = cleaner_map.get(t.cleaner_id)
+        data.description = t.notes
+        return data
+
     return TaskListResponse(
         total=total,
-        items=[CleaningTaskOut.model_validate(t) for t in tasks],
+        items=[_enrich_task(t) for t in tasks],
     )
 
 

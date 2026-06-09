@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.db import get_db, Hotel, Room
+from app.api.auth import get_current_user, User
 
 router = APIRouter(prefix="/api/hotels", tags=["门店"])
 
@@ -72,7 +73,7 @@ class HotelListResponse(BaseModel):
 
 
 # ── 路由 ─────────────────────────────────────────────
-@router.get("", response_model=HotelListResponse, summary="门店列表")
+@router.get("", summary="门店列表")
 async def list_hotels(
     city: Optional[str] = Query(None, description="按城市筛选"),
     keyword: Optional[str] = Query(None, description="搜索关键词(名称/地址)"),
@@ -116,7 +117,7 @@ async def list_hotels(
             )
         )
 
-    return HotelListResponse(total=total, items=items)
+    return {"code": 0, "data": {"total": total, "items": items}, "msg": "ok"}
 
 
 @router.get("/{hotel_id}", response_model=HotelDetail, summary="门店详情")
@@ -165,3 +166,98 @@ async def get_room_detail(room_id: int, db: AsyncSession = Depends(get_db)):
     if not room:
         raise HTTPException(status_code=404, detail="房型不存在")
     return RoomOut.model_validate(room)
+
+
+# ── 门店管理（管理员） ──────────────────────────────
+
+class CreateHotelRequest(BaseModel):
+    name: str
+    address: str
+    city: str
+    district: Optional[str] = None
+    phone: Optional[str] = None
+    description: Optional[str] = None
+    cover_image: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+
+class UpdateHotelRequest(BaseModel):
+    name: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    district: Optional[str] = None
+    phone: Optional[str] = None
+    description: Optional[str] = None
+    cover_image: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+
+@router.post("", summary="新增门店（管理员）")
+async def create_hotel(
+    req: CreateHotelRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="仅管理员可新增门店")
+
+    hotel = Hotel(
+        name=req.name,
+        address=req.address,
+        city=req.city,
+        district=req.district,
+        phone=req.phone,
+        description=req.description,
+        cover_image=req.cover_image,
+        latitude=req.latitude,
+        longitude=req.longitude,
+        rating=5.0,
+    )
+    db.add(hotel)
+    await db.flush()
+    await db.refresh(hotel)
+    return {"code": 0, "data": {"id": hotel.id, "name": hotel.name}, "msg": "门店创建成功"}
+
+
+@router.put("/{hotel_id}", summary="编辑门店（管理员）")
+async def update_hotel(
+    hotel_id: int,
+    req: UpdateHotelRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="仅管理员可编辑门店")
+
+    result = await db.execute(select(Hotel).where(Hotel.id == hotel_id))
+    hotel = result.scalar_one_or_none()
+    if not hotel:
+        raise HTTPException(status_code=404, detail="门店不存在")
+
+    update_data = req.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(hotel, key, value)
+
+    await db.flush()
+    await db.refresh(hotel)
+    return {"code": 0, "data": {"id": hotel.id, "name": hotel.name}, "msg": "门店更新成功"}
+
+
+@router.delete("/{hotel_id}", summary="删除门店（管理员）")
+async def delete_hotel(
+    hotel_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="仅管理员可删除门店")
+
+    result = await db.execute(select(Hotel).where(Hotel.id == hotel_id))
+    hotel = result.scalar_one_or_none()
+    if not hotel:
+        raise HTTPException(status_code=404, detail="门店不存在")
+
+    # 软删除
+    hotel.is_active = False
+    await db.flush()
+    return {"code": 0, "msg": "门店已删除"}
