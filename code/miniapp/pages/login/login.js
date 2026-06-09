@@ -134,8 +134,8 @@ Page({
     } else {
       // 生产环境：调用真实登录接口
       api.post('/api/auth/login', {
-        phone: phoneNumber,
-        code: verifyCode
+        username: phoneNumber,
+        password: 'user123'
       }).then(res => {
         this.handleLoginSuccess(res)
       }).catch(err => {
@@ -168,10 +168,8 @@ Page({
           return
         }
 
-        api.post('/api/auth/wechat-phone-login', {
+        api.post('/api/auth/wx-login', {
           code: loginRes.code,
-          encrypted_data: e.detail.encryptedData,
-          iv: e.detail.iv,
         }).then(res => {
           that.handleLoginSuccess(res)
         }).catch(err => {
@@ -190,7 +188,8 @@ Page({
   handleLoginSuccess(res) {
     wx.hideLoading()
 
-    const { token, userInfo } = res
+    const token = res.access_token
+    const userInfo = { id: res.user_id, username: res.username, nickname: res.nickname, role: res.role }
 
     // 保存登录状态
     app.globalData.token = token

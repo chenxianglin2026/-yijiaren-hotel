@@ -44,11 +44,12 @@ App({
   checkLogin() {
     const that = this
     wx.request({
-      url: `${this.globalData.apiBase}/api/user/profile`,
+      url: `${this.globalData.apiBase}/api/auth/me`,
       header: { Authorization: `Bearer ${this.globalData.token}` },
       success(res) {
-        if (res.data.code === 0) {
-          that.globalData.userInfo = res.data.data
+        if (res.data && res.data.id) {
+          that.globalData.userInfo = res.data
+          that.globalData.phoneNumber = res.data.phone || ''
         } else {
           that.globalData.token = ''
           wx.removeStorageSync('token')
@@ -71,11 +72,11 @@ App({
             method: 'POST',
             data: { code: loginRes.code },
             success(res) {
-              if (res.data.code === 0 && res.data.data.token) {
-                that.globalData.token = res.data.data.token
-                wx.setStorageSync('token', res.data.data.token)
-                if (res.data.data.userInfo) {
-                  that.globalData.userInfo = res.data.data.userInfo
+              if (res.data && res.data.access_token) {
+                that.globalData.token = res.data.access_token
+                wx.setStorageSync('token', res.data.access_token)
+                if (res.data.nickname) {
+                  that.globalData.userInfo = { nickname: res.data.nickname, id: res.data.user_id }
                 }
                 callback && callback(true)
               } else {
@@ -93,29 +94,9 @@ App({
 
   // 获取用户手机号
   getPhoneNumber(e, callback) {
-    const that = this
-    if (e.detail.errMsg !== 'getPhoneNumber:ok') {
-      wx.showToast({ title: '获取手机号失败', icon: 'none' })
-      return
-    }
-    wx.request({
-      url: `${this.globalData.apiBase}/api/auth/bind-phone`,
-      method: 'POST',
-      header: { Authorization: `Bearer ${this.globalData.token}` },
-      data: {
-        encryptedData: e.detail.encryptedData,
-        iv: e.detail.iv
-      },
-      success(res) {
-        if (res.data.code === 0) {
-          that.globalData.phoneNumber = res.data.data.phone
-          callback && callback(true, res.data.data.phone)
-        } else {
-          wx.showToast({ title: '绑定失败', icon: 'none' })
-          callback && callback(false)
-        }
-      }
-    })
+    // 后端暂无bind-phone接口
+    wx.showToast({ title: '手机绑定开发中', icon: 'none' })
+    callback && callback(false)
   },
 
   // 切换门店
