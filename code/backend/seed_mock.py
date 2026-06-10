@@ -108,18 +108,39 @@ def seed():
             session.flush()
             hotels.append(hotel)
 
-        # ── 3. 为每个门店创建 5 个房型 ──
-        room_types = [
-            {"name": "雅致大床房", "room_type": "大床房", "price": 298, "total_count": 15, "area": 25, "bed_type": "1.8m大床", "max_guests": 2, "has_window": True, "has_bathtub": False},
-            {"name": "豪华双床房", "room_type": "双床房", "price": 368, "total_count": 12, "area": 32, "bed_type": "1.5m双床", "max_guests": 2, "has_window": True, "has_bathtub": False},
-            {"name": "行政套房", "room_type": "套房", "price": 688, "total_count": 5, "area": 55, "bed_type": "1.8m大床", "max_guests": 3, "has_window": True, "has_bathtub": True},
-            {"name": "家庭亲子房", "room_type": "家庭房", "price": 528, "total_count": 6, "area": 42, "bed_type": "1.8m+1.2m", "max_guests": 4, "has_window": True, "has_bathtub": True},
-            {"name": "舒适单人间", "room_type": "单人间", "price": 198, "total_count": 20, "area": 18, "bed_type": "1.5m大床", "max_guests": 1, "has_window": True, "has_bathtub": False},
+        # ── 3. 为每个门店创建 5 个房型（覆盖全部房型属性组合）──
+        # 房型矩阵: 大床房/双床房/套房/家庭房/单人间/标准间
+        # 属性覆盖: has_window(T/F), has_wifi(T/F), has_bathtub(T/F), max_guests(1-4)
+        hotel_room_types = [
+            # 西湖旗舰店 — 经典房型
+            [
+                {"name": "雅致大床房", "room_type": "大床房", "price": 298, "total_count": 15, "area": 25, "bed_type": "1.8m大床", "max_guests": 2, "has_window": True, "has_wifi": True, "has_bathtub": False},
+                {"name": "豪华双床房", "room_type": "双床房", "price": 368, "total_count": 12, "area": 32, "bed_type": "1.5m双床", "max_guests": 2, "has_window": True, "has_wifi": True, "has_bathtub": False},
+                {"name": "行政套房", "room_type": "套房", "price": 688, "total_count": 5, "area": 55, "bed_type": "1.8m大床", "max_guests": 3, "has_window": True, "has_wifi": True, "has_bathtub": True},
+                {"name": "家庭亲子房", "room_type": "家庭房", "price": 528, "total_count": 6, "area": 42, "bed_type": "1.8m+1.2m", "max_guests": 4, "has_window": True, "has_wifi": True, "has_bathtub": True},
+                {"name": "舒适单人间", "room_type": "单人间", "price": 198, "total_count": 20, "area": 18, "bed_type": "1.5m大床", "max_guests": 1, "has_window": True, "has_wifi": True, "has_bathtub": False},
+            ],
+            # 三里屯店 — 覆盖 has_window=False, has_wifi=False
+            [
+                {"name": "商务大床房", "room_type": "大床房", "price": 358, "total_count": 15, "area": 28, "bed_type": "1.8m大床", "max_guests": 2, "has_window": True, "has_wifi": True, "has_bathtub": False},
+                {"name": "经济无窗房", "room_type": "双床房", "price": 248, "total_count": 10, "area": 22, "bed_type": "1.5m双床", "max_guests": 2, "has_window": False, "has_wifi": True, "has_bathtub": False},
+                {"name": "豪华套房", "room_type": "套房", "price": 888, "total_count": 4, "area": 60, "bed_type": "1.8m大床", "max_guests": 3, "has_window": True, "has_wifi": True, "has_bathtub": True},
+                {"name": "精选大床房", "room_type": "大床房", "price": 458, "total_count": 8, "area": 30, "bed_type": "2.0m特大床", "max_guests": 2, "has_window": True, "has_wifi": False, "has_bathtub": True},
+                {"name": "迷你单人间", "room_type": "单人间", "price": 158, "total_count": 12, "area": 15, "bed_type": "1.2m单人床", "max_guests": 1, "has_window": False, "has_wifi": True, "has_bathtub": False},
+            ],
+            # 珠江新城店 — 覆盖标准间、has_wifi=False
+            [
+                {"name": "江景大床房", "room_type": "大床房", "price": 498, "total_count": 12, "area": 35, "bed_type": "1.8m大床", "max_guests": 2, "has_window": True, "has_wifi": True, "has_bathtub": False},
+                {"name": "标准双床房", "room_type": "双床房", "price": 338, "total_count": 10, "area": 30, "bed_type": "1.5m双床", "max_guests": 2, "has_window": True, "has_wifi": True, "has_bathtub": False},
+                {"name": "总统套房", "room_type": "套房", "price": 1288, "total_count": 3, "area": 80, "bed_type": "2.0m特大床", "max_guests": 4, "has_window": True, "has_wifi": True, "has_bathtub": True},
+                {"name": "无障碍标准间", "room_type": "标准间", "price": 288, "total_count": 5, "area": 26, "bed_type": "1.5m大床", "max_guests": 2, "has_window": True, "has_wifi": True, "has_bathtub": False},
+                {"name": "特惠单人间", "room_type": "单人间", "price": 128, "total_count": 8, "area": 14, "bed_type": "1.2m单人床", "max_guests": 1, "has_window": False, "has_wifi": False, "has_bathtub": False},
+            ],
         ]
 
         all_rooms = []
-        for hotel in hotels:
-            for rt in room_types:
+        for i, hotel in enumerate(hotels):
+            for rt in hotel_room_types[i]:
                 room = Room(
                     hotel_id=hotel.id,
                     name=rt["name"],
@@ -131,8 +152,9 @@ def seed():
                     bed_type=rt["bed_type"],
                     max_guests=rt["max_guests"],
                     has_window=rt["has_window"],
+                    has_wifi=rt.get("has_wifi", True),
                     has_bathtub=rt["has_bathtub"],
-                    description=f"{hotel.name} - {rt['name']}，{rt['area']}m²，{rt['bed_type']}",
+                    description=f"{hotel.name} - {rt['name']}，{rt['area']}m²，{rt['bed_type']}" + ("，无窗" if not rt["has_window"] else "") + ("，无WiFi" if not rt.get("has_wifi", True) else ""),
                     images=f"https://img.yijiaren.com/rooms/{rt['room_type']}/01.jpg",
                 )
                 session.add(room)
@@ -160,7 +182,7 @@ def seed():
                 "order_no": datetime.now().strftime("%Y%m%d%H%M") + "A10002",
                 "user": guest1,
                 "hotel": hotels[1],
-                "room": all_rooms[7],  # 豪华双床房
+                "room": all_rooms[5],  # 商务大床房 (三里屯)
                 "checkin_date": today + timedelta(days=10),
                 "checkout_date": today + timedelta(days=12),
                 "guest_name": "测试用户",
@@ -172,7 +194,7 @@ def seed():
                 "order_no": datetime.now().strftime("%Y%m%d%H%M") + "A10003",
                 "user": guest2,
                 "hotel": hotels[2],
-                "room": all_rooms[12],  # 行政套房
+                "room": all_rooms[10],  # 江景大床房 (珠江新城)
                 "checkin_date": today + timedelta(days=1),
                 "checkout_date": today + timedelta(days=3),
                 "guest_name": "张三",
