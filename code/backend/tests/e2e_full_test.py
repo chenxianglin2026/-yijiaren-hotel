@@ -10,7 +10,7 @@ import time
 import sqlite3
 from datetime import date, timedelta
 
-BASE = "http://localhost:8000"
+BASE = "http://localhost:8001"
 DB_PATH = "/Users/chenxianglin/projects/yijiaren/code/backend/data/yijiaren.db"
 
 results = []
@@ -133,10 +133,11 @@ if token:
 print("  1b) 浏览酒店列表 → 选择酒店 → 查看房型")
 code, data = http_get(f"{BASE}/api/hotels")
 if code == 200:
-    hotel_count = safe_get(data, "total", 0)
+    inner = data.get("data", data)
+    hotel_count = safe_get(inner, "total", 0)
     if hotel_count > 0:
         ok(f"酒店列表: 共 {hotel_count} 家酒店")
-        hotel = data["items"][0]
+        hotel = inner["items"][0]
         hotel_id = hotel["id"]
         hotel_name = hotel["name"]
     else:
@@ -361,7 +362,7 @@ print("  2c) SQL注入测试: 在查询参数中注入 ' OR '1'='1")
 sqli_payload = "' OR '1'='1"
 url1 = BASE + "/api/hotels?city=" + urllib.parse.quote(sqli_payload)
 code, data = http_get(url1)
-total = safe_get(data, "total", -999)
+total = safe_get(data.get("data", {}), "total", -999)
 if total == 0:
     ok("SQL注入(hotels?city='OR'1'='1): 安全, total=0 (参数化查询防御)")
 elif isinstance(total, int) and total >= 0:
@@ -372,7 +373,7 @@ else:
 sqli_payload2 = "' OR 1=1--"
 url2 = BASE + "/api/hotels?keyword=" + urllib.parse.quote(sqli_payload2)
 code, data = http_get(url2)
-total = safe_get(data, "total", -999)
+total = safe_get(data.get("data", {}), "total", -999)
 if total == 0:
     ok("SQL注入(hotels?keyword='OR 1=1--): 安全, total=0")
 elif isinstance(total, int) and total >= 0:

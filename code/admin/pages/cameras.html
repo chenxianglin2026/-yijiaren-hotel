@@ -162,7 +162,7 @@ async function loadHotels() {
   try {
     const r = await fetch('/api/hotels?page_size=100', {headers:{'Authorization':'Bearer '+T}});
     const d = await r.json();
-    const items = d.items || d.data || [];
+    const items = d.data || [];
     const selectors = [document.getElementById('filterHotel'), document.getElementById('camHotel')];
     selectors.forEach(sel => {
       if (!sel) return;
