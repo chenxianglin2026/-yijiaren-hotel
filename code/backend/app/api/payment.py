@@ -16,7 +16,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db import get_db, User, Order, OrderStatus
+from app.db import get_db, User, Order, OrderStatus, Room
 from app.api.auth import get_current_user
 from app.config import settings
 
@@ -172,12 +172,20 @@ async def refund_order(
     if not order:
         raise HTTPException(404, "订单不存在")
     if order.status not in (OrderStatus.PAID, OrderStatus.CHECKED_IN):
-        raise HTTPException(400, "当前状态不可退款")
+        raise HTTPException(400, f"当前订单状态为 {order.status}，不可退款（仅已支付/已入住订单可退款）")
 
     # TODO: 调用微信退款 API
-    order.status = OrderStatus.CANCELLED
+    old_status = order.status
+    order.status = OrderStatus.REFUNDED
     order.cancel_reason = reason or "用户申请退款"
     order.cancelled_at = datetime.utcnow()
+
+    # 退款时恢复可用房间数
+    room_result = await db.execute(select(Room).where(Room.id == order.room_id))
+    room = room_result.scalar_one_or_none()
+    if room:
+        room.available_count += order.room_count
+
     await db.flush()
 
-    return PayResponse(msg="退款申请已提交")
+    return PayResponse(msg=f"退款申请已提交（原状态: {old_status} → refunded）")

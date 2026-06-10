@@ -1,6 +1,9 @@
-"""
+""""
 伊家人酒店系统 - 订单 API
-创建订单 / 查询订单 / 取消订单
+创建订单 / 查询订单 / 取消订单 / 状态流转
+状态机：pending → paid → checked_in → completed
+          ↓         ↓         ↓
+       cancelled  refunded  (不可取消/退款)
 """
 import uuid
 from datetime import date, datetime, timedelta
@@ -16,6 +19,22 @@ from app.db import get_db, User, Order, Room, Hotel, OrderStatus
 from app.api.auth import get_current_user
 
 router = APIRouter(prefix="/api/orders", tags=["订单"])
+
+# 合法的订单状态值列表
+VALID_ORDER_STATUSES = {
+    OrderStatus.PENDING, OrderStatus.PAID, OrderStatus.CHECKED_IN,
+    OrderStatus.COMPLETED, OrderStatus.CANCELLED, OrderStatus.REFUNDED,
+}
+
+# 合法的状态转换规则
+VALID_TRANSITIONS = {
+    OrderStatus.PENDING:   {OrderStatus.PAID, OrderStatus.CANCELLED},
+    OrderStatus.PAID:      {OrderStatus.CHECKED_IN, OrderStatus.CANCELLED, OrderStatus.REFUNDED},
+    OrderStatus.CHECKED_IN:{OrderStatus.COMPLETED, OrderStatus.REFUNDED},
+    OrderStatus.COMPLETED: set(),       # 终态
+    OrderStatus.CANCELLED: set(),       # 终态
+    OrderStatus.REFUNDED:  set(),       # 终态
+}
 
 
 # ── Schemas ──────────────────────────────────────────
@@ -167,6 +186,8 @@ async def list_orders(
         count_q = select(func.count(Order.id)).where(Order.user_id == current_user.id)
 
     if status:
+        if status not in VALID_ORDER_STATUSES:
+            raise HTTPException(status_code=400, detail=f"无效的订单状态: {status}，合法值: {', '.join(sorted(VALID_ORDER_STATUSES))}")
         query = query.where(Order.status == status)
         count_q = count_q.where(Order.status == status)
 
@@ -305,9 +326,9 @@ async def cancel_order(
     if not order:
         raise HTTPException(status_code=404, detail="订单不存在")
 
-    # 只能取消待支付和已支付的订单
-    if order.status not in (OrderStatus.PENDING, OrderStatus.PAID):
-        raise HTTPException(status_code=400, detail=f"当前订单状态为 {order.status}，无法取消")
+    # 状态机验证：只能取消待支付和已支付的订单
+    if OrderStatus.CANCELLED not in VALID_TRANSITIONS.get(order.status, set()):
+        raise HTTPException(status_code=400, detail=f"当前订单状态为 {order.status}，无法取消（仅 pending/paid 可取消）")
 
     order.status = OrderStatus.CANCELLED
     order.cancel_reason = reason
@@ -322,6 +343,66 @@ async def cancel_order(
     await db.flush()
     await db.refresh(order)
 
+    return _build_order_out(order)
+
+
+@router.post("/{order_id}/status", response_model=OrderOut, summary="管理员更新订单状态")
+async def update_order_status(
+    order_id: int,
+    new_status: str = Query(..., description="新状态: paid/checked_in/completed/cancelled/refunded"),
+    reason: Optional[str] = Query(None, description="状态变更原因"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """管理员手动更新订单状态，走状态机校验"""
+    if current_user.role not in ("admin", "front_desk"):
+        raise HTTPException(status_code=403, detail="仅管理员或前台可更新订单状态")
+
+    if new_status not in VALID_ORDER_STATUSES:
+        raise HTTPException(status_code=400, detail=f"无效的状态值: {new_status}，合法值: {', '.join(sorted(VALID_ORDER_STATUSES))}")
+
+    result = await db.execute(
+        select(Order).where(Order.id == order_id).options(
+            selectinload(Order.hotel), selectinload(Order.room)
+        )
+    )
+    order = result.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="订单不存在")
+
+    old_status = order.status
+    allowed = VALID_TRANSITIONS.get(old_status, set())
+    if new_status not in allowed:
+        raise HTTPException(
+            status_code=400,
+            detail=f"不允许从 {old_status} 转换到 {new_status}。当前状态允许的转换: {', '.join(sorted(allowed)) if allowed else '无（终态）'}"
+        )
+
+    # 执行状态转换
+    order.status = new_status
+    if new_status == OrderStatus.PAID and not order.paid_at:
+        order.paid_at = datetime.utcnow()
+    if new_status == OrderStatus.CANCELLED:
+        order.cancel_reason = reason or "管理员取消"
+        order.cancelled_at = datetime.utcnow()
+    if new_status == OrderStatus.REFUNDED and not order.cancelled_at:
+        order.cancelled_at = datetime.utcnow()
+
+    # 取消/退款时恢复可用房间数
+    if new_status in (OrderStatus.CANCELLED, OrderStatus.REFUNDED):
+        room_result = await db.execute(select(Room).where(Room.id == order.room_id))
+        room = room_result.scalar_one_or_none()
+        if room:
+            room.available_count += order.room_count
+
+    await db.flush()
+    await db.refresh(order)
+    return _build_order_out(order)
+
+
+# ── 辅助函数 ─────────────────────────────────────────
+def _build_order_out(order: Order) -> OrderOut:
+    """构建 OrderOut 响应对象"""
     return OrderOut(
         id=order.id,
         order_no=order.order_no,
@@ -329,6 +410,7 @@ async def cancel_order(
         hotel_name=order.hotel.name if order.hotel else None,
         room_id=order.room_id,
         room_name=order.room.name if order.room else None,
+        room_type=order.room.room_type if order.room else None,
         room_count=order.room_count,
         checkin_date=order.checkin_date,
         checkout_date=order.checkout_date,
