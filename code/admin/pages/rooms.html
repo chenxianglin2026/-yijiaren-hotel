@@ -12,7 +12,7 @@
   .room-legend .dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:4px; }
   .dot.vacant{background:var(--success)} .dot.occupied{background:var(--info)} .dot.cleaning{background:var(--warning)} .dot.booked{background:#faad14}
   .room-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
-  .room-card-new { background:var(--bg-card); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; border-left:4px solid var(--border); cursor:pointer; transition:var(--transition); }
+  .room-card-new { background:var(--bg-card); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; border-left:4px solid var(--border); cursor:pointer; transition:var(--transition); position:relative; }
   .room-card-new:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,0.08); }
   .room-card-new .rc-name { font-size:18px; font-weight:700; color:var(--text-primary); }
   .room-card-new .rc-type { font-size:12px; color:var(--text-muted); margin-top:2px; }
@@ -34,6 +34,12 @@
   .summary-item-bar { flex:1; text-align:center; padding:12px; background:var(--bg-card); border-radius:var(--radius); box-shadow:var(--shadow); }
   .summary-item-bar .n { font-size:24px; font-weight:700; }
   .summary-item-bar .l { font-size:11px; color:var(--text-muted); }
+  /* edit actions on hover */
+  .rc-actions { position:absolute; top:8px; right:8px; display:flex; gap:4px; opacity:0; transition:opacity .2s; }
+  .room-card-new:hover .rc-actions { opacity:1; }
+  .rc-actions button { background:rgba(0,0,0,.5); color:#fff; border:none; border-radius:4px; padding:2px 8px; font-size:11px; cursor:pointer; }
+  .rc-actions button:hover { background:var(--gold); color:#000; }
+  .rc-actions button.del:hover { background:var(--error); color:#fff; }
   /* responsive */
   @media(max-width:768px){
     .room-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
@@ -56,6 +62,7 @@
   <div class="room-toolbar">
     <div id="hotelBtns"></div>
     <button class="btn btn-outline btn-sm" onclick="loadRooms()">🔄 刷新</button>
+    <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="openRoomModal()">+ 新增房型</button>
     <div class="room-legend">
       <span><span class="dot vacant"></span>空闲</span>
       <span><span class="dot booked"></span>已预订</span>
@@ -68,11 +75,98 @@
   <div class="room-grid" id="roomGrid"></div>
 </div>
 
+<!-- 房型新增/编辑弹窗 -->
+<div class="modal-overlay" id="roomModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="roomModalTitle">新增房型</div>
+      <button class="modal-close" onclick="closeRoomModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>所属门店 <span style="color:var(--error)">*</span></label>
+        <select class="form-select" id="rHotel">
+          <option value="">请选择门店</option>
+        </select>
+      </div>
+      <div class="form-row" style="display:flex;gap:12px;">
+        <div class="form-group" style="flex:1;">
+          <label>房型名称 <span style="color:var(--error)">*</span></label>
+          <input class="form-input" id="rName" placeholder="如: 豪华大床房">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>房型分类</label>
+          <input class="form-input" id="rType" placeholder="如: 大床房/双床房/套房">
+        </div>
+      </div>
+      <div class="form-row" style="display:flex;gap:12px;">
+        <div class="form-group" style="flex:1;">
+          <label>单价(元/晚) <span style="color:var(--error)">*</span></label>
+          <input class="form-input" id="rPrice" type="number" step="0.01" placeholder="如: 299">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>总间数</label>
+          <input class="form-input" id="rTotal" type="number" value="10" min="1">
+        </div>
+      </div>
+      <div class="form-row" style="display:flex;gap:12px;">
+        <div class="form-group" style="flex:1;">
+          <label>可用间数</label>
+          <input class="form-input" id="rAvail" type="number" value="10" min="0">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>面积(m²)</label>
+          <input class="form-input" id="rArea" type="number" step="0.1" placeholder="如: 30">
+        </div>
+      </div>
+      <div class="form-row" style="display:flex;gap:12px;">
+        <div class="form-group" style="flex:1;">
+          <label>床型</label>
+          <input class="form-input" id="rBed" placeholder="如: 1.8m大床">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>最大入住</label>
+          <input class="form-input" id="rGuests" type="number" value="2" min="1">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>简介</label>
+        <textarea class="form-input" id="rDesc" rows="2" placeholder="房型简介..."></textarea>
+      </div>
+      <input type="hidden" id="rEditId">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeRoomModal()">取消</button>
+      <button class="btn btn-primary" id="roomSaveBtn" onclick="saveRoom()">保存</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const T = localStorage.getItem('yjr_token');
 const H = { 'Authorization':'Bearer '+T };
 const F = n => '¥'+Number(n||0).toLocaleString();
-let curHotel = null;
+let curHotel = null, roomItems = [], hotelList = [];
+
+// Load hotels for modal dropdown
+async function loadHotels(){
+  try{
+    let r = await fetch('/api/hotels?page_size=100',{headers:H});
+    let j = await r.json();
+    hotelList = j.data?.items||j.data||[];
+  }catch(e){/* ok */}
+}
+
+function populateHotelSelect(){
+  let sel = document.getElementById('rHotel');
+  sel.innerHTML = '<option value="">请选择门店</option>';
+  hotelList.forEach(h => {
+    let opt = document.createElement('option');
+    opt.value = h.id; opt.textContent = h.name;
+    if(curHotel && h.id===curHotel) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
 
 async function loadRooms(hid){
   curHotel = hid||null;
@@ -84,14 +178,15 @@ async function loadRooms(hid){
     let j = await r.json();
     if(j.code&&j.code!==0) throw new Error(j.msg);
     let d = j.data||j, items = d.items||[];
+    roomItems = items;
     
     // Hotel buttons
-    let hotels = [...new Set(items.map(i=>i.hotel_id))];
+    let hotelIds = [...new Set(items.map(i=>i.hotel_id))];
     let hotelNames = {};
     items.forEach(i=>{ hotelNames[i.hotel_id]=i.hotel_name||d.hotel_name||'门店'+i.hotel_id; });
     document.getElementById('hotelBtns').innerHTML = 
       '<button class="hs-btn'+(curHotel?'':' active')+'" onclick="loadRooms()">全部门店</button>'+
-      hotels.map(h=>'<button class="hs-btn'+(curHotel===h?' active':'')+'" onclick="loadRooms('+h+')">'+hotelNames[h]+'</button>').join('');
+      hotelIds.map(h=>'<button class="hs-btn'+(curHotel===h?' active':'')+'" onclick="loadRooms('+h+')">'+hotelNames[h]+'</button>').join('');
 
     // Summary
     document.getElementById('summary').innerHTML = [
@@ -107,7 +202,12 @@ async function loadRooms(hid){
       let cls = r.available_count>r.total_count*0.5?'rc-vacant':r.occupied_count>r.total_count*0.5?'rc-occupied':r.booked_count>r.total_count*0.5?'rc-booked':'rc-mixed';
       let occRate = r.total_count > 0 ? Math.round((r.occupied_count + r.booked_count) / r.total_count * 100) : 0;
       let rateCls = occRate < 50 ? 'low' : occRate < 80 ? 'mid' : 'high';
-      return '<div class="room-card-new '+cls+'"><div class="rc-name">'+r.name+'</div><div class="rc-type">'+r.room_type+' · '+F(r.price)+'/晚 · '+(r.bed_type||'')+'</div><div class="rc-stats">'+
+      return '<div class="room-card-new '+cls+'">'+
+        '<div class="rc-actions">'+
+          '<button onclick="event.stopPropagation();openRoomModal('+r.id+')">✏️</button>'+
+          '<button class="del" onclick="event.stopPropagation();deleteRoom('+r.id+',\''+(r.name||'').replace(/'/g,"\\'")+'\')">🗑️</button>'+
+        '</div>'+
+        '<div class="rc-name">'+r.name+'</div><div class="rc-type">'+r.room_type+' · '+F(r.price)+'/晚 · '+(r.bed_type||'')+'</div><div class="rc-stats">'+
         '<div class="rc-stat"><div class="n" style="color:var(--success);">'+r.available_count+'</div><div class="l">空闲</div></div>'+
         '<div class="rc-stat"><div class="n" style="color:#faad14;">'+r.booked_count+'</div><div class="l">预订</div></div>'+
         '<div class="rc-stat"><div class="n" style="color:var(--info);">'+r.occupied_count+'</div><div class="l">入住</div></div>'+
@@ -121,6 +221,103 @@ async function loadRooms(hid){
   }
 }
 
+// ── 房型弹窗 ──────────────────────────────────────
+function openRoomModal(id){
+  populateHotelSelect();
+  if(id){
+    // Edit: fetch room detail
+    fetch('/api/hotels/rooms/'+id,{headers:H}).then(r=>r.json()).then(room=>{
+      document.getElementById('roomModalTitle').textContent='编辑房型';
+      document.getElementById('rEditId').value=room.id;
+      document.getElementById('rHotel').value=room.hotel_id;
+      document.getElementById('rName').value=room.name||'';
+      document.getElementById('rType').value=room.room_type||'';
+      document.getElementById('rPrice').value=room.price||'';
+      document.getElementById('rTotal').value=room.total_count||10;
+      document.getElementById('rAvail').value=room.available_count||10;
+      document.getElementById('rArea').value=room.area||'';
+      document.getElementById('rBed').value=room.bed_type||'';
+      document.getElementById('rGuests').value=room.max_guests||2;
+      document.getElementById('rDesc').value=room.description||'';
+      document.getElementById('roomSaveBtn').textContent='更新';
+      document.getElementById('roomModal').classList.add('show');
+    }).catch(e=>{ alert('加载房型详情失败: '+e.message); });
+    return;
+  }
+  document.getElementById('roomModalTitle').textContent='新增房型';
+  document.getElementById('rEditId').value='';
+  document.getElementById('rHotel').value=curHotel||'';
+  document.getElementById('rName').value='';
+  document.getElementById('rType').value='';
+  document.getElementById('rPrice').value='';
+  document.getElementById('rTotal').value='10';
+  document.getElementById('rAvail').value='10';
+  document.getElementById('rArea').value='';
+  document.getElementById('rBed').value='';
+  document.getElementById('rGuests').value='2';
+  document.getElementById('rDesc').value='';
+  document.getElementById('roomSaveBtn').textContent='保存';
+  document.getElementById('roomModal').classList.add('show');
+}
+
+function closeRoomModal(){
+  document.getElementById('roomModal').classList.remove('show');
+}
+
+async function saveRoom(){
+  let isEdit=!!document.getElementById('rEditId').value;
+  let hotelId=parseInt(document.getElementById('rHotel').value);
+
+  if(!hotelId){ alert('请选择门店'); return; }
+
+  let body={
+    hotel_id: hotelId,
+    name: document.getElementById('rName').value.trim(),
+    room_type: document.getElementById('rType').value.trim(),
+    price: parseFloat(document.getElementById('rPrice').value)||0,
+    total_count: parseInt(document.getElementById('rTotal').value)||10,
+    available_count: parseInt(document.getElementById('rAvail').value)||10,
+    area: parseFloat(document.getElementById('rArea').value)||null,
+    bed_type: document.getElementById('rBed').value.trim()||null,
+    max_guests: parseInt(document.getElementById('rGuests').value)||2,
+    description: document.getElementById('rDesc').value.trim()||null
+  };
+
+  if(!body.name){ alert('请输入房型名称'); return; }
+  if(!body.price){ alert('请输入单价'); return; }
+  if(!body.room_type){ alert('请输入房型分类'); return; }
+
+  let url, method;
+  if(isEdit){
+    url = '/api/hotels/rooms/'+document.getElementById('rEditId').value;
+    method = 'PUT';
+  } else {
+    url = '/api/hotels/'+hotelId+'/rooms';
+    method = 'POST';
+  }
+
+  try{
+    let r=await fetch(url,{method,headers:{...H,'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(r.status===401){ window.top.location.href='pages/login.html'; return; }
+    let j=await r.json();
+    if(j.code!==0) throw new Error(j.msg||'操作失败');
+    closeRoomModal();
+    loadRooms(curHotel);
+  }catch(e){ alert('保存失败: '+e.message); }
+}
+
+async function deleteRoom(id,name){
+  if(!confirm('确定删除房型「'+name+'」？此操作不可恢复。')) return;
+  try{
+    let r=await fetch('/api/hotels/rooms/'+id,{method:'DELETE',headers:H});
+    if(r.status===401){ window.top.location.href='pages/login.html'; return; }
+    let j=await r.json();
+    if(j.code!==0) throw new Error(j.msg||'删除失败');
+    loadRooms(curHotel);
+  }catch(e){ alert('删除失败: '+e.message); }
+}
+
+loadHotels();
 loadRooms();
 </script>
 </body>

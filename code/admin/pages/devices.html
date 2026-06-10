@@ -6,13 +6,18 @@
 <link rel="stylesheet" href="../css/admin.css">
 <style>
   .device-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; }
-  .device-card { background:var(--bg-card); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px; }
+  .device-card { background:var(--bg-card); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px; position:relative; }
   .device-card .dc-header { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
   .dc-icon { font-size:32px; }
   .dc-name { font-size:16px; font-weight:700; }
   .dc-id { font-size:11px; color:var(--text-muted); }
   .dc-status { margin-left:auto; }
   .dc-info { font-size:13px; color:var(--text-secondary); line-height:1.8; }
+  .dc-actions { position:absolute; top:8px; right:8px; display:flex; gap:4px; opacity:0; transition:opacity .2s; }
+  .device-card:hover .dc-actions { opacity:1; }
+  .dc-actions button { background:rgba(0,0,0,.5); color:#fff; border:none; border-radius:4px; padding:2px 8px; font-size:11px; cursor:pointer; }
+  .dc-actions button:hover { background:var(--gold); color:#000; }
+  .dc-actions button.del:hover { background:var(--error); color:#fff; }
 </style>
 </head>
 <body>
@@ -20,10 +25,10 @@
   <div class="page-title">设备监控</div>
 
   <div class="filter-bar">
-    <input class="form-input" placeholder="搜索设备..." style="width:200px;">
-    <select class="form-select" style="width:auto;"><option>全部状态</option><option>在线</option><option>离线</option><option>告警</option></select>
-    <button class="btn btn-primary btn-sm">查询</button>
-    <button class="btn btn-outline btn-sm" style="margin-left:auto;">+ 添加设备</button>
+    <input class="form-input" id="searchKeyword" placeholder="搜索设备..." style="width:200px;">
+    <select class="form-select" id="filterStatus" style="width:auto;"><option value="">全部状态</option><option value="online">在线</option><option value="offline">离线</option><option value="alert">告警</option></select>
+    <button class="btn btn-primary btn-sm" onclick="loadDevices()">查询</button>
+    <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="openDeviceModal()">+ 添加设备</button>
   </div>
 
   <div class="stat-cards" id="statCards">
@@ -42,23 +47,96 @@
   </div>
 </div>
 
+<!-- 设备新增弹窗 -->
+<div class="modal-overlay" id="deviceModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">注册新设备</div>
+      <button class="modal-close" onclick="closeDeviceModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>设备ID <span style="color:var(--error)">*</span></label>
+        <input class="form-input" id="dDeviceId" placeholder="如: LOCK-001 或设备MAC地址">
+      </div>
+      <div class="form-group">
+        <label>设备名称 <span style="color:var(--error)">*</span></label>
+        <input class="form-input" id="dName" placeholder="如: 301门锁">
+      </div>
+      <div class="form-row" style="display:flex;gap:12px;">
+        <div class="form-group" style="flex:1;">
+          <label>设备类型</label>
+          <select class="form-select" id="dType">
+            <option value="smart_lock">智能门锁</option>
+            <option value="control_panel">客控面板</option>
+            <option value="sensor">传感器</option>
+            <option value="gateway">网关</option>
+            <option value="charger">充电桩</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>所属门店</label>
+          <select class="form-select" id="dHotel">
+            <option value="">不限</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row" style="display:flex;gap:12px;">
+        <div class="form-group" style="flex:1;">
+          <label>房间号</label>
+          <input class="form-input" id="dRoom" placeholder="如: 301">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>IP地址</label>
+          <input class="form-input" id="dIp" placeholder="如: 192.168.1.100">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>固件版本</label>
+        <input class="form-input" id="dFirmware" placeholder="如: v2.1.0">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeDeviceModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveDevice()">注册</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const T=localStorage.getItem('yjr_token'),H={'Authorization':'Bearer '+T};
+
+async function loadHotels(){
+  try{
+    let r=await fetch('/api/hotels?page_size=100',{headers:H});
+    let j=await r.json();
+    let items=j.data?.items||j.data||[];
+    let sel=document.getElementById('dHotel');
+    sel.innerHTML='<option value="">不限</option>';
+    items.forEach(h=>{
+      let opt=document.createElement('option');
+      opt.value=h.id; opt.textContent=h.name; sel.appendChild(opt);
+    });
+  }catch(e){/* ok */}
+}
 
 async function loadDevices() {
   const loadingEl = document.getElementById('device-loading');
   const listEl = document.getElementById('deviceList');
   try{
-    let r=await fetch('/api/devices/list',{headers:H});
+    let params=new URLSearchParams();
+    let kw=document.getElementById('searchKeyword').value.trim();
+    let st=document.getElementById('filterStatus').value;
+    if(kw) params.set('keyword',kw);
+    if(st) params.set('status',st);
+    let url='/api/devices/list'+(params.toString()?'?'+params:'');
+    let r=await fetch(url,{headers:H});
     if (r.status === 401) { window.top.location.href = 'pages/login.html'; return; }
     let j=await r.json();
     if(j.code===0&&j.data) {
       let items=Array.isArray(j.data)?j.data:(j.data.items||[]);
-      let online=0,offline=0;
-      items.forEach(function(d){
-        if(d.status==='online'||d.is_online) online++;
-        else offline++;
-      });
+      let online=j.online_count!=null?j.online_count:items.filter(d=>d.status==='online'||d.is_online).length;
+      let offline=j.offline_count!=null?j.offline_count:items.length-online;
       document.getElementById('totalCount').textContent=j.total||items.length;
       document.getElementById('onlineCount').textContent=online;
       document.getElementById('offlineCount').textContent=offline;
@@ -79,6 +157,9 @@ async function loadDevices() {
         var typeNames = {smart_lock:'智能门锁',control_panel:'客控面板',sensor:'传感器',gateway:'网关',charger:'充电桩'};
         var typeName = typeNames[d.device_type]||d.type||'智能门锁';
         html += '<div class="device-card">'+
+          '<div class="dc-actions">'+
+            '<button class="del" onclick="event.stopPropagation();deleteDevice(\''+(d.device_id||'')+'\',\''+(d.name||'').replace(/'/g,"\\'")+'\')">🗑️</button>'+
+          '</div>'+
           '<div class="dc-header">'+
             '<span class="dc-icon">🔒</span>'+
             '<div><div class="dc-name">'+(d.name||'未命名设备')+'</div>'+
@@ -103,7 +184,63 @@ async function loadDevices() {
   }
 }
 
+// ── 设备弹窗 ──────────────────────────────────────
+function openDeviceModal(){
+  document.getElementById('dDeviceId').value='';
+  document.getElementById('dName').value='';
+  document.getElementById('dType').value='smart_lock';
+  document.getElementById('dHotel').value='';
+  document.getElementById('dRoom').value='';
+  document.getElementById('dIp').value='';
+  document.getElementById('dFirmware').value='';
+  document.getElementById('deviceModal').classList.add('show');
+}
+
+function closeDeviceModal(){
+  document.getElementById('deviceModal').classList.remove('show');
+}
+
+async function saveDevice(){
+  let body={
+    device_id: document.getElementById('dDeviceId').value.trim(),
+    name: document.getElementById('dName').value.trim(),
+    device_type: document.getElementById('dType').value,
+    hotel_id: parseInt(document.getElementById('dHotel').value)||null,
+    room_number: document.getElementById('dRoom').value.trim()||null,
+    ip_address: document.getElementById('dIp').value.trim()||null,
+    firmware_version: document.getElementById('dFirmware').value.trim()||null
+  };
+
+  if(!body.device_id){ alert('请输入设备ID'); return; }
+  if(!body.name){ alert('请输入设备名称'); return; }
+
+  try{
+    let r=await fetch('/api/devices/register',{
+      method:'POST',
+      headers:{...H,'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    });
+    if(r.status===401){ window.top.location.href='pages/login.html'; return; }
+    let j=await r.json();
+    if(j.code!==0) throw new Error(j.msg||'注册失败');
+    closeDeviceModal();
+    loadDevices();
+  }catch(e){ alert('注册失败: '+e.message); }
+}
+
+async function deleteDevice(deviceId,name){
+  if(!confirm('确定删除设备「'+name+'」？')) return;
+  try{
+    let r=await fetch('/api/devices/'+encodeURIComponent(deviceId),{method:'DELETE',headers:H});
+    if(r.status===401){ window.top.location.href='pages/login.html'; return; }
+    let j=await r.json();
+    if(j.code!==0) throw new Error(j.msg||'删除失败');
+    loadDevices();
+  }catch(e){ alert('删除失败: '+e.message); }
+}
+
 // 首次加载 + 每30秒自动刷新
+loadHotels();
 loadDevices();
 setInterval(loadDevices, 30000);
 </script>

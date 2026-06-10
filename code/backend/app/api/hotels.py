@@ -261,3 +261,118 @@ async def delete_hotel(
     hotel.is_active = False
     await db.flush()
     return {"code": 0, "msg": "门店已删除"}
+
+
+# ── 房型管理（管理员） ──────────────────────────────
+
+class CreateRoomRequest(BaseModel):
+    hotel_id: int
+    name: str
+    room_type: str
+    price: float
+    total_count: int = 10
+    available_count: int = 10
+    area: Optional[float] = None
+    bed_type: Optional[str] = None
+    max_guests: int = 2
+    has_window: bool = True
+    has_wifi: bool = True
+    has_bathtub: bool = False
+    description: Optional[str] = None
+    images: Optional[str] = None
+
+
+class UpdateRoomRequest(BaseModel):
+    name: Optional[str] = None
+    room_type: Optional[str] = None
+    price: Optional[float] = None
+    total_count: Optional[int] = None
+    available_count: Optional[int] = None
+    area: Optional[float] = None
+    bed_type: Optional[str] = None
+    max_guests: Optional[int] = None
+    has_window: Optional[bool] = None
+    has_wifi: Optional[bool] = None
+    has_bathtub: Optional[bool] = None
+    description: Optional[str] = None
+    images: Optional[str] = None
+
+
+@router.post("/{hotel_id}/rooms", summary="新增房型（管理员）")
+async def create_room(
+    hotel_id: int,
+    req: CreateRoomRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="仅管理员可新增房型")
+
+    # 验证门店存在
+    hotel_result = await db.execute(select(Hotel).where(Hotel.id == hotel_id, Hotel.is_active == True))
+    if not hotel_result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="门店不存在")
+
+    room = Room(
+        hotel_id=hotel_id,
+        name=req.name,
+        room_type=req.room_type,
+        price=req.price,
+        total_count=req.total_count,
+        available_count=req.available_count,
+        area=req.area,
+        bed_type=req.bed_type,
+        max_guests=req.max_guests,
+        has_window=req.has_window,
+        has_wifi=req.has_wifi,
+        has_bathtub=req.has_bathtub,
+        description=req.description,
+        images=req.images,
+    )
+    db.add(room)
+    await db.flush()
+    await db.refresh(room)
+    return {"code": 0, "data": RoomOut.model_validate(room).model_dump(), "msg": "房型创建成功"}
+
+
+@router.put("/rooms/{room_id}", summary="编辑房型（管理员）")
+async def update_room(
+    room_id: int,
+    req: UpdateRoomRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="仅管理员可编辑房型")
+
+    result = await db.execute(select(Room).where(Room.id == room_id, Room.is_active == True))
+    room = result.scalar_one_or_none()
+    if not room:
+        raise HTTPException(status_code=404, detail="房型不存在")
+
+    update_data = req.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(room, key, value)
+
+    await db.flush()
+    await db.refresh(room)
+    return {"code": 0, "data": RoomOut.model_validate(room).model_dump(), "msg": "房型更新成功"}
+
+
+@router.delete("/rooms/{room_id}", summary="删除房型（管理员）")
+async def delete_room(
+    room_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="仅管理员可删除房型")
+
+    result = await db.execute(select(Room).where(Room.id == room_id))
+    room = result.scalar_one_or_none()
+    if not room:
+        raise HTTPException(status_code=404, detail="房型不存在")
+
+    room.is_active = False
+    await db.flush()
+    return {"code": 0, "msg": "房型已删除"}

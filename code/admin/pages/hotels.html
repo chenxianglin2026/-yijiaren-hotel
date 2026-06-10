@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="../css/admin.css">
 <style>
   .hotel-cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; }
-  .hotel-card { background:var(--bg-card); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px; }
+  .hotel-card { background:var(--bg-card); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px; position:relative; }
   .hotel-card .hc-name { font-size:18px; font-weight:700; color:var(--text-primary); }
   .hotel-card .hc-addr { font-size:13px; color:var(--text-muted); margin-top:4px; }
   .hotel-card .hc-stats { display:flex; gap:16px; margin-top:14px; padding-top:14px; border-top:1px solid var(--border); }
@@ -14,6 +14,11 @@
   .hc-stat .n { font-size:20px; font-weight:700; color:var(--gold-dark); }
   .hc-stat .l { font-size:10px; color:var(--text-muted); }
   .hc-meta { font-size:12px; color:var(--text-muted); margin-top:8px; line-height:1.8; }
+  .hc-actions { position:absolute; top:12px; right:12px; display:flex; gap:4px; opacity:0; transition:opacity .2s; }
+  .hotel-card:hover .hc-actions { opacity:1; }
+  .hc-actions button { background:rgba(0,0,0,.5); color:#fff; border:none; border-radius:4px; padding:2px 8px; font-size:11px; cursor:pointer; }
+  .hc-actions button:hover { background:var(--gold); color:#000; }
+  .hc-actions button.del:hover { background:var(--error); color:#fff; }
 </style>
 </head>
 <body>
@@ -25,10 +30,67 @@
   <div class="filter-bar">
     <input class="form-input" id="search" placeholder="🔍 搜索门店..." style="width:220px;" oninput="render()">
     <button class="btn btn-primary btn-sm" onclick="render()">搜索</button>
-    <button class="btn btn-outline btn-sm" style="margin-left:auto;">+ 新增门店</button>
+    <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="openHotelModal()">+ 新增门店</button>
   </div>
 
   <div class="hotel-cards" id="hotelCards"></div>
+</div>
+
+<!-- 门店新增/编辑弹窗 -->
+<div class="modal-overlay" id="hotelModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="hotelModalTitle">新增门店</div>
+      <button class="modal-close" onclick="closeHotelModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>门店名称 <span style="color:var(--error)">*</span></label>
+        <input class="form-input" id="hName" placeholder="如: 伊家酒店(武林广场店)">
+      </div>
+      <div class="form-row" style="display:flex;gap:12px;">
+        <div class="form-group" style="flex:1;">
+          <label>城市 <span style="color:var(--error)">*</span></label>
+          <input class="form-input" id="hCity" placeholder="如: 杭州">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>区/县</label>
+          <input class="form-input" id="hDistrict" placeholder="如: 拱墅区">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>详细地址 <span style="color:var(--error)">*</span></label>
+        <input class="form-input" id="hAddress" placeholder="如: 武林广场1号">
+      </div>
+      <div class="form-group">
+        <label>联系电话</label>
+        <input class="form-input" id="hPhone" placeholder="如: 0571-88888888">
+      </div>
+      <div class="form-row" style="display:flex;gap:12px;">
+        <div class="form-group" style="flex:1;">
+          <label>纬度</label>
+          <input class="form-input" id="hLat" type="number" step="any" placeholder="如: 30.2741">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>经度</label>
+          <input class="form-input" id="hLng" type="number" step="any" placeholder="如: 120.1551">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>封面图URL</label>
+        <input class="form-input" id="hCover" placeholder="https://...">
+      </div>
+      <div class="form-group">
+        <label>简介</label>
+        <textarea class="form-input" id="hDesc" rows="2" placeholder="门店简介..."></textarea>
+      </div>
+      <input type="hidden" id="hEditId">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeHotelModal()">取消</button>
+      <button class="btn btn-primary" id="hotelSaveBtn" onclick="saveHotel()">保存</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -68,6 +130,10 @@ function render(){
     let hOcc=hRooms.reduce((s,r)=>s+(r.occupied_count||0),0);
     let hAvail=hRooms.reduce((s,r)=>s+(r.available_count||0),0);
     return `<div class="hotel-card">
+      <div class="hc-actions">
+        <button onclick="event.stopPropagation();openHotelModal(${h.id})">✏️</button>
+        <button class="del" onclick="event.stopPropagation();deleteHotel(${h.id},'${(h.name||'').replace(/'/g,"\\'")}')">🗑️</button>
+      </div>
       <div class="hc-name">${h.name||'未命名'}</div>
       <div class="hc-addr">📍 ${h.address||'地址未填写'}</div>
       <div class="hc-meta">📞 ${h.phone||'--'} | 🛏️ ${hRooms.length}种房型</div>
@@ -80,6 +146,90 @@ function render(){
     </div>`;
   }).join(''):'<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:40px;">暂无门店数据</div>';
 }
+
+// ── 门店弹窗 ──────────────────────────────────────
+function openHotelModal(id){
+  if(id){
+    let h=hotels.find(x=>x.id===id);
+    if(!h) return;
+    document.getElementById('hotelModalTitle').textContent='编辑门店';
+    document.getElementById('hEditId').value=h.id;
+    document.getElementById('hName').value=h.name||'';
+    document.getElementById('hCity').value=h.city||'';
+    document.getElementById('hDistrict').value=h.district||'';
+    document.getElementById('hAddress').value=h.address||'';
+    document.getElementById('hPhone').value=h.phone||'';
+    // lat/lng might not be in list response, use approximate
+    document.getElementById('hLat').value='';
+    document.getElementById('hLng').value='';
+    document.getElementById('hCover').value=h.cover_image||'';
+    document.getElementById('hDesc').value='';
+    document.getElementById('hotelSaveBtn').textContent='更新';
+  } else {
+    document.getElementById('hotelModalTitle').textContent='新增门店';
+    document.getElementById('hEditId').value='';
+    document.getElementById('hName').value='';
+    document.getElementById('hCity').value='';
+    document.getElementById('hDistrict').value='';
+    document.getElementById('hAddress').value='';
+    document.getElementById('hPhone').value='';
+    document.getElementById('hLat').value='';
+    document.getElementById('hLng').value='';
+    document.getElementById('hCover').value='';
+    document.getElementById('hDesc').value='';
+    document.getElementById('hotelSaveBtn').textContent='保存';
+  }
+  document.getElementById('hotelModal').classList.add('show');
+}
+
+function closeHotelModal(){
+  document.getElementById('hotelModal').classList.remove('show');
+}
+
+async function saveHotel(){
+  let isEdit=!!document.getElementById('hEditId').value;
+  let body={
+    name: document.getElementById('hName').value.trim(),
+    address: document.getElementById('hAddress').value.trim(),
+    city: document.getElementById('hCity').value.trim(),
+    district: document.getElementById('hDistrict').value.trim()||null,
+    phone: document.getElementById('hPhone').value.trim()||null,
+    description: document.getElementById('hDesc').value.trim()||null,
+    cover_image: document.getElementById('hCover').value.trim()||null
+  };
+  let lat=parseFloat(document.getElementById('hLat').value);
+  let lng=parseFloat(document.getElementById('hLng').value);
+  if(!isNaN(lat)) body.latitude=lat;
+  if(!isNaN(lng)) body.longitude=lng;
+
+  if(!body.name){ alert('请输入门店名称'); return; }
+  if(!body.address){ alert('请输入详细地址'); return; }
+  if(!body.city){ alert('请输入城市'); return; }
+
+  let url=isEdit?'/api/hotels/'+document.getElementById('hEditId').value:'/api/hotels';
+  let method=isEdit?'PUT':'POST';
+
+  try{
+    let r=await fetch(url,{method,headers:{...H,'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(r.status===401){ window.top.location.href='pages/login.html'; return; }
+    let j=await r.json();
+    if(j.code!==0) throw new Error(j.msg||'操作失败');
+    closeHotelModal();
+    load();
+  }catch(e){ alert('保存失败: '+e.message); }
+}
+
+async function deleteHotel(id,name){
+  if(!confirm('确定删除门店「'+name+'」？此操作不可恢复。')) return;
+  try{
+    let r=await fetch('/api/hotels/'+id,{method:'DELETE',headers:H});
+    if(r.status===401){ window.top.location.href='pages/login.html'; return; }
+    let j=await r.json();
+    if(j.code!==0) throw new Error(j.msg||'删除失败');
+    load();
+  }catch(e){ alert('删除失败: '+e.message); }
+}
+
 load();
 </script>
 </body>

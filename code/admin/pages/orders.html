@@ -141,14 +141,14 @@ async function loadOrders(){
     document.getElementById('ordersBody').innerHTML = items.length ? items.map(o=>{
       let d = new Date(o.created_at||o.checkin_date||''), ds = d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');
       return `<tr>
-        <td><a href="javascript:void(0)" onclick="showDetail('${o.order_no||o.id}')" style="color:var(--gold-dark);font-weight:600;">${o.order_no||o.id}</a></td>
+        <td><a href="javascript:void(0)" onclick="showDetail('${o.id}')" style="color:var(--gold-dark);font-weight:600;">${o.order_no||o.id}</a></td>
         <td>${o.guest_name||'-'}</td>
         <td>${o.room_type||'-'}</td>
         <td>${o.checkin_date||'-'} ~ ${o.checkout_date||'-'}</td>
         <td class="text-right" style="font-weight:600;">${F(o.total_price)}</td>
         <td><span class="status-tag ${o.status||''}">${STATUS[o.status]||o.status}</span></td>
         <td>${ds}</td>
-        <td><button class="btn btn-outline btn-sm" onclick="showDetail('${o.order_no||o.id}')">详情</button></td>
+        <td><button class="btn btn-outline btn-sm" onclick="showDetail('${o.id}')">详情</button></td>
       </tr>`;
     }).join('') : '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px;">暂无订单数据</td></tr>';
 
@@ -188,7 +188,7 @@ async function showDetail(id){
     let r = await fetch('/api/orders/'+id,{headers:H});
     if (r.status === 401) { window.top.location.href = 'pages/login.html'; return; }
     let j = await r.json();
-    let o = (j.code===0?j.data:null)||{};
+    let o = j.code!==undefined?(j.code===0?j.data:null):j;
     document.getElementById('detailContent').innerHTML = 
       '<div class="detail-row"><span class="detail-label">订单编号</span><span class="detail-value">'+(o.order_no||id)+'</span></div>'+
       '<div class="detail-row"><span class="detail-label">客人</span><span class="detail-value">'+(o.guest_name||'-')+' ('+(o.guest_phone||'-')+')</span></div>'+
