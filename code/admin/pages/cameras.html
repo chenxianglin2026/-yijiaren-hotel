@@ -157,6 +157,15 @@
 <script>
 const T=localStorage.getItem('yjr_token'),H={'Authorization':'Bearer '+T,'Content-Type':'application/json'};
 
+function toast(msg, type) {
+  type = type || 'info';
+  var c = document.getElementById('toastContainer');
+  if (!c) { c = document.createElement('div'); c.id = 'toastContainer'; c.className = 'toast-container'; document.body.appendChild(c); }
+  var t = document.createElement('div'); t.className = 'toast toast-' + type; t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(function() { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(function() { t.remove(); }, 300); }, 3000);
+}
+
 // 加载门店列表到筛选器和表单
 async function loadHotels() {
   try {
@@ -281,7 +290,7 @@ async function openEditDialog(id) {
     const r = await fetch('/api/cameras', {headers:H});
     const d = await r.json();
     const c = (d.data||[]).find(x => x.id === id);
-    if (!c) { alert('摄像头不存在'); return; }
+    if (!c) { toast('摄像头不存在', 'error'); return; }
     document.getElementById('dialogTitle').textContent = '编辑摄像头';
     document.getElementById('dialogSubmitBtn').textContent = '保存';
     document.getElementById('camId').value = c.id;
@@ -294,7 +303,7 @@ async function openEditDialog(id) {
     document.getElementById('camChannel').value = c.channel;
     document.getElementById('camHotel').value = c.hotel_id || '';
     document.getElementById('cameraDialog').classList.add('show');
-  } catch(e) { alert('加载失败: '+e.message); }
+  } catch(e) { toast('加载失败: '+e.message, 'error'); }
 }
 
 async function saveCamera(e) {
@@ -312,23 +321,30 @@ async function saveCamera(e) {
   };
 
   try {
+    var submitBtn = document.getElementById('dialogSubmitBtn');
+    var origText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = '保存中...';
+
     let r;
     if (id) {
       // 编辑: 密码为空则不更新
       if (!body.password) delete body.password;
       r = await fetch('/api/cameras/'+id, {method:'PUT',headers:H,body:JSON.stringify(body)});
     } else {
-      if (!body.password) { alert('请输入密码'); return; }
+      if (!body.password) { toast('请输入密码', 'warning'); submitBtn.disabled = false; submitBtn.textContent = origText; return; }
       r = await fetch('/api/cameras', {method:'POST',headers:H,body:JSON.stringify(body)});
     }
     const d = await r.json();
     if (d.code===0) {
       closeDialog();
       loadCameras().then(() => startPolling());
+      toast(id?'摄像头已更新':'摄像头已添加', 'success');
     } else {
-      alert('操作失败: '+(d.msg||d.detail||'未知错误'));
+      toast('操作失败: '+(d.msg||d.detail||'未知错误'), 'error');
     }
-  } catch(e) { alert('请求失败: '+e.message); }
+  } catch(e) { toast('请求失败: '+e.message, 'error'); }
+  finally { submitBtn.disabled = false; submitBtn.textContent = origText; }
 }
 
 async function deleteCamera(id, name) {
@@ -338,10 +354,11 @@ async function deleteCamera(id, name) {
     const d = await r.json();
     if (d.code===0) {
       loadCameras().then(() => startPolling());
+      toast('摄像头已删除', 'success');
     } else {
-      alert('删除失败: '+(d.msg||d.detail||'未知错误'));
+      toast('删除失败: '+(d.msg||d.detail||'未知错误'), 'error');
     }
-  } catch(e) { alert('请求失败: '+e.message); }
+  } catch(e) { toast('请求失败: '+e.message, 'error'); }
 }
 
 // 门店筛选变化

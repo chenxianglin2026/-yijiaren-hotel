@@ -106,6 +106,15 @@
 <script>
 const T=localStorage.getItem('yjr_token'),H={'Authorization':'Bearer '+T};
 
+function toast(msg, type) {
+  type = type || 'info';
+  var c = document.getElementById('toastContainer');
+  if (!c) { c = document.createElement('div'); c.id = 'toastContainer'; c.className = 'toast-container'; document.body.appendChild(c); }
+  var t = document.createElement('div'); t.className = 'toast toast-' + type; t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(function() { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(function() { t.remove(); }, 300); }, 3000);
+}
+
 async function loadHotels(){
   try{
     let r=await fetch('/api/hotels?page_size=100',{headers:H});
@@ -211,8 +220,13 @@ async function saveDevice(){
     firmware_version: document.getElementById('dFirmware').value.trim()||null
   };
 
-  if(!body.device_id){ alert('请输入设备ID'); return; }
-  if(!body.name){ alert('请输入设备名称'); return; }
+  if(!body.device_id){ toast('请输入设备ID', 'warning'); return; }
+  if(!body.name){ toast('请输入设备名称', 'warning'); return; }
+
+  var saveBtn = document.querySelector('#deviceModal .btn-primary');
+  var origText = saveBtn.textContent;
+  saveBtn.disabled = true;
+  saveBtn.textContent = '注册中...';
 
   try{
     let r=await fetch('/api/devices/register',{
@@ -225,7 +239,9 @@ async function saveDevice(){
     if(j.code!==0) throw new Error(j.msg||'注册失败');
     closeDeviceModal();
     loadDevices();
-  }catch(e){ alert('注册失败: '+e.message); }
+    toast('设备注册成功', 'success');
+  }catch(e){ toast('注册失败: '+e.message, 'error'); }
+  finally { saveBtn.disabled = false; saveBtn.textContent = origText; }
 }
 
 async function deleteDevice(deviceId,name){
@@ -236,7 +252,8 @@ async function deleteDevice(deviceId,name){
     let j=await r.json();
     if(j.code!==0) throw new Error(j.msg||'删除失败');
     loadDevices();
-  }catch(e){ alert('删除失败: '+e.message); }
+    toast('设备已删除', 'success');
+  }catch(e){ toast('删除失败: '+e.message, 'error'); }
 }
 
 // 首次加载 + 每30秒自动刷新

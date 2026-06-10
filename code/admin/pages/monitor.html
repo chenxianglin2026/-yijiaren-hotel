@@ -99,6 +99,15 @@
 const T = localStorage.getItem('yjr_token');
 const H = { 'Authorization':'Bearer '+T };
 
+function toast(msg, type) {
+  type = type || 'info';
+  var c = document.getElementById('toastContainer');
+  if (!c) { c = document.createElement('div'); c.id = 'toastContainer'; c.className = 'toast-container'; document.body.appendChild(c); }
+  var t = document.createElement('div'); t.className = 'toast toast-' + type; t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(function() { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(function() { t.remove(); }, 300); }, 3000);
+}
+
 const ENDPOINTS = [
   { name:'健康检查', url:'/health', method:'GET' },
   { name:'系统信息', url:'/api/system/info', method:'GET', auth:true },
@@ -143,6 +152,7 @@ async function loadSystemInfo() {
   } catch(e) {
     document.getElementById('sysStatus').innerHTML = '<span class="status-indicator warn"></span>异常';
     document.getElementById('sysInfo').innerHTML = '<span style="color:var(--error);">加载失败: '+e.message+'</span>';
+    toast('系统信息加载失败: '+e.message, 'error');
   }
 }
 
@@ -188,6 +198,7 @@ async function loadDashStats() {
     }).join('');
   } catch(e) {
     document.getElementById('dashStats').innerHTML = '<div class="stat-card" style="grid-column:1/-1;color:var(--error);">加载仪表盘数据失败</div>';
+    toast('仪表盘数据加载失败', 'error');
   }
 }
 
@@ -208,6 +219,7 @@ async function loadErrorLogs() {
     }).join('');
   } catch(e) {
     el.innerHTML = '<div style="padding:12px;color:var(--error);">加载错误日志失败: '+e.message+'</div>';
+    toast('错误日志加载失败', 'error');
   }
 }
 
@@ -233,6 +245,7 @@ async function loadDbPool() {
     }).join('');
   } catch(e) {
     el.innerHTML = '<div class="pool-card" style="grid-column:1/-1;color:var(--error);">加载连接池状态失败</div>';
+    toast('数据库连接池信息加载失败', 'error');
   }
 }
 

@@ -208,7 +208,7 @@ async function showDetail(id){
       '<div class="detail-row"><span class="detail-label">状态</span><span class="detail-value"><span class="status-tag '+(o.status||'')+'">'+(STATUS[o.status]||o.status||'-')+'</span></span></div>';
     document.getElementById('detailModal').classList.add('show');
   }catch(e){
-    alert('加载详情失败，请重试');
+    toast('加载详情失败，请重试', 'error');
   }
 }
 

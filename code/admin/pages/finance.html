@@ -61,6 +61,15 @@ const T = localStorage.getItem('yjr_token');
 const H = { 'Authorization':'Bearer '+T, 'Content-Type':'application/json' };
 const F = n => '¥'+Number(n||0).toLocaleString('zh-CN',{minimumFractionDigits:0,maximumFractionDigits:0});
 
+function toast(msg, type) {
+  type = type || 'info';
+  var c = document.getElementById('toastContainer');
+  if (!c) { c = document.createElement('div'); c.id = 'toastContainer'; c.className = 'toast-container'; document.body.appendChild(c); }
+  var t = document.createElement('div'); t.className = 'toast toast-' + type; t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(function() { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(function() { t.remove(); }, 300); }, 3000);
+}
+
 function switchTab(el,id){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
@@ -96,6 +105,7 @@ async function loadDaily(){
     document.getElementById('dailyTable').innerHTML = '<thead><tr><th>日期</th><th>订单数</th><th>已支付</th><th>营收</th><th>客单价</th></tr></thead><tbody>'+rows+'</tbody><tfoot>'+foot+'</tfoot>';
   }catch(e){
     document.getElementById('dailyCards').innerHTML = '<div class="finance-card"><div class="fc-value" style="font-size:14px;color:var(--error);">加载失败</div></div>';
+    toast('日报加载失败: '+e.message, 'error');
   }
 }
 
@@ -126,6 +136,7 @@ async function loadMonthly(){
       '</tbody>';
   }catch(e){
     document.getElementById('monthlyCards').innerHTML = '<div class="finance-card"><div class="fc-value" style="font-size:14px;color:var(--error);">加载失败</div></div>';
+    toast('月报加载失败: '+e.message, 'error');
   }
 }
 
@@ -152,6 +163,7 @@ async function loadRecon(){
     document.getElementById('reconTable').innerHTML = html;
   }catch(e){
     document.getElementById('reconTable').innerHTML = '<div class="loading" style="color:var(--error);">加载失败: '+e.message+'</div>';
+    toast('对账加载失败: '+e.message, 'error');
   }
 }
 

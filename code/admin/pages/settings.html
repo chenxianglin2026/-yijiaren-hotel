@@ -179,7 +179,7 @@
           </div>
           <div style="margin-top:20px;display:flex;gap:12px;">
             <button class="btn btn-outline btn-sm" onclick="loadBackupInfo()">🔄 刷新</button>
-            <button class="btn btn-outline btn-sm" onclick="alert('TODO: 自动备份功能待开发')">📦 手动备份</button>
+            <button class="btn btn-outline btn-sm" onclick="toast('手动备份功能待开发', 'info')">📦 手动备份</button>
           </div>
           <p style="color:var(--gold);font-size:12px;margin-top:16px;padding:8px 12px;background:#fef9ed;border-radius:6px;border-left:3px solid var(--gold);">🚧 TODO: 自动备份功能待开发，计划支持定时备份到本地/VPS/云存储</p>
         </div>
@@ -202,6 +202,15 @@
 function handleFetchError(res) {
   if (res.status === 401) { window.top.location.href = 'pages/login.html'; return true; }
   return false;
+}
+
+function toast(msg, type) {
+  type = type || 'info';
+  var c = document.getElementById('toastContainer');
+  if (!c) { c = document.createElement('div'); c.id = 'toastContainer'; c.className = 'toast-container'; document.body.appendChild(c); }
+  var t = document.createElement('div'); t.className = 'toast toast-' + type; t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(function() { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(function() { t.remove(); }, 300); }, 3000);
 }
 
 function switchSetting(el, panelId) {
@@ -243,6 +252,7 @@ function switchSetting(el, panelId) {
     document.getElementById('enterprise-loading').style.display = 'none';
     document.getElementById('enterprise-error').style.display = 'block';
     document.getElementById('enterprise-error').textContent = '加载失败: ' + err.message;
+    toast('企业信息加载失败: ' + err.message, 'error');
   });
 })();
 
@@ -271,6 +281,7 @@ var allAccounts = [];
     document.getElementById('account-loading').style.display = 'none';
     document.getElementById('account-error').style.display = 'block';
     document.getElementById('account-error').textContent = '加载失败: ' + err.message + ' (需管理员权限)';
+    toast('账号列表加载失败', 'error');
   });
 })();
 
@@ -362,10 +373,11 @@ function saveNotificationConfig() {
   var orderOn = document.getElementById('notify-order').checked;
   var checkinOn = document.getElementById('notify-checkin').checked;
   var alertOn = document.getElementById('notify-alert').checked;
-  var statusEl = document.getElementById('notify-save-status');
-  statusEl.style.display = 'inline';
-  statusEl.style.color = 'var(--gold)';
-  statusEl.textContent = '保存中...';
+
+  var saveBtn = document.querySelector('#panel-notification .btn-primary');
+  var origText = saveBtn.textContent;
+  saveBtn.disabled = true;
+  saveBtn.textContent = '保存中...';
 
   fetch('/api/system/settings', {
     method: 'POST',
@@ -387,13 +399,14 @@ function saveNotificationConfig() {
     return res.json();
   })
   .then(function(result) {
-    statusEl.style.color = 'var(--success)';
-    statusEl.textContent = '✅ 保存成功';
-    setTimeout(function() { statusEl.style.display = 'none'; }, 3000);
+    saveBtn.disabled = false;
+    saveBtn.textContent = origText;
+    toast('通知设置保存成功', 'success');
   })
   .catch(function(err) {
-    statusEl.style.color = 'var(--error)';
-    statusEl.textContent = '❌ 保存失败: ' + err.message;
+    saveBtn.disabled = false;
+    saveBtn.textContent = origText;
+    toast('保存失败: ' + err.message, 'error');
   });
 }
 
@@ -432,6 +445,7 @@ function loadBackupInfo() {
     document.getElementById('backup-loading').style.display = 'none';
     document.getElementById('backup-error').style.display = 'block';
     document.getElementById('backup-error').textContent = '加载失败: ' + err.message;
+    toast('备份信息加载失败', 'error');
   });
 }
 </script>
