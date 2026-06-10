@@ -708,6 +708,162 @@ class TestCheckinAPI:
                 "room_number": "101"
             }, headers=auth_header(testuser_auth))
             assert r.status_code == 400  # 未支付不能入住
+
+    def test_checkin_empty_room_number(self, admin_auth):
+        """空房间号办理入住应报400"""
+        today = date.today()
+        r_order = client.post(f"{BASE_URL}/api/orders", json={
+            "hotel_id": 1, "room_id": 3, "room_count": 1,
+            "checkin_date": (today + timedelta(days=10)).isoformat(),
+            "checkout_date": (today + timedelta(days=12)).isoformat(),
+            "guest_name": "空房号测试", "guest_phone": "13800001113"
+        }, headers=auth_header(admin_auth))
+        order_id = r_order.json()["id"]
+        # 模拟支付
+        client.post(f"{BASE_URL}/api/orders/{order_id}/status",
+                    params={"new_status": "paid"}, headers=auth_header(admin_auth))
+        # 空房间号
+        r = client.post(f"{BASE_URL}/api/checkin/in", json={
+            "order_id": order_id, "room_number": ""
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 400
+
+    def test_checkin_nonexistent_order(self, testuser_auth):
+        """用不存在的订单ID办理入住房应报404"""
+        r = client.post(f"{BASE_URL}/api/checkin/in", json={
+            "order_id": 99999, "room_number": "101"
+        }, headers=auth_header(testuser_auth))
+        assert r.status_code == 404
+
+    def test_checkin_duplicate_order(self, admin_auth):
+        """同一订单重复办理入住应报400"""
+        today = date.today()
+        r_order = client.post(f"{BASE_URL}/api/orders", json={
+            "hotel_id": 1, "room_id": 4, "room_count": 1,
+            "checkin_date": (today + timedelta(days=11)).isoformat(),
+            "checkout_date": (today + timedelta(days=13)).isoformat(),
+            "guest_name": "重复入住测试", "guest_phone": "13800001114"
+        }, headers=auth_header(admin_auth))
+        order_id = r_order.json()["id"]
+        # 模拟支付
+        client.post(f"{BASE_URL}/api/orders/{order_id}/status",
+                    params={"new_status": "paid"}, headers=auth_header(admin_auth))
+        # 第一次入住
+        r1 = client.post(f"{BASE_URL}/api/checkin/in", json={
+            "order_id": order_id, "room_number": "201"
+        }, headers=auth_header(admin_auth))
+        assert r1.status_code == 200
+        # 第二次入住 - 重复
+        r2 = client.post(f"{BASE_URL}/api/checkin/in", json={
+            "order_id": order_id, "room_number": "202"
+        }, headers=auth_header(admin_auth))
+        assert r2.status_code == 400
+
+    def test_checkout_already_checked_out(self, admin_auth):
+        """重复退房应报400"""
+        today = date.today()
+        r_order = client.post(f"{BASE_URL}/api/orders", json={
+            "hotel_id": 1, "room_id": 5, "room_count": 1,
+            "checkin_date": (today + timedelta(days=12)).isoformat(),
+            "checkout_date": (today + timedelta(days=14)).isoformat(),
+            "guest_name": "重复退房测试", "guest_phone": "13800001115"
+        }, headers=auth_header(admin_auth))
+        order_id = r_order.json()["id"]
+        client.post(f"{BASE_URL}/api/orders/{order_id}/status",
+                    params={"new_status": "paid"}, headers=auth_header(admin_auth))
+        r_checkin = client.post(f"{BASE_URL}/api/checkin/in", json={
+            "order_id": order_id, "room_number": "301"
+        }, headers=auth_header(admin_auth))
+        checkin_id = r_checkin.json()["id"]
+        # 第一次退房
+        r1 = client.post(f"{BASE_URL}/api/checkin/out/{checkin_id}",
+                        headers=auth_header(admin_auth))
+        assert r1.status_code == 200
+        # 第二次退房
+        r2 = client.post(f"{BASE_URL}/api/checkin/out/{checkin_id}",
+                        headers=auth_header(admin_auth))
+        assert r2.status_code == 400
+
+    def test_unlock_invalid_action(self, admin_auth):
+        """非法开锁action应报400"""
+        today = date.today()
+        r_order = client.post(f"{BASE_URL}/api/orders", json={
+            "hotel_id": 1, "room_id": 5, "room_count": 1,
+            "checkin_date": (today + timedelta(days=13)).isoformat(),
+            "checkout_date": (today + timedelta(days=15)).isoformat(),
+            "guest_name": "开锁测试", "guest_phone": "13800001116"
+        }, headers=auth_header(admin_auth))
+        order_id = r_order.json()["id"]
+        client.post(f"{BASE_URL}/api/orders/{order_id}/status",
+                    params={"new_status": "paid"}, headers=auth_header(admin_auth))
+        r_checkin = client.post(f"{BASE_URL}/api/checkin/in", json={
+            "order_id": order_id, "room_number": "401"
+        }, headers=auth_header(admin_auth))
+        checkin_id = r_checkin.json()["id"]
+        r = client.post(f"{BASE_URL}/api/checkin/{checkin_id}/unlock", json={
+            "action": "explode"
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 400
+
+    def test_list_checkins(self, admin_auth):
+        """入住记录列表"""
+        r = client.get(f"{BASE_URL}/api/checkin", headers=auth_header(admin_auth))
+        assert r.status_code == 200
+        data = r.json()
+        assert "total" in data
+        assert "items" in data
+        assert data["total"] >= 0
+
+    def test_checkin_list_filter_status(self, admin_auth):
+        """按状态筛选入住记录"""
+        r = client.get(f"{BASE_URL}/api/checkin",
+                       params={"status": "checked_in"},
+                       headers=auth_header(admin_auth))
+        assert r.status_code == 200
+        for item in r.json()["items"]:
+            assert item["status"] == "checked_in"
+
+    def test_checkin_list_invalid_status(self, admin_auth):
+        """非法状态参数应报400"""
+        r = client.get(f"{BASE_URL}/api/checkin",
+                       params={"status": "sleeping"},
+                       headers=auth_header(admin_auth))
+        assert r.status_code == 400
+
+    def test_unlock_on_checked_out(self, admin_auth):
+        """已退房后尝试开锁应报400"""
+        today = date.today()
+        r_order = client.post(f"{BASE_URL}/api/orders", json={
+            "hotel_id": 1, "room_id": 5, "room_count": 1,
+            "checkin_date": (today + timedelta(days=14)).isoformat(),
+            "checkout_date": (today + timedelta(days=16)).isoformat(),
+            "guest_name": "退房后开锁", "guest_phone": "13800001117"
+        }, headers=auth_header(admin_auth))
+        order_id = r_order.json()["id"]
+        client.post(f"{BASE_URL}/api/orders/{order_id}/status",
+                    params={"new_status": "paid"}, headers=auth_header(admin_auth))
+        r_checkin = client.post(f"{BASE_URL}/api/checkin/in", json={
+            "order_id": order_id, "room_number": "501"
+        }, headers=auth_header(admin_auth))
+        checkin_id = r_checkin.json()["id"]
+        # 退房
+        client.post(f"{BASE_URL}/api/checkin/out/{checkin_id}",
+                    headers=auth_header(admin_auth))
+        # 尝试开锁
+        r = client.post(f"{BASE_URL}/api/checkin/{checkin_id}/unlock", json={
+            "action": "unlock"
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 400
+
+    def test_checkin_list_filter_hotel(self, admin_auth):
+        """按门店筛选入住记录"""
+        r = client.get(f"{BASE_URL}/api/checkin",
+                       params={"hotel_id": 1},
+                       headers=auth_header(admin_auth))
+        assert r.status_code == 200
+        for item in r.json()["items"]:
+            assert item["hotel_id"] == 1
+
 class TestUserRegisterBoundary:
     """用户注册边界测试"""
 
@@ -836,6 +992,156 @@ class TestOrderStatusFlow:
         data = r.json()
         assert len(data["items"]) <= 1
         assert data["total"] >= 1
+
+    def test_update_status_illegal_transition(self, admin_auth):
+        """非法状态转换：completed -> pending 应报400"""
+        today = date.today()
+        r_order = client.post(f"{BASE_URL}/api/orders", json={
+            "hotel_id": 1, "room_id": 2, "room_count": 1,
+            "checkin_date": (today + timedelta(days=20)).isoformat(),
+            "checkout_date": (today + timedelta(days=22)).isoformat(),
+            "guest_name": "非法转换测试", "guest_phone": "13800001222"
+        }, headers=auth_header(admin_auth))
+        order_id = r_order.json()["id"]
+        # pending -> paid -> checked_in -> completed
+        client.post(f"{BASE_URL}/api/orders/{order_id}/status",
+                    params={"new_status": "paid"}, headers=auth_header(admin_auth))
+        r_checkin = client.post(f"{BASE_URL}/api/checkin/in", json={
+            "order_id": order_id, "room_number": "601"
+        }, headers=auth_header(admin_auth))
+        client.post(f"{BASE_URL}/api/checkin/out/{r_checkin.json()['id']}",
+                    headers=auth_header(admin_auth))
+        # 尝试 completed -> pending (非法)
+        r = client.post(f"{BASE_URL}/api/orders/{order_id}/status",
+                        params={"new_status": "pending"},
+                        headers=auth_header(admin_auth))
+        assert r.status_code == 400
+
+    def test_update_status_pending_to_checked_in(self, admin_auth):
+        """非法: pending 直接跳到 checked_in 应报400"""
+        today = date.today()
+        r_order = client.post(f"{BASE_URL}/api/orders", json={
+            "hotel_id": 1, "room_id": 3, "room_count": 1,
+            "checkin_date": (today + timedelta(days=21)).isoformat(),
+            "checkout_date": (today + timedelta(days=23)).isoformat(),
+            "guest_name": "跳过支付测试", "guest_phone": "13800001223"
+        }, headers=auth_header(admin_auth))
+        order_id = r_order.json()["id"]
+        r = client.post(f"{BASE_URL}/api/orders/{order_id}/status",
+                        params={"new_status": "checked_in"},
+                        headers=auth_header(admin_auth))
+        assert r.status_code == 400
+
+    def test_update_status_by_guest_forbidden(self, testuser_auth):
+        """普通用户无权调用 /orders/{id}/status 应报403"""
+        # 获取testuser的订单
+        r_orders = client.get(f"{BASE_URL}/api/orders",
+                              headers=auth_header(testuser_auth))
+        orders = r_orders.json().get("items", [])
+        if orders:
+            order_id = orders[0]["id"]
+            r = client.post(f"{BASE_URL}/api/orders/{order_id}/status",
+                            params={"new_status": "paid"},
+                            headers=auth_header(testuser_auth))
+            assert r.status_code == 403
+
+    def test_update_status_invalid_value(self, admin_auth):
+        """非法的状态值应报400"""
+        r = client.post(f"{BASE_URL}/api/orders/1/status",
+                        params={"new_status": "destroyed"},
+                        headers=auth_header(admin_auth))
+        assert r.status_code == 400
+
+    def test_create_order_nonexistent_room(self, admin_auth):
+        """预订不存在的房型应报404"""
+        today = date.today()
+        r = client.post(f"{BASE_URL}/api/orders", json={
+            "hotel_id": 1, "room_id": 99999, "room_count": 1,
+            "checkin_date": (today + timedelta(days=22)).isoformat(),
+            "checkout_date": (today + timedelta(days=24)).isoformat(),
+            "guest_name": "不存在房型", "guest_phone": "13800001224"
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 404
+
+    def test_create_order_nonexistent_hotel(self, admin_auth):
+        """预订不存在门店应报404"""
+        today = date.today()
+        r = client.post(f"{BASE_URL}/api/orders", json={
+            "hotel_id": 99999, "room_id": 1, "room_count": 1,
+            "checkin_date": (today + timedelta(days=23)).isoformat(),
+            "checkout_date": (today + timedelta(days=25)).isoformat(),
+            "guest_name": "不存在门店", "guest_phone": "13800001225"
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 404
+
+    def test_pay_nonexistent_order(self, testuser_auth):
+        """支付不存在的订单应报404"""
+        r = client.post(f"{BASE_URL}/api/payment/create", json={
+            "order_id": 99999
+        }, headers=auth_header(testuser_auth))
+        assert r.status_code == 404
+
+    def test_refund_pending_order(self, admin_auth):
+        """退款待支付订单应报400"""
+        today = date.today()
+        r_order = client.post(f"{BASE_URL}/api/orders", json={
+            "hotel_id": 1, "room_id": 4, "room_count": 1,
+            "checkin_date": (today + timedelta(days=26)).isoformat(),
+            "checkout_date": (today + timedelta(days=28)).isoformat(),
+            "guest_name": "退款pending测试", "guest_phone": "13800001226"
+        }, headers=auth_header(admin_auth))
+        order_id = r_order.json()["id"]
+        r = client.post(f"{BASE_URL}/api/payment/refund",
+                        params={"order_id": order_id, "reason": "不想要"},
+                        headers=auth_header(admin_auth))
+        assert r.status_code == 400
+
+    def test_cancel_completed_order(self, admin_auth):
+        """取消已完成的订单应报400"""
+        today = date.today()
+        r_order = client.post(f"{BASE_URL}/api/orders", json={
+            "hotel_id": 1, "room_id": 5, "room_count": 1,
+            "checkin_date": (today + timedelta(days=27)).isoformat(),
+            "checkout_date": (today + timedelta(days=29)).isoformat(),
+            "guest_name": "取消已完成测试", "guest_phone": "13800001227"
+        }, headers=auth_header(admin_auth))
+        order_id = r_order.json()["id"]
+        # pending -> paid -> checked_in -> completed
+        client.post(f"{BASE_URL}/api/orders/{order_id}/status",
+                    params={"new_status": "paid"}, headers=auth_header(admin_auth))
+        r_checkin = client.post(f"{BASE_URL}/api/checkin/in", json={
+            "order_id": order_id, "room_number": "701"
+        }, headers=auth_header(admin_auth))
+        client.post(f"{BASE_URL}/api/checkin/out/{r_checkin.json()['id']}",
+                    headers=auth_header(admin_auth))
+        # 尝试取消
+        r = client.post(f"{BASE_URL}/api/orders/{order_id}/cancel",
+                        params={"reason": "后悔了"},
+                        headers=auth_header(admin_auth))
+        assert r.status_code == 400
+
+    def test_pay_checkin_then_refund_flow(self, admin_auth):
+        """完整退款流程：pending -> paid -> checked_in -> refund"""
+        today = date.today()
+        r_order = client.post(f"{BASE_URL}/api/orders", json={
+            "hotel_id": 1, "room_id": 5, "room_count": 1,
+            "checkin_date": (today + timedelta(days=28)).isoformat(),
+            "checkout_date": (today + timedelta(days=30)).isoformat(),
+            "guest_name": "入住后退款", "guest_phone": "13800001228"
+        }, headers=auth_header(admin_auth))
+        order_id = r_order.json()["id"]
+        client.post(f"{BASE_URL}/api/orders/{order_id}/status",
+                    params={"new_status": "paid"}, headers=auth_header(admin_auth))
+        r_checkin = client.post(f"{BASE_URL}/api/checkin/in", json={
+            "order_id": order_id, "room_number": "801"
+        }, headers=auth_header(admin_auth))
+        assert r_checkin.status_code == 200
+        # checked_in 可以退款
+        r = client.post(f"{BASE_URL}/api/payment/refund",
+                        params={"order_id": order_id, "reason": "入住后不满意"},
+                        headers=auth_header(admin_auth))
+        assert r.status_code == 200
+        assert r.json()["code"] == 0
 
 
 class TestDevicesAPI:
