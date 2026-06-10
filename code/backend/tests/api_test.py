@@ -708,11 +708,231 @@ class TestCheckinAPI:
                 "room_number": "101"
             }, headers=auth_header(testuser_auth))
             assert r.status_code == 400  # 未支付不能入住
+class TestUserRegisterBoundary:
+    """用户注册边界测试"""
+
+    def test_register_username_too_short(self):
+        """用户名太短（<2字符）"""
+        r = client.post(f"{BASE_URL}/api/auth/register", json={
+            "username": "a",
+            "password": "test123456"
+        })
+        assert r.status_code == 422
+
+    def test_register_password_too_short(self):
+        """密码太短（<6字符）"""
+        ts = int(time.time())
+        r = client.post(f"{BASE_URL}/api/auth/register", json={
+            "username": f"bndtest_{ts}",
+            "password": "12345"
+        })
+        assert r.status_code == 422
+
+    def test_register_invalid_phone_format(self):
+        """手机号格式非法"""
+        ts = int(time.time())
+        r = client.post(f"{BASE_URL}/api/auth/register", json={
+            "username": f"bndtest_{ts}",
+            "password": "test123456",
+            "phone": "12345"
+        })
+        assert r.status_code == 422
+
+    def test_register_missing_username(self):
+        """缺少必填字段 username"""
+        r = client.post(f"{BASE_URL}/api/auth/register", json={
+            "password": "test123456"
+        })
+        assert r.status_code == 422
+
+    def test_register_duplicate_phone(self):
+        """手机号已被注册（用已有用户的手机号）"""
+        ts = int(time.time())
+        r = client.post(f"{BASE_URL}/api/auth/register", json={
+            "username": f"bndtest_{ts}",
+            "password": "test123456",
+            "phone": "13800000002"  # testuser的手机号
+        })
+        assert r.status_code == 400
+
+
+class TestOrderStatusFlow:
+    """订单状态流转测试"""
+
+    def test_create_and_pay_order(self, admin_auth):
+        """创建订单 -> 模拟支付 -> 验证状态流转"""
+        today = date.today()
+        # 1. 创建订单
+        r = client.post(f"{BASE_URL}/api/orders", json={
+            "hotel_id": 1,
+            "room_id": 2,
+            "room_count": 1,
+            "checkin_date": (today + timedelta(days=6)).isoformat(),
+            "checkout_date": (today + timedelta(days=8)).isoformat(),
+            "guest_name": "状态流转测试",
+            "guest_phone": "13800001111"
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 201, f"Create order failed: {r.text}"
+        order_data = r.json()
+        assert order_data["status"] == "pending"
+        order_id = order_data["id"]
+
+        # 2. 模拟支付 - 验证 pending -> paid
+        r_pay = client.post(f"{BASE_URL}/api/payment/create", json={
+            "order_id": order_id
+        }, headers=auth_header(admin_auth))
+        assert r_pay.status_code == 200, f"Pay simulate failed: {r_pay.text}"
+        pay_data = r_pay.json()
+        assert pay_data["code"] == 0
+        assert pay_data["data"]["prepay_id"] is not None
+
+    def test_create_order_zero_nights(self, admin_auth):
+        """入住日期=离店日期（零晚）应被拒绝"""
+        today = date.today()
+        r = client.post(f"{BASE_URL}/api/orders", json={
+            "hotel_id": 1,
+            "room_id": 1,
+            "room_count": 1,
+            "checkin_date": (today + timedelta(days=5)).isoformat(),
+            "checkout_date": (today + timedelta(days=5)).isoformat(),
+            "guest_name": "零晚测试",
+            "guest_phone": "13800001112"
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 400
+
+    def test_cancel_cancelled_order(self, admin_auth):
+        """尝试取消已取消的订单应报400"""
+        r_list = client.get(f"{BASE_URL}/api/orders",
+                            params={"status": "cancelled"},
+                            headers=auth_header(admin_auth))
+        cancelled_orders = r_list.json().get("items", [])
+        if cancelled_orders:
+            cancelled_order = cancelled_orders[0]
+            r = client.post(
+                f"{BASE_URL}/api/orders/{cancelled_order['id']}/cancel",
+                params={"reason": "再次取消"},
+                headers=auth_header(admin_auth)
+            )
+            assert r.status_code == 400
+
+    def test_order_list_with_date_range(self, admin_auth):
+        """按日期范围筛选订单"""
+        today = date.today()
+        r = client.get(f"{BASE_URL}/api/orders", params={
+            "start_date": (today - timedelta(days=30)).isoformat(),
+            "end_date": (today + timedelta(days=30)).isoformat()
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 200
+        data = r.json()
+        assert "total" in data
+        assert "items" in data
+
+    def test_order_list_with_pagination(self, admin_auth):
+        """订单列表分页"""
+        r = client.get(f"{BASE_URL}/api/orders", params={
+            "page": 1, "page_size": 1
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 200
+        data = r.json()
+        assert len(data["items"]) <= 1
+        assert data["total"] >= 1
+
+
+class TestDevicesAPI:
+    """设备管理接口测试（心跳异常场景）"""
+
+    def test_device_heartbeat_unknown_device(self, admin_auth):
+        """未注册设备上报心跳应报404"""
+        r = client.post(f"{BASE_URL}/api/devices/heartbeat", json={
+            "device_id": "UNKNOWN-DEV-9999",
+            "status": "online",
+            "battery": 80
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 404
+
+    def test_device_heartbeat_low_battery(self, admin_auth):
+        """设备心跳上报低电量告警"""
+        r = client.post(f"{BASE_URL}/api/devices/heartbeat", json={
+            "device_id": "LOCK-001",
+            "status": "alert",
+            "battery": 5
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 200
+        data = r.json()
+        assert data["code"] == 0
+        assert data["data"]["status"] == "alert"
+        assert data["data"]["battery"] == 5
+
+    def test_device_heartbeat_offline_status(self, admin_auth):
+        """设备心跳上报离线状态"""
+        r = client.post(f"{BASE_URL}/api/devices/heartbeat", json={
+            "device_id": "LOCK-002",
+            "status": "offline",
+            "battery": 10
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 200
+        data = r.json()
+        assert data["code"] == 0
+        assert data["data"]["status"] == "offline"
+
+    def test_device_list_all(self, admin_auth):
+        """设备列表查询"""
+        r = client.get(f"{BASE_URL}/api/devices/list",
+                       headers=auth_header(admin_auth))
+        assert r.status_code == 200
+        data = r.json()
+        assert data["code"] == 0
+        assert "data" in data
+        assert "total" in data
+        assert "online_count" in data
+        assert "offline_count" in data
+        assert "alert_count" in data
+
+    def test_device_stats(self, admin_auth):
+        """设备统计概览"""
+        r = client.get(f"{BASE_URL}/api/devices/stats",
+                       headers=auth_header(admin_auth))
+        assert r.status_code == 200
+        data = r.json()
+        assert data["code"] == 0
+        stats = data["data"]
+        assert "total" in stats
+        assert "online" in stats
+        assert "offline" in stats
+        assert "alert" in stats
+        assert "low_battery" in stats
+
+    def test_device_heartbeat_full_cycle(self, admin_auth):
+        """设备心跳完整周期：online -> offline -> alert -> online 恢复"""
+        device_id = "LOCK-002"
+        # 确保设备先在线
+        client.post(f"{BASE_URL}/api/devices/heartbeat", json={
+            "device_id": device_id,
+            "status": "online",
+            "battery": 80
+        }, headers=auth_header(admin_auth))
+
+        # 上报告警
+        r_alert = client.post(f"{BASE_URL}/api/devices/heartbeat", json={
+            "device_id": device_id,
+            "status": "alert",
+            "battery": 3
+        }, headers=auth_header(admin_auth))
+        assert r_alert.status_code == 200
+        assert r_alert.json()["data"]["status"] == "alert"
+
+        # 恢复在线
+        r_online = client.post(f"{BASE_URL}/api/devices/heartbeat", json={
+            "device_id": device_id,
+            "status": "online",
+            "battery": 90
+        }, headers=auth_header(admin_auth))
+        assert r_online.status_code == 200
+        assert r_online.json()["data"]["status"] == "online"
 
 
 # ══════════════════════════════════════════════════════
 # 运行入口
 # ══════════════════════════════════════════════════════
-
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "-s", "--tb=short"])
