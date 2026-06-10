@@ -521,6 +521,109 @@ else:
 conn.close()
 
 # ============================================================
+# SECTION 5: 新API端点覆盖测试
+# ============================================================
+print()
+print("━━━ SECTION 5: 扩展端点覆盖测试 ━━━")
+
+# 5a) Dashboard stats
+print("  5a) 仪表盘统计数据")
+code, data = http_get(f"{BASE}/api/dashboard/stats", admin_headers)
+if code == 200:
+    inner = data.get("data", data)
+    occ_rate = safe_get(inner, "occupancy_rate", -1)
+    total_rooms = safe_get(inner, "total_rooms", 0)
+    if occ_rate >= 0 and total_rooms >= 0:
+        ok(f"仪表盘: occupancy_rate={occ_rate}%, total_rooms={total_rooms}")
+    else:
+        no("仪表盘数据异常", str(data)[:200])
+else:
+    no(f"仪表盘请求失败 HTTP {code}", str(data)[:200])
+
+# 5b) Finance daily revenue
+print("  5b) 财务日营收报表")
+today = date.today()
+week_ago = today - timedelta(days=7)
+code, data = http_get(
+    f"{BASE}/api/finance/daily?start_date={week_ago.isoformat()}&end_date={today.isoformat()}",
+    admin_headers
+)
+if code == 200:
+    summary = safe_get(data, "summary", {})
+    total_rev = safe_get(summary, "total_revenue", -1)
+    total_orders = safe_get(summary, "total_orders", -1)
+    ok(f"日营收: revenue=¥{total_rev}, orders={total_orders}")
+else:
+    no(f"日营收请求失败 HTTP {code}", str(data)[:200])
+
+# 5c) Finance overview
+print("  5c) 财务总览")
+code, data = http_get(f"{BASE}/api/finance/overview", admin_headers)
+if code == 200:
+    overview = safe_get(data, "data", {})
+    today_rev = safe_get(safe_get(overview, "today", {}), "revenue", -1)
+    month_rev = safe_get(safe_get(overview, "this_month", {}), "revenue", -1)
+    ok(f"财务总览: today=¥{today_rev}, month=¥{month_rev}")
+else:
+    no(f"财务总览请求失败 HTTP {code}", str(data)[:200])
+
+# 5d) Device list
+print("  5d) 设备列表")
+code, data = http_get(f"{BASE}/api/devices/list", admin_headers)
+if code == 200:
+    online = safe_get(data, "online_count", -1)
+    offline = safe_get(data, "offline_count", -1)
+    alert = safe_get(data, "alert_count", -1)
+    total_dev = safe_get(data, "total", 0)
+    ok(f"设备列表: total={total_dev}, online={online}, offline={offline}, alert={alert}")
+else:
+    no(f"设备列表请求失败 HTTP {code}", str(data)[:200])
+
+# 5e) Device stats
+print("  5e) 设备统计概览")
+code, data = http_get(f"{BASE}/api/devices/stats", admin_headers)
+if code == 200:
+    stats = safe_get(data, "data", {})
+    dev_total = safe_get(stats, "total", 0)
+    dev_online = safe_get(stats, "online", 0)
+    low_battery = safe_get(stats, "low_battery", 0)
+    ok(f"设备统计: total={dev_total}, online={dev_online}, low_battery={low_battery}")
+else:
+    no(f"设备统计请求失败 HTTP {code}", str(data)[:200])
+
+# 5f) System info
+print("  5f) 系统信息")
+code, data = http_get(f"{BASE}/api/system/info")
+if code == 200:
+    sys_data = safe_get(data, "data", {})
+    version = safe_get(sys_data, "version", "unknown")
+    db_type = safe_get(sys_data, "db_type", "unknown")
+    hotel_cnt = safe_get(sys_data, "hotel_count", 0)
+    ok(f"系统信息: v{version}, db={db_type}, hotels={hotel_cnt}")
+else:
+    no(f"系统信息请求失败 HTTP {code}", str(data)[:200])
+
+# 5g) Room status query
+print("  5g) 房态总览")
+code, data = http_get(f"{BASE}/api/rooms/status", admin_headers)
+if code == 200:
+    total_rooms = safe_get(data, "total_rooms", 0)
+    available = safe_get(data, "available_total", 0)
+    occupied = safe_get(data, "occupied_total", 0)
+    ok(f"房态: total={total_rooms}, available={available}, occupied={occupied}")
+else:
+    no(f"房态查询失败 HTTP {code}", str(data)[:200])
+
+# 5h) Lock info
+print("  5h) 门锁配置状态")
+code, data = http_get(f"{BASE}/api/lock/info")
+if code == 200:
+    platform = safe_get(safe_get(data, "data", {}), "platform", "unknown")
+    ok(f"门锁平台: {platform}")
+else:
+    no(f"门锁信息请求失败 HTTP {code}", str(data)[:200])
+
+# ============================================================
 # Cleanup
 # ============================================================
 print()
