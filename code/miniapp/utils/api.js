@@ -5,7 +5,7 @@
  */
 
 const { DEV_MODE } = require('./const')
-const BASE_URL = 'http://43.163.5.90'  // 生产环境; 本地调试可改为 http://127.0.0.1:8001
+const BASE_URL = 'https://43.163.5.90'  // 生产环境
 
 // 请求队列，用于并发请求时的 token 刷新
 let isRefreshing = false
