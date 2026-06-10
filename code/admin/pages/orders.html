@@ -83,6 +83,15 @@ const STATUS = {pending:'待支付',paid:'已支付',checked_in:'已入住',comp
 
 let page=1, pageSize=10, totalCount=0;
 
+function toast(msg, type) {
+  type = type || 'info';
+  var c = document.getElementById('toastContainer');
+  if (!c) { c = document.createElement('div'); c.id = 'toastContainer'; c.className = 'toast-container'; document.body.appendChild(c); }
+  var t = document.createElement('div'); t.className = 'toast toast-' + type; t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(function() { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(function() { t.remove(); }, 300); }, 3000);
+}
+
 function fmtDateISO(d) { return d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0'); }
 
 function setDatePreset(range, el) {
@@ -150,7 +159,7 @@ async function loadOrders(){
         <td>${ds}</td>
         <td><button class="btn btn-outline btn-sm" onclick="showDetail('${o.id}')">详情</button></td>
       </tr>`;
-    }).join('') : '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px;">暂无订单数据</td></tr>';
+    }).join('') : '<tr><td colspan="8"><div class="empty-state"><span class="empty-icon">📋</span><div class="empty-text">暂无订单数据</div><div class="empty-hint">调整筛选条件或创建新订单</div></div></td></tr>';
 
     // Pagination
     let tp = Math.ceil(totalCount/pageSize);
@@ -199,7 +208,7 @@ async function showDetail(id){
       '<div class="detail-row"><span class="detail-label">状态</span><span class="detail-value"><span class="status-tag '+(o.status||'')+'">'+(STATUS[o.status]||o.status||'-')+'</span></span></div>';
     document.getElementById('detailModal').classList.add('show');
   }catch(e){
-    alert('加载失败: '+e.message);
+    alert('加载详情失败，请重试');
   }
 }
 

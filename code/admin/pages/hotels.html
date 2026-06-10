@@ -19,13 +19,17 @@
   .hc-actions button { background:rgba(0,0,0,.5); color:#fff; border:none; border-radius:4px; padding:2px 8px; font-size:11px; cursor:pointer; }
   .hc-actions button:hover { background:var(--gold); color:#000; }
   .hc-actions button.del:hover { background:var(--error); color:#fff; }
+  @media(max-width:768px){ .hotel-cards{grid-template-columns:1fr} .hc-stats{gap:8px} .hc-stat .n{font-size:16px} }
+  @media(max-width:480px){ .hotel-card{padding:14px} }
 </style>
 </head>
 <body>
 <div class="page">
   <div class="page-title">门店管理</div>
 
-  <div class="stat-cards" id="statCards"></div>
+  <div class="stat-cards" id="statCards">
+    <div class="loading-row" style="grid-column:1/-1;">加载中...</div>
+  </div>
 
   <div class="filter-bar">
     <input class="form-input" id="search" placeholder="🔍 搜索门店..." style="width:220px;" oninput="render()">
@@ -98,6 +102,23 @@ const T=localStorage.getItem('yjr_token'),H={'Authorization':'Bearer '+T};
 const F=n=>'¥'+Number(n||0).toLocaleString();
 let hotels=[],rooms=[];
 
+// Toast notification
+function toast(msg, type) {
+  type = type || 'info';
+  var container = document.getElementById('toastContainer');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toastContainer';
+    container.className = 'toast-container';
+    document.body.appendChild(container);
+  }
+  var t = document.createElement('div');
+  t.className = 'toast toast-' + type;
+  t.textContent = msg;
+  container.appendChild(t);
+  setTimeout(function() { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(function() { t.remove(); }, 300); }, 3000);
+}
+
 async function load(){
   try{
     let [hr,rr]=await Promise.all([
@@ -144,7 +165,7 @@ function render(){
         <div class="hc-stat"><div class="n">${hTotal?Math.round(hOcc/hTotal*100):0}%</div><div class="l">入住率</div></div>
       </div>
     </div>`;
-  }).join(''):'<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:40px;">暂无门店数据</div>';
+  }).join(''):'<div class="empty-state" style="grid-column:1/-1;"><span class="empty-icon">🏢</span><div class="empty-text">暂无门店数据</div><div class="empty-hint">点击「+ 新增门店」添加第一个门店</div></div>';
 }
 
 // ── 门店弹窗 ──────────────────────────────────────
@@ -202,9 +223,9 @@ async function saveHotel(){
   if(!isNaN(lat)) body.latitude=lat;
   if(!isNaN(lng)) body.longitude=lng;
 
-  if(!body.name){ alert('请输入门店名称'); return; }
-  if(!body.address){ alert('请输入详细地址'); return; }
-  if(!body.city){ alert('请输入城市'); return; }
+  if(!body.name){ toast('请输入门店名称', 'warning'); return; }
+  if(!body.address){ toast('请输入详细地址', 'warning'); return; }
+  if(!body.city){ toast('请输入城市', 'warning'); return; }
 
   let url=isEdit?'/api/hotels/'+document.getElementById('hEditId').value:'/api/hotels';
   let method=isEdit?'PUT':'POST';
@@ -216,7 +237,8 @@ async function saveHotel(){
     if(j.code!==0) throw new Error(j.msg||'操作失败');
     closeHotelModal();
     load();
-  }catch(e){ alert('保存失败: '+e.message); }
+    toast('保存成功', 'success');
+  }catch(e){ toast('保存失败: '+e.message, 'error'); }
 }
 
 async function deleteHotel(id,name){
@@ -227,7 +249,8 @@ async function deleteHotel(id,name){
     let j=await r.json();
     if(j.code!==0) throw new Error(j.msg||'删除失败');
     load();
-  }catch(e){ alert('删除失败: '+e.message); }
+    toast('已删除', 'success');
+  }catch(e){ toast('删除失败: '+e.message, 'error'); }
 }
 
 load();

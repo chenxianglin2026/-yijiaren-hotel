@@ -17,6 +17,7 @@
   .log-entry.log-ok { color:var(--success); }
   .log-entry.log-err { color:var(--error); }
   .modal-body textarea.form-input { min-height:80px; resize:vertical; font-family:monospace; font-size:12px; }
+  @media(max-width:768px){ .ota-table-wrap{overflow-x:auto} .filter-bar .btn{width:100%} }
 </style>
 </head>
 <body>
@@ -144,6 +145,15 @@ let syncLogs = [];
 const CH_LABELS = { ctrip:'携程', meituan:'美团', fliggy:'飞猪' };
 const CH_ICONS  = { ctrip:'🏨', meituan:'🍜', fliggy:'✈️' };
 
+function toast(msg, type) {
+  type = type || 'info';
+  var c = document.getElementById('toastContainer');
+  if (!c) { c = document.createElement('div'); c.id = 'toastContainer'; c.className = 'toast-container'; document.body.appendChild(c); }
+  var t = document.createElement('div'); t.className = 'toast toast-' + type; t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(function() { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(function() { t.remove(); }, 300); }, 3000);
+}
+
 function addLog(channel, msg, ok) {
   let now = new Date();
   let ts = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0')+':'+now.getSeconds().toString().padStart(2,'0');
@@ -254,7 +264,7 @@ async function doManualSyncSubmit() {
   let rooms;
   try {
     rooms = roomsText ? JSON.parse(roomsText) : [{room_id:1, date:new Date().toISOString().slice(0,10), available:5, price:299}];
-  } catch(e) { alert('房态数据JSON格式错误'); return; }
+  } catch(e) { toast('房态数据JSON格式错误', 'warning'); return; }
 
   try {
     let r = await fetch('/api/ota/sync/availability', {
@@ -342,7 +352,7 @@ async function saveChannel() {
 
   if (!isEdit) {
     body.channel = channel;
-    if (!body.channel) { alert('请选择渠道平台'); return; }
+    if (!body.channel) { toast('请选择渠道平台', 'warning'); return; }
   }
 
   let apiKey = document.getElementById('chApiKey').value;
@@ -353,7 +363,7 @@ async function saveChannel() {
   let mappingText = document.getElementById('chMapping').value.trim();
   if (mappingText) {
     try { body.hotel_mapping = JSON.parse(mappingText); }
-    catch(e) { alert('酒店映射JSON格式错误'); return; }
+    catch(e) { toast('酒店映射JSON格式错误', 'warning'); return; }
   }
 
   let url = isEdit ? '/api/ota/channels/'+channel : '/api/ota/channels';
@@ -367,8 +377,9 @@ async function saveChannel() {
     addLog(channel, isEdit?'已更新':'已添加', true);
     closeModal();
     loadChannels();
+    toast(isEdit?'渠道已更新':'渠道已添加', 'success');
   } catch(e) {
-    alert('保存失败: '+e.message);
+    toast('保存失败: '+e.message, 'error');
   }
 }
 
@@ -383,7 +394,7 @@ async function deleteChannel(channel) {
     addLog(channel, '已删除', true);
     loadChannels();
   } catch(e) {
-    alert('删除失败: '+e.message);
+    toast('删除失败: '+e.message, 'error');
   }
 }
 

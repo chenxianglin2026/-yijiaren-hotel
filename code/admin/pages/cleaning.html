@@ -54,6 +54,15 @@ const STATUS_ICON={pending:'🕐',accepted:'📋',in_progress:'🧹',completed:'
 const STATUS_BADGE={pending:'badge-warning',accepted:'badge-info',in_progress:'badge-processing',completed:'badge-success'};
 const STATUS_TEXT={pending:'待派单',accepted:'已接单',in_progress:'进行中',completed:'已完成'};
 
+function toast(msg, type) {
+  type = type || 'info';
+  var c = document.getElementById('toastContainer');
+  if (!c) { c = document.createElement('div'); c.id = 'toastContainer'; c.className = 'toast-container'; document.body.appendChild(c); }
+  var t = document.createElement('div'); t.className = 'toast toast-' + type; t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(function() { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(function() { t.remove(); }, 300); }, 3000);
+}
+
 async function loadTasks(){
   let st=document.getElementById('filterStatus').value;
   let url='/api/cleaning/tasks'+(st?'?status='+st:'');
@@ -92,7 +101,7 @@ async function loadTasks(){
           ${t.status==='in_progress'?'<button class="btn btn-outline btn-sm">催单</button>':''}
           ${t.status==='completed'?'<button class="btn btn-success btn-sm">验收</button>':''}
         </div></div>`;
-    }).join('') : '<div style="text-align:center;color:var(--text-muted);padding:30px;">暂无保洁工单</div>';
+    }).join('') : '<div class="empty-state"><span class="empty-icon">🧹</span><div class="empty-text">暂无保洁工单</div><div class="empty-hint">点击「+ 新建任务」创建工单</div></div>';
 
     // Stats table grouped by hotel
     let hotelMap={}; items.forEach(t=>{
