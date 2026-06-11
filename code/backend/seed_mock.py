@@ -1,7 +1,9 @@
 """
 伊家人酒店系统 - 模拟数据播种脚本
 插入 3 个门店、每种门店 5 个房型、几条订单
-运行: python seed_mock.py
+运行: python seed_mock.py           # 仅当数据库为空时播种
+      python seed_mock.py --force   # 强制清空并重新播种
+      python seed_mock.py --reset   # 仅清空数据（不播种）
 """
 import sys
 import os
@@ -14,21 +16,52 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.db import Base, User, Hotel, Room, Order, OrderStatus, Camera, Device
+from app.db import Base, User, Hotel, Room, Order, OrderStatus, Camera, Device, Checkin
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-def seed():
-    engine = create_engine(settings.db_sync_url, echo=False, connect_args={"check_same_thread": False} if settings.DEV_MODE else {})
+def _get_engine():
+    return create_engine(
+        settings.db_sync_url, echo=False,
+        connect_args={"check_same_thread": False} if settings.DEV_MODE else {}
+    )
+
+
+def reset_db():
+    """清空所有表数据（保留表结构）"""
+    engine = _get_engine()
+    Base.metadata.create_all(engine)
+    with Session(engine) as session:
+        # 按外键依赖顺序删除：checkins -> orders -> devices -> cameras -> rooms -> hotels -> users
+        tables = [Checkin, Order, Device, Camera, Room, Hotel, User]
+        for table in tables:
+            count = session.query(table).delete()
+            if count > 0:
+                print(f"  ── 清空 {table.__tablename__}: {count} 条")
+        session.commit()
+    print("✅ 数据库已清空")
+
+
+def seed(force: bool = False):
+    engine = _get_engine()
     Base.metadata.create_all(engine)
 
     with Session(engine) as session:
-        # ── 已有数据则跳过 ──
-        if session.query(Hotel).count() > 0:
-            print("⚠️  数据库已有数据，跳过播种")
+        # ── 已有数据则跳过（除非 force=True）──
+        if not force and session.query(Hotel).count() > 0:
+            print("⚠️  数据库已有数据，跳过播种（使用 --force 强制覆盖）")
             return
+
+        if force and session.query(Hotel).count() > 0:
+            print("🔄 强制模式：先清空已有数据...")
+            # 不支持嵌套 session，先关闭外层再做 reset
+            session.close()
+            reset_db()
+            # 重新打开 session
+            session = Session(engine)
+            print("🔄 开始重新播种...")
 
         import hashlib, os
 
@@ -398,4 +431,13 @@ def seed():
 
 
 if __name__ == "__main__":
-    seed()
+    import argparse
+    parser = argparse.ArgumentParser(description="伊家人酒店系统 - 数据播种")
+    parser.add_argument("--force", action="store_true", help="强制清空并重新播种")
+    parser.add_argument("--reset", action="store_true", help="仅清空数据，不播种")
+    args = parser.parse_args()
+
+    if args.reset:
+        reset_db()
+    else:
+        seed(force=args.force)

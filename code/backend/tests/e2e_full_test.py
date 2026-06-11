@@ -8,10 +8,23 @@ import urllib.parse
 import json
 import time
 import sqlite3
+import subprocess
+import sys
+import os
 from datetime import date, timedelta
 
 BASE = "http://localhost:8001"
 DB_PATH = "/Users/chenxianglin/projects/yijiaren/code/backend/data/yijiaren.db"
+
+# ── 测试前重置种子数据 ──
+print("🔄 重置测试数据...")
+seed_script = os.path.join(os.path.dirname(__file__), "..", "seed_mock.py")
+result = subprocess.run(
+    [sys.executable, seed_script, "--force"],
+    capture_output=True, text=True, cwd=os.path.dirname(seed_script)
+)
+print(result.stdout.strip())
+print("✅ 测试数据已重置\n")
 
 results = []
 passed = 0
