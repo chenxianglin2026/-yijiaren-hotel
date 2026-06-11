@@ -16,7 +16,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.db import Base, User, Hotel, Room, Order, OrderStatus, Camera, Device, Checkin
+from app.db import Base, User, Hotel, Room, Order, OrderStatus, Camera, Device, Checkin, OTAChannel, OTAOrderMapping
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -35,7 +35,7 @@ def reset_db():
     Base.metadata.create_all(engine)
     with Session(engine) as session:
         # 按外键依赖顺序删除：checkins -> orders -> devices -> cameras -> rooms -> hotels -> users
-        tables = [Checkin, Order, Device, Camera, Room, Hotel, User]
+        tables = [Checkin, Order, Device, Camera, Room, Hotel, User, OTAChannel, OTAOrderMapping]
         for table in tables:
             count = session.query(table).delete()
             if count > 0:

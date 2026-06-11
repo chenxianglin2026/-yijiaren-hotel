@@ -1747,6 +1747,410 @@ class TestDevicesAPI:
 
 
 # ══════════════════════════════════════════════════════
+# 10. OTA 渠道 API
+# ══════════════════════════════════════════════════════
+
+class TestOTAAPI:
+    """OTA渠道对接接口测试"""
+
+    def test_list_channels_empty_or_default(self, admin_auth):
+        """列出OTA渠道（数据库可能为空，返回默认渠道列表或空）"""
+        r = client.get(f"{BASE_URL}/api/ota/channels",
+                       headers=auth_header(admin_auth))
+        assert r.status_code == 200
+        data = r.json()
+        assert data["code"] == 0
+        assert "data" in data
+        channels = data["data"].get("channels", [])
+        assert isinstance(channels, list)
+        # 默认应返回携程/美团/飞猪三渠道
+        for ch in ["ctrip", "meituan", "fliggy"]:
+            found = any(c.get("channel") == ch for c in channels)
+            assert found, f"默认渠道列表缺少 {ch}"
+
+    def test_create_channel_ctrip(self, admin_auth):
+        """添加携程渠道配置"""
+        r = client.post(f"{BASE_URL}/api/ota/channels", json={
+            "channel": "ctrip",
+            "name": "携程直连测试",
+            "api_key": "ctrip_test_key_2026",
+            "api_secret": "ctrip_test_secret_abc",
+            "hotel_mapping": {"1": "ctrip_hotel_1001"},
+            "sync_interval": 300
+        }, headers=auth_header(admin_auth))
+        # 如果已存在则报400，也视为正常
+        if r.status_code == 200:
+            data = r.json()
+            assert data["code"] == 0
+            assert data["data"]["channel"] == "ctrip"
+        else:
+            assert r.status_code == 400  # 已存在
+
+    def test_create_channel_meituan(self, admin_auth):
+        """添加美团渠道配置"""
+        r = client.post(f"{BASE_URL}/api/ota/channels", json={
+            "channel": "meituan",
+            "name": "美团直连测试",
+            "api_key": "meituan_test_key_2026",
+            "api_secret": "meituan_test_secret_xyz",
+            "hotel_mapping": {"1": "meituan_hotel_2001"},
+            "sync_interval": 300
+        }, headers=auth_header(admin_auth))
+        if r.status_code == 200:
+            assert r.json()["code"] == 0
+        else:
+            assert r.status_code == 400  # 已存在
+
+    def test_create_channel_fliggy(self, admin_auth):
+        """添加飞猪渠道配置"""
+        r = client.post(f"{BASE_URL}/api/ota/channels", json={
+            "channel": "fliggy",
+            "name": "飞猪直连测试",
+            "api_key": "fliggy_test_key_2026",
+            "api_secret": "fliggy_test_secret_pqr",
+            "hotel_mapping": {"1": "fliggy_hotel_3001"},
+            "sync_interval": 600
+        }, headers=auth_header(admin_auth))
+        if r.status_code == 200:
+            assert r.json()["code"] == 0
+        else:
+            assert r.status_code == 400  # 已存在
+
+    def test_create_channel_invalid(self, admin_auth):
+        """添加不支持的渠道应报400"""
+        r = client.post(f"{BASE_URL}/api/ota/channels", json={
+            "channel": "airbnb",
+            "name": "Airbnb测试",
+            "api_key": "invalid",
+            "api_secret": "invalid",
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 400
+
+    def test_list_channels_with_data(self, admin_auth):
+        """列出OTA渠道（包含已配置的渠道）"""
+        r = client.get(f"{BASE_URL}/api/ota/channels",
+                       headers=auth_header(admin_auth))
+        assert r.status_code == 200
+        data = r.json()
+        assert data["code"] == 0
+        channels = data["data"].get("channels", [])
+        assert len(channels) >= 3
+        # 验证每个渠道的必要字段
+        for ch in channels:
+            assert "channel" in ch
+            assert "name" in ch
+            assert "is_enabled" in ch
+            assert "api_key_set" in ch
+            assert "api_secret_set" in ch
+            assert "sync_interval" in ch
+
+    def test_get_channel_detail(self, admin_auth):
+        """通过列表验证渠道详情字段完整性"""
+        r = client.get(f"{BASE_URL}/api/ota/channels",
+                       headers=auth_header(admin_auth))
+        data = r.json()["data"]["channels"]
+        ctrip = next((c for c in data if c["channel"] == "ctrip"), None)
+        if ctrip:
+            assert isinstance(ctrip["is_enabled"], bool)
+            assert isinstance(ctrip["api_key_set"], bool)
+            assert isinstance(ctrip["api_secret_set"], bool)
+            assert isinstance(ctrip["sync_interval"], int)
+            assert ctrip["sync_interval"] >= 60
+
+    def test_update_channel_enable(self, admin_auth):
+        """更新渠道启用/停用状态"""
+        # 先停用携程
+        r = client.put(f"{BASE_URL}/api/ota/channels/ctrip", json={
+            "is_enabled": False
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 200
+        assert r.json()["code"] == 0
+
+        # 验证状态已变更
+        r_check = client.get(f"{BASE_URL}/api/ota/channels",
+                             headers=auth_header(admin_auth))
+        ctrip = next((c for c in r_check.json()["data"]["channels"]
+                       if c["channel"] == "ctrip"), None)
+        if ctrip:
+            assert ctrip["is_enabled"] is False
+
+        # 重新启用
+        client.put(f"{BASE_URL}/api/ota/channels/ctrip", json={
+            "is_enabled": True
+        }, headers=auth_header(admin_auth))
+
+    def test_update_channel_name(self, admin_auth):
+        """更新渠道显示名称"""
+        r = client.put(f"{BASE_URL}/api/ota/channels/meituan", json={
+            "name": "美团酒店直连V2"
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 200
+        assert r.json()["code"] == 0
+
+    def test_update_channel_credentials(self, admin_auth):
+        """更新渠道API凭证"""
+        r = client.put(f"{BASE_URL}/api/ota/channels/fliggy", json={
+            "api_key": "fliggy_updated_key_2026",
+            "api_secret": "fliggy_updated_secret_abc",
+            "sync_interval": 900
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 200
+        assert r.json()["code"] == 0
+
+        # 验证凭证已设置
+        r_check = client.get(f"{BASE_URL}/api/ota/channels",
+                             headers=auth_header(admin_auth))
+        fliggy = next((c for c in r_check.json()["data"]["channels"]
+                        if c["channel"] == "fliggy"), None)
+        if fliggy:
+            assert fliggy["api_key_set"] is True
+            assert fliggy["api_secret_set"] is True
+
+    def test_update_channel_hotel_mapping(self, admin_auth):
+        """更新渠道酒店映射"""
+        r = client.put(f"{BASE_URL}/api/ota/channels/ctrip", json={
+            "hotel_mapping": {"1": "ctrip_1001", "2": "ctrip_1002", "3": "ctrip_1003"}
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 200
+
+        # 验证映射
+        r_check = client.get(f"{BASE_URL}/api/ota/channels",
+                             headers=auth_header(admin_auth))
+        ctrip = next((c for c in r_check.json()["data"]["channels"]
+                       if c["channel"] == "ctrip"), None)
+        if ctrip:
+            mapping = ctrip.get("hotel_mapping", {})
+            assert mapping.get("1") == "ctrip_1001"
+            assert mapping.get("2") == "ctrip_1002"
+
+    def test_update_nonexistent_channel(self, admin_auth):
+        """更新不存在的渠道应报404"""
+        r = client.put(f"{BASE_URL}/api/ota/channels/unknown_channel", json={
+            "name": "不存在"
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 404
+
+    def test_sync_availability_disabled_channel(self, admin_auth):
+        """向未启用的渠道同步房态应报400"""
+        # 先停用携程
+        client.put(f"{BASE_URL}/api/ota/channels/ctrip", json={
+            "is_enabled": False
+        }, headers=auth_header(admin_auth))
+        r = client.post(f"{BASE_URL}/api/ota/sync/availability", json={
+            "hotel_id": 1,
+            "channel": "ctrip",
+            "rooms": [{"room_id": 1, "date": "2026-06-12", "available": 10, "price": 299}]
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 400
+        # 恢复
+        client.put(f"{BASE_URL}/api/ota/channels/ctrip", json={
+            "is_enabled": True
+        }, headers=auth_header(admin_auth))
+
+    def test_sync_availability_enabled_channel(self, admin_auth):
+        """向已启用的渠道同步房态"""
+        r = client.post(f"{BASE_URL}/api/ota/sync/availability", json={
+            "hotel_id": 1,
+            "channel": "ctrip",
+            "rooms": [
+                {"room_id": 1, "date": "2026-06-12", "available": 10, "price": 299},
+                {"room_id": 2, "date": "2026-06-12", "available": 8, "price": 399}
+            ]
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 200
+        data = r.json()
+        assert data["code"] == 0
+        assert data["data"]["synced"] == 2
+        assert data["data"]["channel"] == "ctrip"
+
+    def test_sync_availability_invalid_channel(self, admin_auth):
+        """向不存在的渠道同步房态应报400"""
+        r = client.post(f"{BASE_URL}/api/ota/sync/availability", json={
+            "hotel_id": 1,
+            "channel": "expedia",
+            "rooms": [{"room_id": 1, "date": "2026-06-12", "available": 10, "price": 299}]
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 400
+
+    def test_auto_sync_all(self, admin_auth):
+        """自动同步所有启用渠道（OTA API占位，200或500均可）"""
+        r = client.post(f"{BASE_URL}/api/ota/sync/auto",
+                        headers=auth_header(admin_auth))
+        # OTA API为占位地址，不可达时可能500，但同步请求本身应处理
+        assert r.status_code in (200, 500)
+        if r.status_code == 200:
+            data = r.json()
+            assert data["code"] == 0
+
+    def test_webhook_invalid_channel(self, admin_auth):
+        """无效渠道的webhook回调应报400"""
+        r = client.post(f"{BASE_URL}/api/ota/webhook/invalid_channel", json={
+            "ota_order_id": "TEST-001",
+            "hotel_id": 1,
+            "room_id": 1,
+            "checkin_date": "2026-06-15",
+            "checkout_date": "2026-06-17",
+            "total_price": 598.0,
+            "guest_name": "OTA测试用户",
+            "guest_phone": "13812345678"
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 400
+
+    def test_webhook_valid_channel_missing_fields(self, admin_auth):
+        """有效渠道webhook回调但缺少必填字段应报400"""
+        r = client.post(f"{BASE_URL}/api/ota/webhook/ctrip", json={
+            "channel": "ctrip"
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 400  # 缺少ota_order_id
+
+    def test_webhook_create_order_from_ota_ctrip(self, admin_auth):
+        """OTA webhook(携程)创建订单：使用携程字段名"""
+        r = client.post(f"{BASE_URL}/api/ota/webhook/ctrip", json={
+            "OrderId": "CTRIP-TEST-20260611-001",
+            "HotelId": 1,
+            "RoomId": 1,
+            "RoomCount": 1,
+            "CheckIn": "2026-06-20",
+            "CheckOut": "2026-06-22",
+            "TotalPrice": 596.0,
+            "ContactName": "携程测试用户",
+            "ContactPhone": "13887654321",
+            "Remark": "携程渠道测试订单"
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 200
+        data = r.json()
+        assert data["code"] == 0
+        order_data = data["data"]
+        assert "local_order_id" in order_data
+        assert "local_order_no" in order_data
+        # 验证 remark 包含渠道标记
+        assert order_data["local_order_no"].startswith("OTA-CT")
+
+    def test_webhook_duplicate_order(self, admin_auth):
+        """OTA webhook重复订单应去重"""
+        r = client.post(f"{BASE_URL}/api/ota/webhook/ctrip", json={
+            "OrderId": "CTRIP-TEST-20260611-001",
+            "HotelId": 1,
+            "RoomId": 1,
+            "RoomCount": 1,
+            "CheckIn": "2026-06-20",
+            "CheckOut": "2026-06-22",
+            "TotalPrice": 596.0,
+            "ContactName": "携程重复用户",
+            "ContactPhone": "13887654321",
+            "Remark": "重复推送应去重"
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 200
+        data = r.json()
+        assert data["code"] == 0
+
+    def test_webhook_meituan_order(self, admin_auth):
+        """美团OTA webhook创建订单：使用美团嵌套格式"""
+        r = client.post(f"{BASE_URL}/api/ota/webhook/meituan", json={
+            "data": {
+                "order_id": "MT-TEST-20260611-001",
+                "hotel_id": 1,
+                "room_id": 2,
+                "num": 2,
+                "check_in": "2026-06-25",
+                "check_out": "2026-06-28",
+                "total": 1194.0,
+                "name": "美团测试用户",
+                "mobile": "13855554444",
+                "remark": "美团渠道测试"
+            }
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 200
+        data = r.json()
+        assert data["code"] == 0
+        order_data = data["data"]
+        assert "local_order_id" in order_data
+        assert "local_order_no" in order_data
+        assert order_data["local_order_no"].startswith("OTA-ME")
+
+    def test_webhook_fliggy_order(self, admin_auth):
+        """飞猪OTA webhook创建订单：使用飞猪字段名"""
+        r = client.post(f"{BASE_URL}/api/ota/webhook/fliggy", json={
+            "tid": "FLIGGY-TEST-20260611-001",
+            "hotel_id": 1,
+            "rid": 3,
+            "num": 1,
+            "check_in": "2026-06-30",
+            "check_out": "2026-07-02",
+            "payment": 698.0,
+            "buyer_nick": "飞猪测试用户",
+            "mobile": "13833332222",
+            "buyer_message": "飞猪渠道测试"
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 200
+        data = r.json()
+        assert data["code"] == 0
+        assert "local_order_id" in data["data"]
+        assert data["data"]["local_order_no"].startswith("OTA-FL")
+
+    def test_delete_channel(self, admin_auth):
+        """删除OTA渠道"""
+        # 先确认飞猪渠道存在
+        r = client.delete(f"{BASE_URL}/api/ota/channels/fliggy",
+                          headers=auth_header(admin_auth))
+        # 200=删除成功, 404=不存在(可能被其他测试删除)
+        assert r.status_code in (200, 404)
+
+    def test_delete_nonexistent_channel(self, admin_auth):
+        """删除不存在的渠道应报404"""
+        r = client.delete(f"{BASE_URL}/api/ota/channels/nonexistent_xyz",
+                          headers=auth_header(admin_auth))
+        assert r.status_code == 404
+
+    def test_ota_requires_auth(self):
+        """OTA接口未登录访问应报401/403"""
+        r = client.get(f"{BASE_URL}/api/ota/channels")
+        assert r.status_code in (401, 403)
+
+        r = client.post(f"{BASE_URL}/api/ota/channels", json={
+            "channel": "ctrip", "name": "test"
+        })
+        assert r.status_code in (401, 403)
+
+        r = client.post(f"{BASE_URL}/api/ota/sync/auto")
+        assert r.status_code in (401, 403)
+
+    def test_delete_and_recreate_channel(self, admin_auth):
+        """删除渠道后重新创建"""
+        # 先删除美团
+        client.delete(f"{BASE_URL}/api/ota/channels/meituan",
+                      headers=auth_header(admin_auth))
+        # 重新创建
+        r = client.post(f"{BASE_URL}/api/ota/channels", json={
+            "channel": "meituan",
+            "name": "美团重新创建",
+            "api_key": "new_meituan_key",
+            "api_secret": "new_meituan_secret",
+            "sync_interval": 180
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 200
+        assert r.json()["code"] == 0
+
+    def test_sync_availability_multiple_rooms(self, admin_auth):
+        """推送多房型到渠道"""
+        r = client.post(f"{BASE_URL}/api/ota/sync/availability", json={
+            "hotel_id": 1,
+            "channel": "meituan",
+            "rooms": [
+                {"room_id": 1, "date": "2026-06-15", "available": 5, "price": 298.0},
+                {"room_id": 2, "date": "2026-06-15", "available": 10, "price": 398.0},
+                {"room_id": 3, "date": "2026-06-15", "available": 3, "price": 258.0},
+                {"room_id": 4, "date": "2026-06-15", "available": 7, "price": 558.0},
+                {"room_id": 5, "date": "2026-06-15", "available": 12, "price": 158.0}
+            ]
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 200
+        data = r.json()
+        assert data["code"] == 0
+        assert data["data"]["synced"] == 5
+
+
+# ══════════════════════════════════════════════════════
 # 运行入口
 # ══════════════════════════════════════════════════════
 if __name__ == "__main__":

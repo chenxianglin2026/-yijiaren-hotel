@@ -187,11 +187,22 @@
       </div>
     </div>
 
-    <!-- 操作日志 (TODO) -->
+    <!-- 操作日志 -->
     <div class="settings-panel" id="panel-logs">
       <div class="settings-section">
         <h3>操作日志</h3>
-        <p style="color:var(--gold);font-size:18px;text-align:center;padding:60px 0;">🚧 TODO<br><span style="font-size:14px;color:var(--text-muted);">操作日志功能待开发</span></p>
+        <div id="logs-loading" style="color:var(--text-muted);padding:20px;">加载中...</div>
+        <div id="logs-content" style="display:none;">
+          <div id="logs-total" style="font-size:12px;color:var(--text-muted);margin-bottom:12px;padding:4px 0;"></div>
+          <div id="logs-list" style="max-height:500px;overflow-y:auto;"></div>
+          <div id="logs-empty" style="display:none;text-align:center;color:var(--text-muted);padding:40px;">
+            暂无日志记录
+          </div>
+          <div style="margin-top:16px;">
+            <button class="btn btn-outline btn-sm" onclick="loadLogs()">🔄 刷新日志</button>
+          </div>
+        </div>
+        <div id="logs-error" style="display:none;color:var(--error);padding:20px;"></div>
       </div>
     </div>
   </div>
@@ -222,6 +233,7 @@ function switchSetting(el, panelId) {
   // 懒加载各面板数据
   if (panelId === 'backup') { loadBackupInfo(); }
   if (panelId === 'notification' && !_notificationLoaded) { loadNotificationConfig(); }
+  if (panelId === 'logs') { loadLogs(); }
 }
 
 // 加载企业信息（当前登录用户）
@@ -446,6 +458,70 @@ function loadBackupInfo() {
     document.getElementById('backup-error').style.display = 'block';
     document.getElementById('backup-error').textContent = '加载失败: ' + err.message;
     toast('备份信息加载失败', 'error');
+  });
+}
+// ── 操作日志 ──────────────────────────────────────────
+function loadLogs() {
+  var token = localStorage.getItem('yjr_token');
+  if (!token) { return; }
+
+  document.getElementById('logs-loading').style.display = 'block';
+  document.getElementById('logs-content').style.display = 'none';
+  document.getElementById('logs-error').style.display = 'none';
+
+  fetch('/api/system/errors', {
+    headers: { 'Authorization': 'Bearer ' + token }
+  })
+  .then(function(res) {
+    if (res.status === 401) { window.top.location.href = 'pages/login.html'; return; }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  })
+  .then(function(result) {
+    document.getElementById('logs-loading').style.display = 'none';
+    document.getElementById('logs-content').style.display = 'block';
+
+    var logs = result.data || [];
+    var total = result.total || logs.length;
+    document.getElementById('logs-total').textContent = '最近 ' + total + ' 条错误日志';
+
+    if (logs.length === 0) {
+      document.getElementById('logs-list').style.display = 'none';
+      document.getElementById('logs-empty').style.display = 'block';
+      return;
+    }
+
+    document.getElementById('logs-empty').style.display = 'none';
+    document.getElementById('logs-list').style.display = '';
+
+    var html = '<table class=\"data-table\" style=\"width:100%;\"><thead><tr>' +
+      '<th style=\"width:140px;\">时间</th>' +
+      '<th style=\"width:120px;\">接口</th>' +
+      '<th style=\"width:80px;\">状态码</th>' +
+      '<th>错误信息</th>' +
+      '</tr></thead><tbody>';
+
+    logs.forEach(function(log) {
+      var ts = log.ts ? log.ts.replace('T', ' ').slice(0, 19) : '--';
+      var statusBadge = log.status >= 500
+        ? '<span style=\"color:var(--error);font-weight:700;\">' + log.status + '</span>'
+        : '<span style=\"color:var(--gold);\">' + log.status + '</span>';
+      html += '<tr>' +
+        '<td style=\"font-size:12px;\">' + ts + '</td>' +
+        '<td style=\"font-size:12px;\">' + (log.endpoint || '--') + '</td>' +
+        '<td>' + statusBadge + '</td>' +
+        '<td style=\"font-size:12px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;\">' +
+          (log.message || '--') + '</td>' +
+        '</tr>';
+    });
+
+    html += '</tbody></table>';
+    document.getElementById('logs-list').innerHTML = html;
+  })
+  .catch(function(err) {
+    document.getElementById('logs-loading').style.display = 'none';
+    document.getElementById('logs-error').style.display = 'block';
+    document.getElementById('logs-error').textContent = '加载失败: ' + err.message;
   });
 }
 </script>
