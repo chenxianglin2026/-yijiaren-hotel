@@ -16,7 +16,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db import get_db, User, Order, OrderStatus, Room
+from app.db import get_db, User, Order, OrderStatus, Room, Checkin, CheckinStatus
 from app.api.auth import get_current_user
 from app.config import settings
 
@@ -179,6 +179,19 @@ async def refund_order(
     order.status = OrderStatus.REFUNDED
     order.cancel_reason = reason or "用户申请退款"
     order.cancelled_at = datetime.utcnow()
+
+    # 如果已入住，自动退房
+    if old_status == OrderStatus.CHECKED_IN:
+        checkin_result = await db.execute(
+            select(Checkin).where(
+                Checkin.order_id == order_id,
+                Checkin.status == CheckinStatus.CHECKED_IN
+            )
+        )
+        active_checkin = checkin_result.scalar_one_or_none()
+        if active_checkin:
+            active_checkin.checkout_time = datetime.utcnow()
+            active_checkin.status = CheckinStatus.CHECKED_OUT
 
     # 退款时恢复可用房间数
     room_result = await db.execute(select(Room).where(Room.id == order.room_id))
