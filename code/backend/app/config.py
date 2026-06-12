@@ -72,6 +72,9 @@ class Settings(BaseSettings):
         "http://localhost:8000",
         "http://localhost:3000",
         "http://43.163.5.90",
+        "https://43.163.5.90",
+        "https://www.yijiaren.com",
+        "https://yijiaren.com",
     ]
 
     # 微信小程序配置 — CHANGE IN PRODUCTION: set WX_APPID, WX_SECRET env vars
