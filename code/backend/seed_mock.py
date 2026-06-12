@@ -314,6 +314,40 @@ def seed(force: bool = False):
         for cd in cameras_data:
             session.add(Camera(**cd))
 
+        # ── 6. 创建 OTA 渠道配置 ──
+        import json as _json
+        ota_channels_data = [
+            {
+                "channel": "ctrip",
+                "name": "携程直连",
+                "api_key": "ctrip_demo_key_2026",
+                "api_secret": "ctrip_demo_secret_abc123",
+                "hotel_mapping": _json.dumps({"1": "ctrip_hotel_1001", "2": "ctrip_hotel_1002", "3": "ctrip_hotel_1003"}),
+                "is_enabled": True,
+                "sync_interval": 300,
+            },
+            {
+                "channel": "meituan",
+                "name": "美团酒店",
+                "api_key": "meituan_demo_key_2026",
+                "api_secret": "meituan_demo_secret_xyz789",
+                "hotel_mapping": _json.dumps({"1": "mt_hotel_2001", "2": "mt_hotel_2002"}),
+                "is_enabled": True,
+                "sync_interval": 300,
+            },
+            {
+                "channel": "fliggy",
+                "name": "飞猪旅行",
+                "api_key": None,
+                "api_secret": None,
+                "hotel_mapping": _json.dumps({"1": "fliggy_hotel_3001"}),
+                "is_enabled": False,
+                "sync_interval": 600,
+            },
+        ]
+        for oc in ota_channels_data:
+            session.add(OTAChannel(**oc))
+
         # ── 9. 插入模拟设备数据 ──
         devices_data = [
             {
