@@ -9,7 +9,7 @@ const config = {
   // ═══════════════════════════════════════════════════
 
   /** API 基础地址 */
-  API_BASE: 'https://43.163.5.90',
+  API_BASE: 'http://43.163.5.90',
 
   /** 开发模式：true 使用 mock 数据，false 请求真实 API */
   DEV_MODE: false,
