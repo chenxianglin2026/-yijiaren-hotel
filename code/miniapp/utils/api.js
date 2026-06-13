@@ -5,7 +5,7 @@
  */
 
 const { DEV_MODE } = require('./const')
-const BASE_URL = 'https://43.163.5.90'  // 生产环境
+const BASE_URL = 'http://43.163.5.90'  // 生产环境（临时HTTP，正式上线需HTTPS）
 
 // 请求队列，用于并发请求时的 token 刷新
 let isRefreshing = false

@@ -2632,6 +2632,334 @@ class TestAbnormalToken:
 
 
 # ══════════════════════════════════════════════════════
+# 12. 智能门锁 API (TTLock)
+# ══════════════════════════════════════════════════════
+
+class TestLockAPI:
+    """智能门锁接口测试：开锁/密码/蓝牙/状态/配置"""
+
+    def test_lock_info_no_auth(self):
+        """锁平台配置信息（无需认证）"""
+        r = client.get(f"{BASE_URL}/api/lock/info")
+        assert r.status_code == 200
+        data = r.json()
+        assert data["code"] == 0
+        assert data["data"]["platform"] == "TTLock 通通酒店"
+        assert data["data"]["configured"] is True
+
+    def test_lock_status_valid_checkin(self, admin_auth):
+        """查询已入住的门锁状态"""
+        today = date.today()
+        r_order = client.post(f"{BASE_URL}/api/orders", json={
+            "hotel_id": 1, "room_id": 5, "room_count": 1,
+            "checkin_date": (today + timedelta(days=60)).isoformat(),
+            "checkout_date": (today + timedelta(days=62)).isoformat(),
+            "guest_name": "锁状态测试", "guest_phone": "13800005001"
+        }, headers=auth_header(admin_auth))
+        order_id = r_order.json()["id"]
+        client.post(f"{BASE_URL}/api/orders/{order_id}/status",
+                    params={"new_status": "paid"}, headers=auth_header(admin_auth))
+        r_checkin = client.post(f"{BASE_URL}/api/checkin/in", json={
+            "order_id": order_id, "room_number": "1201"
+        }, headers=auth_header(admin_auth))
+        checkin_id = r_checkin.json()["id"]
+
+        r = client.get(f"{BASE_URL}/api/lock/status/{checkin_id}",
+                       headers=auth_header(admin_auth))
+        assert r.status_code == 200
+        data = r.json()
+        assert data["code"] == 0
+        assert data["data"]["checkin_id"] == checkin_id
+        assert "status" in data["data"]
+
+    def test_lock_status_nonexistent_checkin(self, admin_auth):
+        """查询不存在的入住记录锁状态"""
+        r = client.get(f"{BASE_URL}/api/lock/status/99999",
+                       headers=auth_header(admin_auth))
+        assert r.status_code == 404
+
+    def test_lock_status_requires_auth(self):
+        """锁状态查询需要认证"""
+        r = client.get(f"{BASE_URL}/api/lock/status/1")
+        assert r.status_code in (401, 403)
+
+    def test_unlock_password_method(self, admin_auth):
+        """密码方式开锁"""
+        today = date.today()
+        r_order = client.post(f"{BASE_URL}/api/orders", json={
+            "hotel_id": 1, "room_id": 5, "room_count": 1,
+            "checkin_date": (today + timedelta(days=61)).isoformat(),
+            "checkout_date": (today + timedelta(days=63)).isoformat(),
+            "guest_name": "密码开锁测试", "guest_phone": "13800005002"
+        }, headers=auth_header(admin_auth))
+        order_id = r_order.json()["id"]
+        client.post(f"{BASE_URL}/api/orders/{order_id}/status",
+                    params={"new_status": "paid"}, headers=auth_header(admin_auth))
+        r_checkin = client.post(f"{BASE_URL}/api/checkin/in", json={
+            "order_id": order_id, "room_number": "1202"
+        }, headers=auth_header(admin_auth))
+        checkin_id = r_checkin.json()["id"]
+
+        r = client.post(f"{BASE_URL}/api/lock/unlock", json={
+            "checkin_id": checkin_id,
+            "method": "password"
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 200, f"Unlock password failed: {r.text}"
+        data = r.json()
+        assert data["code"] == 0
+        assert data["data"]["method"] == "password"
+        assert "password" in data["data"]
+        assert len(data["data"]["password"]) == 6
+        assert "valid_until" in data["data"]
+
+    def test_unlock_bluetooth_method(self, admin_auth):
+        """蓝牙方式开锁"""
+        today = date.today()
+        r_order = client.post(f"{BASE_URL}/api/orders", json={
+            "hotel_id": 1, "room_id": 5, "room_count": 1,
+            "checkin_date": (today + timedelta(days=62)).isoformat(),
+            "checkout_date": (today + timedelta(days=64)).isoformat(),
+            "guest_name": "蓝牙开锁测试", "guest_phone": "13800005003"
+        }, headers=auth_header(admin_auth))
+        order_id = r_order.json()["id"]
+        client.post(f"{BASE_URL}/api/orders/{order_id}/status",
+                    params={"new_status": "paid"}, headers=auth_header(admin_auth))
+        r_checkin = client.post(f"{BASE_URL}/api/checkin/in", json={
+            "order_id": order_id, "room_number": "1203"
+        }, headers=auth_header(admin_auth))
+        checkin_id = r_checkin.json()["id"]
+
+        r = client.post(f"{BASE_URL}/api/lock/unlock", json={
+            "checkin_id": checkin_id,
+            "method": "bluetooth"
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 200, f"Unlock bluetooth failed: {r.text}"
+        data = r.json()
+        assert data["code"] == 0
+        assert data["data"]["method"] == "bluetooth"
+        assert data["data"]["lockId"] is not None
+        assert "instruction" in data["data"]
+
+    def test_unlock_invalid_method(self, admin_auth):
+        """非法开锁方式应报400"""
+        today = date.today()
+        r_order = client.post(f"{BASE_URL}/api/orders", json={
+            "hotel_id": 1, "room_id": 5, "room_count": 1,
+            "checkin_date": (today + timedelta(days=63)).isoformat(),
+            "checkout_date": (today + timedelta(days=65)).isoformat(),
+            "guest_name": "非法开锁测试", "guest_phone": "13800005004"
+        }, headers=auth_header(admin_auth))
+        order_id = r_order.json()["id"]
+        client.post(f"{BASE_URL}/api/orders/{order_id}/status",
+                    params={"new_status": "paid"}, headers=auth_header(admin_auth))
+        r_checkin = client.post(f"{BASE_URL}/api/checkin/in", json={
+            "order_id": order_id, "room_number": "1204"
+        }, headers=auth_header(admin_auth))
+        checkin_id = r_checkin.json()["id"]
+
+        r = client.post(f"{BASE_URL}/api/lock/unlock", json={
+            "checkin_id": checkin_id,
+            "method": "nfc"
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 400
+
+    def test_unlock_checked_out(self, admin_auth):
+        """已退房后开锁应报404"""
+        today = date.today()
+        r_order = client.post(f"{BASE_URL}/api/orders", json={
+            "hotel_id": 1, "room_id": 5, "room_count": 1,
+            "checkin_date": (today + timedelta(days=64)).isoformat(),
+            "checkout_date": (today + timedelta(days=66)).isoformat(),
+            "guest_name": "退房后开锁测试", "guest_phone": "13800005005"
+        }, headers=auth_header(admin_auth))
+        order_id = r_order.json()["id"]
+        client.post(f"{BASE_URL}/api/orders/{order_id}/status",
+                    params={"new_status": "paid"}, headers=auth_header(admin_auth))
+        r_checkin = client.post(f"{BASE_URL}/api/checkin/in", json={
+            "order_id": order_id, "room_number": "1205"
+        }, headers=auth_header(admin_auth))
+        checkin_id = r_checkin.json()["id"]
+        # 退房
+        client.post(f"{BASE_URL}/api/checkin/out/{checkin_id}",
+                    headers=auth_header(admin_auth))
+
+        r = client.post(f"{BASE_URL}/api/lock/unlock", json={
+            "checkin_id": checkin_id,
+            "method": "password"
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 404
+
+    def test_unlock_nonexistent_checkin(self, admin_auth):
+        """不存在的入住记录开锁应报404"""
+        r = client.post(f"{BASE_URL}/api/lock/unlock", json={
+            "checkin_id": 99999,
+            "method": "password"
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 404
+
+    def test_unlock_wrong_user(self, testuser_auth):
+        """非订单所属用户开锁应报403"""
+        today = date.today()
+        # admin 创建一个订单并办理入住
+        r_login = client.post(f"{BASE_URL}/api/auth/login", json={
+            "username": "admin", "password": "admin123"
+        })
+        admin_token = r_login.json()["access_token"]
+        r_order = client.post(f"{BASE_URL}/api/orders", json={
+            "hotel_id": 1, "room_id": 5, "room_count": 1,
+            "checkin_date": (today + timedelta(days=65)).isoformat(),
+            "checkout_date": (today + timedelta(days=67)).isoformat(),
+            "guest_name": "权限测试", "guest_phone": "13800005006"
+        }, headers=auth_header(admin_token))
+        order_id = r_order.json()["id"]
+        client.post(f"{BASE_URL}/api/orders/{order_id}/status",
+                    params={"new_status": "paid"}, headers=auth_header(admin_token))
+        r_checkin = client.post(f"{BASE_URL}/api/checkin/in", json={
+            "order_id": order_id, "room_number": "1206"
+        }, headers=auth_header(admin_token))
+        checkin_id = r_checkin.json()["id"]
+
+        # testuser 尝试开锁（不是订单所属用户）
+        r = client.post(f"{BASE_URL}/api/lock/unlock", json={
+            "checkin_id": checkin_id,
+            "method": "password"
+        }, headers=auth_header(testuser_auth))
+        assert r.status_code == 403
+
+    def test_unlock_requires_auth(self):
+        """开锁需要认证"""
+        r = client.post(f"{BASE_URL}/api/lock/unlock", json={
+            "checkin_id": 1,
+            "method": "password"
+        })
+        assert r.status_code in (401, 403)
+
+    def test_generate_password(self, admin_auth):
+        """生成临时密码"""
+        today = date.today()
+        r_order = client.post(f"{BASE_URL}/api/orders", json={
+            "hotel_id": 1, "room_id": 5, "room_count": 1,
+            "checkin_date": (today + timedelta(days=66)).isoformat(),
+            "checkout_date": (today + timedelta(days=68)).isoformat(),
+            "guest_name": "密码生成测试", "guest_phone": "13800005007"
+        }, headers=auth_header(admin_auth))
+        order_id = r_order.json()["id"]
+        client.post(f"{BASE_URL}/api/orders/{order_id}/status",
+                    params={"new_status": "paid"}, headers=auth_header(admin_auth))
+        r_checkin = client.post(f"{BASE_URL}/api/checkin/in", json={
+            "order_id": order_id, "room_number": "1207"
+        }, headers=auth_header(admin_auth))
+        checkin_id = r_checkin.json()["id"]
+
+        r = client.post(f"{BASE_URL}/api/lock/password", json={
+            "checkin_id": checkin_id,
+            "valid_minutes": 30
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 200, f"Generate password failed: {r.text}"
+        data = r.json()
+        assert data["code"] == 0
+        assert "password" in data["data"]
+        assert len(data["data"]["password"]) == 6
+        assert data["data"]["valid_minutes"] == 30
+
+    def test_generate_password_default_validity(self, admin_auth):
+        """生成临时密码使用默认有效期"""
+        today = date.today()
+        r_order = client.post(f"{BASE_URL}/api/orders", json={
+            "hotel_id": 1, "room_id": 5, "room_count": 1,
+            "checkin_date": (today + timedelta(days=67)).isoformat(),
+            "checkout_date": (today + timedelta(days=69)).isoformat(),
+            "guest_name": "密码默认测试", "guest_phone": "13800005008"
+        }, headers=auth_header(admin_auth))
+        order_id = r_order.json()["id"]
+        client.post(f"{BASE_URL}/api/orders/{order_id}/status",
+                    params={"new_status": "paid"}, headers=auth_header(admin_auth))
+        r_checkin = client.post(f"{BASE_URL}/api/checkin/in", json={
+            "order_id": order_id, "room_number": "1208"
+        }, headers=auth_header(admin_auth))
+        checkin_id = r_checkin.json()["id"]
+
+        r = client.post(f"{BASE_URL}/api/lock/password", json={
+            "checkin_id": checkin_id
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 200
+        data = r.json()
+        assert data["data"]["valid_minutes"] == 1440  # 默认24小时
+
+    def test_generate_password_nonexistent_checkin(self, admin_auth):
+        """不存在的入住记录生成密码应报404"""
+        r = client.post(f"{BASE_URL}/api/lock/password", json={
+            "checkin_id": 99999,
+            "valid_minutes": 60
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 404
+
+    def test_generate_password_checked_out(self, admin_auth):
+        """已退房生成密码应报404"""
+        today = date.today()
+        r_order = client.post(f"{BASE_URL}/api/orders", json={
+            "hotel_id": 1, "room_id": 3, "room_count": 1,
+            "checkin_date": (today + timedelta(days=68)).isoformat(),
+            "checkout_date": (today + timedelta(days=70)).isoformat(),
+            "guest_name": "退房后密码测试", "guest_phone": "13800005009"
+        }, headers=auth_header(admin_auth))
+        if r_order.status_code != 201:
+            pytest.skip(f"Order create failed (room exhausted): {r_order.text}")
+        order_id = r_order.json()["id"]
+        client.post(f"{BASE_URL}/api/orders/{order_id}/status",
+                    params={"new_status": "paid"}, headers=auth_header(admin_auth))
+        r_checkin = client.post(f"{BASE_URL}/api/checkin/in", json={
+            "order_id": order_id, "room_number": "1209"
+        }, headers=auth_header(admin_auth))
+        checkin_id = r_checkin.json()["id"]
+        # 退房
+        client.post(f"{BASE_URL}/api/checkin/out/{checkin_id}",
+                    headers=auth_header(admin_auth))
+
+        r = client.post(f"{BASE_URL}/api/lock/password", json={
+            "checkin_id": checkin_id,
+            "valid_minutes": 60
+        }, headers=auth_header(admin_auth))
+        assert r.status_code == 404
+
+    def test_generate_password_requires_auth(self):
+        """生成密码需要认证"""
+        r = client.post(f"{BASE_URL}/api/lock/password", json={
+            "checkin_id": 1,
+            "valid_minutes": 60
+        })
+        assert r.status_code in (401, 403)
+
+    def test_lock_status_checked_out(self, admin_auth):
+        """查询已退房的门锁状态（仍应可查）"""
+        today = date.today()
+        r_order = client.post(f"{BASE_URL}/api/orders", json={
+            "hotel_id": 1, "room_id": 3, "room_count": 1,
+            "checkin_date": (today + timedelta(days=69)).isoformat(),
+            "checkout_date": (today + timedelta(days=71)).isoformat(),
+            "guest_name": "退房锁状态测试", "guest_phone": "13800005011"
+        }, headers=auth_header(admin_auth))
+        if r_order.status_code != 201:
+            pytest.skip(f"Order create failed (room exhausted): {r_order.text}")
+        order_id = r_order.json()["id"]
+        client.post(f"{BASE_URL}/api/orders/{order_id}/status",
+                    params={"new_status": "paid"}, headers=auth_header(admin_auth))
+        r_checkin = client.post(f"{BASE_URL}/api/checkin/in", json={
+            "order_id": order_id, "room_number": "1210"
+        }, headers=auth_header(admin_auth))
+        checkin_id = r_checkin.json()["id"]
+        client.post(f"{BASE_URL}/api/checkin/out/{checkin_id}",
+                    headers=auth_header(admin_auth))
+
+        r = client.get(f"{BASE_URL}/api/lock/status/{checkin_id}",
+                       headers=auth_header(admin_auth))
+        assert r.status_code == 200
+        data = r.json()
+        assert data["code"] == 0
+        assert "battery" in data["data"]  # 仍返回状态（但电量可能为None）
+
+
+# ══════════════════════════════════════════════════════
 # 运行入口
 # ══════════════════════════════════════════════════════
 if __name__ == "__main__":
