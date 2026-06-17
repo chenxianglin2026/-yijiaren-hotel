@@ -57,7 +57,7 @@ class ErrorLogMiddleware(BaseHTTPMiddleware):
             system.log_error(endpoint, f"{type(e).__name__}: {str(e)}", 500)
             return JSONResponse(
                 status_code=500,
-                content={"code": 1, "msg": f"服务器内部错误: {str(e)}"},
+                content={"code": 1, "msg": "服务器内部错误，请联系管理员"},
             )
 
 app.add_middleware(ErrorLogMiddleware)

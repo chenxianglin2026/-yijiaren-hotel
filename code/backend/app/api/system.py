@@ -67,7 +67,7 @@ def _detect_container():
 
 
 @router.get("/info", summary="获取系统信息")
-async def get_system_info(request: Request):
+async def get_system_info(request: Request, user: User = Depends(get_current_user)):
     """返回系统版本、运行时间、数据库大小、容器状态（无需认证）"""
     start_time = getattr(request.app.state, "start_time", None)
     uptime_seconds = int(_time_module.time() - start_time) if start_time else 0
