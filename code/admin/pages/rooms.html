@@ -143,7 +143,7 @@
 </div>
 
 <script>
-const T = localStorage.getItem('yjr_token');
+var T='';try{T=localStorage.getItem('yjr_token')||''}catch(e){}
 const H = { 'Authorization':'Bearer '+T };
 const F = n => '¥'+Number(n||0).toLocaleString();
 let curHotel = null, roomItems = [], hotelList = [];
@@ -162,7 +162,7 @@ async function loadHotels(){
   try{
     let r = await fetch('/api/hotels?page_size=100',{headers:H});
     let j = await r.json();
-    hotelList = j.data?.items||j.data||[];
+    hotelList = j.items||j.data?.items||j.data||[];
   }catch(e){/* ok */}
 }
 

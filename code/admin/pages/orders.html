@@ -76,7 +76,7 @@
 </div>
 
 <script>
-const T = localStorage.getItem('yjr_token');
+var T='';try{T=localStorage.getItem('yjr_token')||''}catch(e){}
 const H = { 'Authorization':'Bearer '+T };
 const F = n => '¥'+Number(n||0).toLocaleString();
 const STATUS = {pending:'待支付',paid:'已支付',checked_in:'已入住',completed:'已完成',cancelled:'已取消'};
