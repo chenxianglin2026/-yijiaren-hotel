@@ -103,49 +103,37 @@
   </div>
 </div>
 
+<!-- admin-common.js 由父框架 srcdoc 注入 -->
 <script>
-const T=localStorage.getItem('yjr_token'),H={'Authorization':'Bearer '+T};
-
-function toast(msg, type) {
-  type = type || 'info';
-  var c = document.getElementById('toastContainer');
-  if (!c) { c = document.createElement('div'); c.id = 'toastContainer'; c.className = 'toast-container'; document.body.appendChild(c); }
-  var t = document.createElement('div'); t.className = 'toast toast-' + type; t.textContent = msg;
-  c.appendChild(t);
-  setTimeout(function() { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(function() { t.remove(); }, 300); }, 3000);
-}
+// ── 使用 YJ 统一库 ──
 
 async function loadHotels(){
   try{
-    let r=await fetch('/api/hotels?page_size=100',{headers:H});
-    let j=await r.json();
-    let items=j.data?.items||j.data||[];
-    let sel=document.getElementById('dHotel');
+    var items = await YJ.get('/api/hotels', {page_size: 100});
+    var sel=document.getElementById('dHotel');
     sel.innerHTML='<option value="">不限</option>';
-    items.forEach(h=>{
-      let opt=document.createElement('option');
+    (items||[]).forEach(function(h){
+      var opt=document.createElement('option');
       opt.value=h.id; opt.textContent=h.name; sel.appendChild(opt);
     });
   }catch(e){/* ok */}
 }
 
 async function loadDevices() {
-  const loadingEl = document.getElementById('device-loading');
-  const listEl = document.getElementById('deviceList');
+  var loadingEl = document.getElementById('device-loading');
+  var listEl = document.getElementById('deviceList');
   try{
-    let params=new URLSearchParams();
-    let kw=document.getElementById('searchKeyword').value.trim();
-    let st=document.getElementById('filterStatus').value;
-    if(kw) params.set('keyword',kw);
-    if(st) params.set('status',st);
-    let url='/api/devices/list'+(params.toString()?'?'+params:'');
-    let r=await fetch(url,{headers:H});
-    if (r.status === 401) { window.top.location.href = 'pages/login.html'; return; }
-    let j=await r.json();
+    var params={};
+    var kw=document.getElementById('searchKeyword').value.trim();
+    var st=document.getElementById('filterStatus').value;
+    if(kw) params.keyword=kw;
+    if(st) params.status=st;
+    var j = await YJ.api('/api/devices/list', { params: params });
     if(j.code===0&&j.data) {
-      let items=Array.isArray(j.data)?j.data:(j.data.items||[]);
-      let online=j.online_count!=null?j.online_count:items.filter(d=>d.status==='online'||d.is_online).length;
-      let offline=j.offline_count!=null?j.offline_count:items.length-online;
+      var data = j.data;
+      var items=Array.isArray(data)?data:(data.items||[]);
+      var online=j.online_count!=null?j.online_count:items.filter(function(d){return d.status==='online'||d.is_online}).length;
+      var offline=j.offline_count!=null?j.offline_count:items.length-online;
       document.getElementById('totalCount').textContent=j.total||items.length;
       document.getElementById('onlineCount').textContent=online;
       document.getElementById('offlineCount').textContent=offline;
@@ -158,12 +146,12 @@ async function loadDevices() {
       }
 
       var html = '';
+      var typeNames = {smart_lock:'智能门锁',control_panel:'客控面板',sensor:'传感器',gateway:'网关',charger:'充电桩'};
       items.forEach(function(d){
         var isOnline = d.status==='online'||d.is_online;
         var statusIcon = isOnline?'🟢':'🔴';
         var statusText = isOnline?'在线':'离线';
         var statusColor = isOnline?'var(--success)':'var(--error)';
-        var typeNames = {smart_lock:'智能门锁',control_panel:'客控面板',sensor:'传感器',gateway:'网关',charger:'充电桩'};
         var typeName = typeNames[d.device_type]||d.type||'智能门锁';
         html += '<div class="device-card">'+
           '<div class="dc-actions">'+
@@ -193,7 +181,6 @@ async function loadDevices() {
   }
 }
 
-// ── 设备弹窗 ──────────────────────────────────────
 function openDeviceModal(){
   document.getElementById('dDeviceId').value='';
   document.getElementById('dName').value='';
@@ -210,7 +197,7 @@ function closeDeviceModal(){
 }
 
 async function saveDevice(){
-  let body={
+  var body={
     device_id: document.getElementById('dDeviceId').value.trim(),
     name: document.getElementById('dName').value.trim(),
     device_type: document.getElementById('dType').value,
@@ -220,8 +207,8 @@ async function saveDevice(){
     firmware_version: document.getElementById('dFirmware').value.trim()||null
   };
 
-  if(!body.device_id){ toast('请输入设备ID', 'warning'); return; }
-  if(!body.name){ toast('请输入设备名称', 'warning'); return; }
+  if(!body.device_id){ YJ.toast('请输入设备ID', 'warning'); return; }
+  if(!body.name){ YJ.toast('请输入设备名称', 'warning'); return; }
 
   var saveBtn = document.querySelector('#deviceModal .btn-primary');
   var origText = saveBtn.textContent;
@@ -229,36 +216,24 @@ async function saveDevice(){
   saveBtn.textContent = '注册中...';
 
   try{
-    let r=await fetch('/api/devices/register',{
-      method:'POST',
-      headers:{...H,'Content-Type':'application/json'},
-      body:JSON.stringify(body)
-    });
-    if(r.status===401){ window.top.location.href='pages/login.html'; return; }
-    let j=await r.json();
-    if(j.code!==0) throw new Error(j.msg||'注册失败');
+    await YJ.post('/api/devices/register', body);
     closeDeviceModal();
     loadDevices();
-    toast('设备注册成功', 'success');
-  }catch(e){ toast('注册失败: '+e.message, 'error'); }
+    YJ.toast('设备注册成功', 'success');
+  }catch(e){ YJ.toast('注册失败: '+e.message, 'error'); }
   finally { saveBtn.disabled = false; saveBtn.textContent = origText; }
 }
 
 async function deleteDevice(deviceId,name){
   if(!confirm('确定删除设备「'+name+'」？')) return;
   try{
-    let r=await fetch('/api/devices/'+encodeURIComponent(deviceId),{method:'DELETE',headers:H});
-    if(r.status===401){ window.top.location.href='pages/login.html'; return; }
-    let j=await r.json();
-    if(j.code!==0) throw new Error(j.msg||'删除失败');
+    await YJ.del('/api/devices/'+encodeURIComponent(deviceId));
     loadDevices();
-    toast('设备已删除', 'success');
-  }catch(e){ toast('删除失败: '+e.message, 'error'); }
+    YJ.toast('设备已删除', 'success');
+  }catch(e){ YJ.toast('删除失败: '+e.message, 'error'); }
 }
 
-// 首次加载 + 每30秒自动刷新
-loadHotels();
-loadDevices();
+YJ.init().then(function(){ loadHotels(); loadDevices(); });
 setInterval(loadDevices, 30000);
 </script>
 </body>

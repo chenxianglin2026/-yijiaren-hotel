@@ -99,7 +99,7 @@
     </header>
 
     <div class="main-content">
-      <iframe id="contentFrame" src="pages/dashboard.html" title="内容区"></iframe>
+      <iframe id="contentFrame" title="内容区"></iframe>
     </div>
   </div>
 </div>
@@ -147,24 +147,59 @@
   updateTime();
   setInterval(updateTime, 1000);
 
-  // Navigation
+  var currentPage = 'pages/dashboard.html'; // 跟踪当前页面
+
+  // Navigation — 使用 srcdoc + base 注入, 确保子页面脚本执行前token已就绪
   navItems.forEach(function(item) {
     item.addEventListener('click', function() {
       navItems.forEach(function(n) { n.classList.remove('active'); });
       item.classList.add('active');
       const page = item.getAttribute('data-page');
       const title = item.getAttribute('data-title');
-      iframe.src = page;
       breadcrumb.textContent = title;
+      currentPage = page;
+      loadPageIntoIframe(page);
     });
   });
-  // Inject token into iframe after each page load
+
+  /**
+   * 加载子页面到iframe: 获取HTML → 注入token+公共库 → 通过srcdoc加载
+   * 确保子页面脚本执行前 window.YJR_TOKEN 已存在
+   */
+  function loadPageIntoIframe(page) {
+    // 计算该页面目录的 base path (用于修正srcdoc的相对路径)
+    var basePath = page.substring(0, page.lastIndexOf('/') + 1);
+    
+    fetch(page)
+      .then(function(res) { return res.text(); })
+      .then(function(html) {
+        // 注入: <base> 修正相对路径 + admin-common.js + token预置
+        var inject = '<base href="' + basePath + '">\n' +
+          '<script>window.YJR_TOKEN="' + token + '";window.YJR_USER="' + (savedUser||'') + '";</script>\n' +
+          '<script src="../js/admin-common.js"></script>\n';
+        html = html.replace(/<head[^>]*>/i, function(match) {
+          return match + '\n' + inject;
+        });
+        iframe.srcdoc = html;
+      })
+      .catch(function(err) {
+        // 降级: 直接src加载 + postMessage兜底
+        console.warn('srcdoc load failed, fallback to src:', err.message);
+        iframe.src = page;
+      });
+  }
+
+  // 降级方案: iframe src加载完成后通过postMessage发送token
   iframe.addEventListener('load', function() {
     try {
       iframe.contentWindow.YJR_TOKEN = token;
       iframe.contentWindow.YJR_USER = savedUser;
+      iframe.contentWindow.postMessage({ type: 'YJR_TOKEN', token: token, user: savedUser }, '*');
     } catch(e) {}
   });
+
+  // 初始加载 dashboard
+  loadPageIntoIframe('pages/dashboard.html');
 
   // Store switcher
   async function loadStores() {
@@ -188,7 +223,7 @@
     localStorage.setItem('selectedHotelId', hotelId);
     // Reload current iframe page with hotel context
     iframe.contentWindow.postMessage({ type: 'hotelChange', hotelId: hotelId }, '*');
-    iframe.src = iframe.src; // force refresh
+    loadPageIntoIframe(currentPage);
   });
 
   // Expose selected hotel to iframe pages

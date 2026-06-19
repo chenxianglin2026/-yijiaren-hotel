@@ -45,21 +45,21 @@
     </div>
   </div>
 </div>
+
+<!-- admin-common.js 由父框架 srcdoc 注入 -->
 <script>
-var T=window.YJR_TOKEN||localStorage.getItem('yjr_token')||'';
-var H={'Authorization':'Bearer '+T};
+// ── 使用 YJ 统一库 ──
 var STATUS_ICON={pending:'🕐',accepted:'📋',in_progress:'🧹',completed:'✅'};
 var STATUS_BADGE={pending:'badge-warning',accepted:'badge-info',in_progress:'badge-processing',completed:'badge-success'};
 var STATUS_TEXT={pending:'待派单',accepted:'已接单',in_progress:'进行中',completed:'已完成'};
 
 async function loadTasks(){
   var st=document.getElementById('filterStatus').value;
-  var url='/api/cleaning/tasks'+(st?'?status='+st:'');
+  var params = {};
+  if(st) params.status = st;
   try{
-    var r=await fetch(url,{headers:H});
-    if(r.status===401){window.top.location.href='pages/login.html';return}
-    var j=await r.json();
-    var items=j.items||j.data?.items||j.data||[];
+    var data = await YJ.get('/api/cleaning/tasks', params);
+    var items = YJ.parseItems(data);
     var pending=items.filter(function(i){return i.status==='pending'}).length;
     var doing=items.filter(function(i){return i.status==='in_progress'||i.status==='accepted'}).length;
     var done=items.filter(function(i){return i.status==='completed'}).length;
@@ -79,7 +79,8 @@ async function loadTasks(){
     document.getElementById('taskList').innerHTML='<div style="text-align:center;color:var(--error);padding:30px;">加载失败: '+e.message+'</div>';
   }
 }
-loadTasks();
+
+YJ.init().then(function(){ loadTasks(); });
 </script>
 </body>
 </html>

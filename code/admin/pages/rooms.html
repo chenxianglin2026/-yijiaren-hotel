@@ -142,35 +142,25 @@
   </div>
 </div>
 
+<!-- admin-common.js 由父框架 srcdoc 注入, 提供 YJ 全局对象 -->
 <script>
-var T='';try{T=localStorage.getItem('yjr_token')||''}catch(e){}
-const H = { 'Authorization':'Bearer '+T };
-const F = n => '¥'+Number(n||0).toLocaleString();
-let curHotel = null, roomItems = [], hotelList = [];
-
-function toast(msg, type) {
-  type = type || 'info';
-  var c = document.getElementById('toastContainer');
-  if (!c) { c = document.createElement('div'); c.id = 'toastContainer'; c.className = 'toast-container'; document.body.appendChild(c); }
-  var t = document.createElement('div'); t.className = 'toast toast-' + type; t.textContent = msg;
-  c.appendChild(t);
-  setTimeout(function() { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(function() { t.remove(); }, 300); }, 3000);
-}
+// ── 使用 YJ 统一库 ──
+const F = function(n){ return '¥'+Number(n||0).toLocaleString(); };
+var curHotel = null, roomItems = [], hotelList = [];
 
 // Load hotels for modal dropdown
 async function loadHotels(){
   try{
-    let r = await fetch('/api/hotels?page_size=100',{headers:H});
-    let j = await r.json();
-    hotelList = j.items||j.data?.items||j.data||[];
+    var j = await YJ.get('/api/hotels', {page_size: 100});
+    hotelList = YJ.parseItems(j) || [];
   }catch(e){/* ok */}
 }
 
 function populateHotelSelect(){
-  let sel = document.getElementById('rHotel');
+  var sel = document.getElementById('rHotel');
   sel.innerHTML = '<option value="">请选择门店</option>';
-  hotelList.forEach(h => {
-    let opt = document.createElement('option');
+  hotelList.forEach(function(h) {
+    var opt = document.createElement('option');
     opt.value = h.id; opt.textContent = h.name;
     if(curHotel && h.id===curHotel) opt.selected = true;
     sel.appendChild(opt);
@@ -179,23 +169,24 @@ function populateHotelSelect(){
 
 async function loadRooms(hid){
   curHotel = hid||null;
-  let url = '/api/rooms/status';
-  if(hid) url += '?hotel_id='+hid;
+  var params = {};
+  if(hid) params.hotel_id = hid;
   try{
-    let r = await fetch(url,{headers:H});
-    if (r.status === 401) { window.top.location.href = 'pages/login.html'; return; }
-    let j = await r.json();
-    if(j.code&&j.code!==0) throw new Error(j.msg);
-    let d = j.data||j, items = d.items||[];
+    var j = await YJ.get('/api/rooms/status', params);
+    var d = j||{}, items = d.items||[];
     roomItems = items;
-    
+
     // Hotel buttons
-    let hotelIds = [...new Set(items.map(i=>i.hotel_id))];
-    let hotelNames = {};
-    items.forEach(i=>{ hotelNames[i.hotel_id]=i.hotel_name||d.hotel_name||'门店'+i.hotel_id; });
+    var hotelIds = []; 
+    var hotelNames = {};
+    var seen = {};
+    items.forEach(function(i){ 
+      if(!seen[i.hotel_id]){ hotelIds.push(i.hotel_id); seen[i.hotel_id]=true; }
+      hotelNames[i.hotel_id]=i.hotel_name||d.hotel_name||'门店'+i.hotel_id; 
+    });
     document.getElementById('hotelBtns').innerHTML = 
       '<button class="hs-btn'+(curHotel?'':' active')+'" onclick="loadRooms()">全部门店</button>'+
-      hotelIds.map(h=>'<button class="hs-btn'+(curHotel===h?' active':'')+'" onclick="loadRooms('+h+')">'+hotelNames[h]+'</button>').join('');
+      hotelIds.map(function(h){return '<button class="hs-btn'+(curHotel===h?' active':'')+'" onclick="loadRooms('+h+')">'+hotelNames[h]+'</button>';}).join('');
 
     // Summary
     document.getElementById('summary').innerHTML = [
@@ -204,13 +195,13 @@ async function loadRooms(hid){
       {c:'#faad14',n:d.booked_total,l:'已预订'},
       {c:'var(--info)',n:d.occupied_total,l:'入住中'},
       {c:'var(--warning)',n:d.cleaning_total,l:'待清洁'}
-    ].map(s=>'<div class="summary-item-bar"><div class="n" style="color:'+s.c+'">'+s.n+'</div><div class="l">'+s.l+'</div></div>').join('');
+    ].map(function(s){return '<div class="summary-item-bar"><div class="n" style="color:'+s.c+'">'+s.n+'</div><div class="l">'+s.l+'</div></div>';}).join('');
 
     // Room cards
-    document.getElementById('roomGrid').innerHTML = items.length ? items.map(r=>{
-      let cls = r.available_count>r.total_count*0.5?'rc-vacant':r.occupied_count>r.total_count*0.5?'rc-occupied':r.booked_count>r.total_count*0.5?'rc-booked':'rc-mixed';
-      let occRate = r.total_count > 0 ? Math.round((r.occupied_count + r.booked_count) / r.total_count * 100) : 0;
-      let rateCls = occRate < 50 ? 'low' : occRate < 80 ? 'mid' : 'high';
+    document.getElementById('roomGrid').innerHTML = items.length ? items.map(function(r){
+      var cls = r.available_count>r.total_count*0.5?'rc-vacant':r.occupied_count>r.total_count*0.5?'rc-occupied':r.booked_count>r.total_count*0.5?'rc-booked':'rc-mixed';
+      var occRate = r.total_count > 0 ? Math.round((r.occupied_count + r.booked_count) / r.total_count * 100) : 0;
+      var rateCls = occRate < 50 ? 'low' : occRate < 80 ? 'mid' : 'high';
       return '<div class="room-card-new '+cls+'">'+
         '<div class="rc-actions">'+
           '<button onclick="event.stopPropagation();openRoomModal('+r.id+')">✏️</button>'+
@@ -235,7 +226,7 @@ function openRoomModal(id){
   populateHotelSelect();
   if(id){
     // Edit: fetch room detail
-    fetch('/api/hotels/rooms/'+id,{headers:H}).then(r=>r.json()).then(room=>{
+    YJ.get('/api/hotels/rooms/'+id).then(function(room){
       document.getElementById('roomModalTitle').textContent='编辑房型';
       document.getElementById('rEditId').value=room.id;
       document.getElementById('rHotel').value=room.hotel_id;
@@ -250,7 +241,7 @@ function openRoomModal(id){
       document.getElementById('rDesc').value=room.description||'';
       document.getElementById('roomSaveBtn').textContent='更新';
       document.getElementById('roomModal').classList.add('show');
-    }).catch(e=>{ toast('加载房型详情失败', 'error'); });
+    }).catch(function(e){ YJ.toast('加载房型详情失败', 'error'); });
     return;
   }
   document.getElementById('roomModalTitle').textContent='新增房型';
@@ -274,12 +265,12 @@ function closeRoomModal(){
 }
 
 async function saveRoom(){
-  let isEdit=!!document.getElementById('rEditId').value;
-  let hotelId=parseInt(document.getElementById('rHotel').value);
+  var isEdit=!!document.getElementById('rEditId').value;
+  var hotelId=parseInt(document.getElementById('rHotel').value);
 
-  if(!hotelId){ toast('请选择门店', 'warning'); return; }
+  if(!hotelId){ YJ.toast('请选择门店', 'warning'); return; }
 
-  let body={
+  var body={
     hotel_id: hotelId,
     name: document.getElementById('rName').value.trim(),
     room_type: document.getElementById('rType').value.trim(),
@@ -292,44 +283,32 @@ async function saveRoom(){
     description: document.getElementById('rDesc').value.trim()||null
   };
 
-  if(!body.name){ toast('请输入房型名称', 'warning'); return; }
-  if(!body.price){ toast('请输入单价', 'warning'); return; }
-  if(!body.room_type){ toast('请输入房型分类', 'warning'); return; }
-
-  let url, method;
-  if(isEdit){
-    url = '/api/hotels/rooms/'+document.getElementById('rEditId').value;
-    method = 'PUT';
-  } else {
-    url = '/api/hotels/'+hotelId+'/rooms';
-    method = 'POST';
-  }
+  if(!body.name){ YJ.toast('请输入房型名称', 'warning'); return; }
+  if(!body.price){ YJ.toast('请输入单价', 'warning'); return; }
+  if(!body.room_type){ YJ.toast('请输入房型分类', 'warning'); return; }
 
   try{
-    let r=await fetch(url,{method,headers:{...H,'Content-Type':'application/json'},body:JSON.stringify(body)});
-    if(r.status===401){ window.top.location.href='pages/login.html'; return; }
-    let j=await r.json();
-    if(j.code!==0) throw new Error(j.msg||'操作失败');
+    if(isEdit){
+      await YJ.put('/api/hotels/rooms/'+document.getElementById('rEditId').value, body);
+    } else {
+      await YJ.post('/api/hotels/'+hotelId+'/rooms', body);
+    }
     closeRoomModal();
     loadRooms(curHotel);
-    toast('保存成功', 'success');
-  }catch(e){ toast('保存失败: '+e.message, 'error'); }
+    YJ.toast('保存成功', 'success');
+  }catch(e){ YJ.toast('保存失败: '+e.message, 'error'); }
 }
 
 async function deleteRoom(id,name){
   if(!confirm('确定删除房型「'+name+'」？此操作不可恢复。')) return;
   try{
-    let r=await fetch('/api/hotels/rooms/'+id,{method:'DELETE',headers:H});
-    if(r.status===401){ window.top.location.href='pages/login.html'; return; }
-    let j=await r.json();
-    if(j.code!==0) throw new Error(j.msg||'删除失败');
+    await YJ.del('/api/hotels/rooms/'+id);
     loadRooms(curHotel);
-    toast('已删除', 'success');
-  }catch(e){ toast('删除失败: '+e.message, 'error'); }
+    YJ.toast('已删除', 'success');
+  }catch(e){ YJ.toast('删除失败: '+e.message, 'error'); }
 }
 
-loadHotels();
-loadRooms();
+YJ.init().then(function(){ loadHotels(); loadRooms(); });
 </script>
 </body>
 </html>

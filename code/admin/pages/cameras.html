@@ -154,32 +154,22 @@
   </div>
 </div>
 
+<!-- admin-common.js 由父框架 srcdoc 注入 -->
 <script>
-const T=localStorage.getItem('yjr_token'),H={'Authorization':'Bearer '+T,'Content-Type':'application/json'};
-
-function toast(msg, type) {
-  type = type || 'info';
-  var c = document.getElementById('toastContainer');
-  if (!c) { c = document.createElement('div'); c.id = 'toastContainer'; c.className = 'toast-container'; document.body.appendChild(c); }
-  var t = document.createElement('div'); t.className = 'toast toast-' + type; t.textContent = msg;
-  c.appendChild(t);
-  setTimeout(function() { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(function() { t.remove(); }, 300); }, 3000);
-}
+// ── 使用 YJ 统一库 ──
 
 // 加载门店列表到筛选器和表单
 async function loadHotels() {
   try {
-    const r = await fetch('/api/hotels?page_size=100', {headers:{'Authorization':'Bearer '+T}});
-    const d = await r.json();
-    const items = d.data || [];
-    const selectors = [document.getElementById('filterHotel'), document.getElementById('camHotel')];
-    selectors.forEach(sel => {
+    var items = await YJ.get('/api/hotels', {page_size: 100});
+    var selectors = [document.getElementById('filterHotel'), document.getElementById('camHotel')];
+    selectors.forEach(function(sel) {
       if (!sel) return;
-      const keep = sel.querySelector('option:first-child');
+      var keep = sel.querySelector('option:first-child');
       sel.innerHTML = '';
       if (keep) sel.appendChild(keep);
-      items.forEach(h => {
-        const opt = document.createElement('option');
+      (items||[]).forEach(function(h) {
+        var opt = document.createElement('option');
         opt.value = h.id;
         opt.textContent = h.name;
         sel.appendChild(opt);
@@ -190,22 +180,20 @@ async function loadHotels() {
 
 // 加载摄像头列表
 async function loadCameras() {
-  const grid = document.getElementById('camerasGrid');
-  const hotelId = document.getElementById('filterHotel').value;
+  var grid = document.getElementById('camerasGrid');
+  var hotelId = document.getElementById('filterHotel').value;
   try {
-    let url = '/api/cameras';
-    if (hotelId) url += '?hotel_id=' + hotelId;
-    const r = await fetch(url, {headers:H});
-    if (r.status===401) { window.top.location.href='pages/login.html'; return; }
-    const d = await r.json();
-    const items = d.data || [];
+    var params = {};
+    if (hotelId) params.hotel_id = hotelId;
+    var data = await YJ.get('/api/cameras', params);
+    var items = data || [];
 
     if (items.length === 0) {
       grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:60px;">📷 暂无摄像头<br><small>点击「+ 添加摄像头」开始配置海康威视设备</small></div>';
     } else {
-      grid.innerHTML = items.map(c => renderCameraCell(c)).join('');
+      grid.innerHTML = items.map(function(c) { return renderCameraCell(c); }).join('');
       // 延迟加载快照
-      items.forEach(c => loadSnapshot(c.id));
+      items.forEach(function(c) { loadSnapshot(c.id); });
     }
     document.getElementById('refreshInfo').textContent = '共 ' + items.length + ' 个摄像头';
   } catch(e) {
@@ -214,9 +202,9 @@ async function loadCameras() {
 }
 
 function renderCameraCell(c) {
-  const loc = c.location || '未指定';
-  const statusCls = c.status === 'online' ? 'online' : 'offline';
-  const statusTxt = c.status === 'online' ? '在线' : '离线';
+  var loc = c.location || '未指定';
+  var statusCls = c.status === 'online' ? 'online' : 'offline';
+  var statusTxt = c.status === 'online' ? '在线' : '离线';
   return '<div class="camera-cell" id="cell-'+c.id+'">'+
     '<img id="snap-'+c.id+'" src="" alt="'+c.name+'" onerror="this.parentElement.querySelector(\'.snapshot-error\').style.display=\'flex\';this.style.display=\'none\'">'+
     '<div class="snapshot-error" style="display:none">📷 等待快照...</div>'+
@@ -234,35 +222,35 @@ function renderCameraCell(c) {
 }
 
 function loadSnapshot(camId) {
-  const img = document.getElementById('snap-'+camId);
+  var img = document.getElementById('snap-'+camId);
   if (!img) return;
   img.src = '/api/cameras/'+camId+'/snapshot?t='+Date.now();
   img.onerror = function() {
-    const errEl = img.parentElement.querySelector('.snapshot-error');
+    var errEl = img.parentElement.querySelector('.snapshot-error');
     if (errEl) { errEl.style.display='flex'; errEl.textContent='📷 快照加载失败'; }
     img.style.display='none';
   };
   img.onload = function() {
-    const errEl = img.parentElement.querySelector('.snapshot-error');
+    var errEl = img.parentElement.querySelector('.snapshot-error');
     if (errEl) errEl.style.display='none';
     img.style.display='block';
   };
 }
 
 // 自动轮询快照（每10秒刷新）
-let pollTimer = null;
+var pollTimer = null;
 function startPolling() {
   if (pollTimer) clearInterval(pollTimer);
-  pollTimer = setInterval(() => {
-    document.querySelectorAll('[id^="snap-"]').forEach(img => {
-      const camId = img.id.replace('snap-','');
+  pollTimer = setInterval(function() {
+    document.querySelectorAll('[id^="snap-"]').forEach(function(img) {
+      var camId = img.id.replace('snap-','');
       img.src = '/api/cameras/'+camId+'/snapshot?t='+Date.now();
     });
   }, 10000);
 }
 
 function refreshAll() {
-  loadCameras().then(() => startPolling());
+  loadCameras().then(function() { startPolling(); });
 }
 
 // 对话框操作
@@ -287,10 +275,9 @@ function closeDialog() {
 
 async function openEditDialog(id) {
   try {
-    const r = await fetch('/api/cameras', {headers:H});
-    const d = await r.json();
-    const c = (d.data||[]).find(x => x.id === id);
-    if (!c) { toast('摄像头不存在', 'error'); return; }
+    var items = await YJ.get('/api/cameras');
+    var c = (items||[]).find(function(x) { return x.id === id; });
+    if (!c) { YJ.toast('摄像头不存在', 'error'); return; }
     document.getElementById('dialogTitle').textContent = '编辑摄像头';
     document.getElementById('dialogSubmitBtn').textContent = '保存';
     document.getElementById('camId').value = c.id;
@@ -303,13 +290,13 @@ async function openEditDialog(id) {
     document.getElementById('camChannel').value = c.channel;
     document.getElementById('camHotel').value = c.hotel_id || '';
     document.getElementById('cameraDialog').classList.add('show');
-  } catch(e) { toast('加载失败: '+e.message, 'error'); }
+  } catch(e) { YJ.toast('加载失败: '+e.message, 'error'); }
 }
 
 async function saveCamera(e) {
   e.preventDefault();
-  const id = document.getElementById('camId').value;
-  const body = {
+  var id = document.getElementById('camId').value;
+  var body = {
     name: document.getElementById('camName').value,
     ip: document.getElementById('camIp').value,
     port: parseInt(document.getElementById('camPort').value)||554,
@@ -320,55 +307,46 @@ async function saveCamera(e) {
     hotel_id: parseInt(document.getElementById('camHotel').value) || null,
   };
 
-  try {
-    var submitBtn = document.getElementById('dialogSubmitBtn');
-    var origText = submitBtn.textContent;
-    submitBtn.disabled = true;
-    submitBtn.textContent = '保存中...';
+  var submitBtn = document.getElementById('dialogSubmitBtn');
+  var origText = submitBtn.textContent;
+  submitBtn.disabled = true;
+  submitBtn.textContent = '保存中...';
 
-    let r;
+  try {
     if (id) {
       // 编辑: 密码为空则不更新
       if (!body.password) delete body.password;
-      r = await fetch('/api/cameras/'+id, {method:'PUT',headers:H,body:JSON.stringify(body)});
+      await YJ.put('/api/cameras/'+id, body);
     } else {
-      if (!body.password) { toast('请输入密码', 'warning'); submitBtn.disabled = false; submitBtn.textContent = origText; return; }
-      r = await fetch('/api/cameras', {method:'POST',headers:H,body:JSON.stringify(body)});
+      if (!body.password) { YJ.toast('请输入密码', 'warning'); submitBtn.disabled = false; submitBtn.textContent = origText; return; }
+      await YJ.post('/api/cameras', body);
     }
-    const d = await r.json();
-    if (d.code===0) {
-      closeDialog();
-      loadCameras().then(() => startPolling());
-      toast(id?'摄像头已更新':'摄像头已添加', 'success');
-    } else {
-      toast('操作失败: '+(d.msg||d.detail||'未知错误'), 'error');
-    }
-  } catch(e) { toast('请求失败: '+e.message, 'error'); }
+    closeDialog();
+    loadCameras().then(function() { startPolling(); });
+    YJ.toast(id?'摄像头已更新':'摄像头已添加', 'success');
+  } catch(e) { YJ.toast('请求失败: '+e.message, 'error'); }
   finally { submitBtn.disabled = false; submitBtn.textContent = origText; }
 }
 
 async function deleteCamera(id, name) {
   if (!confirm('确认删除摄像头「'+name+'」？')) return;
   try {
-    const r = await fetch('/api/cameras/'+id, {method:'DELETE',headers:H});
-    const d = await r.json();
-    if (d.code===0) {
-      loadCameras().then(() => startPolling());
-      toast('摄像头已删除', 'success');
-    } else {
-      toast('删除失败: '+(d.msg||d.detail||'未知错误'), 'error');
-    }
-  } catch(e) { toast('请求失败: '+e.message, 'error'); }
+    await YJ.del('/api/cameras/'+id);
+    loadCameras().then(function() { startPolling(); });
+    YJ.toast('摄像头已删除', 'success');
+  } catch(e) { YJ.toast('请求失败: '+e.message, 'error'); }
 }
 
 // 门店筛选变化
-document.getElementById('filterHotel').addEventListener('change', () => {
-  loadCameras().then(() => startPolling());
+document.getElementById('filterHotel').addEventListener('change', function() {
+  loadCameras().then(function() { startPolling(); });
 });
 
-// 初始化
-loadHotels();
-loadCameras().then(() => startPolling());
+// 初始化 - 使用 YJ.init() 确保token就绪
+YJ.init().then(function() {
+  loadHotels();
+  loadCameras().then(function() { startPolling(); });
+});
 </script>
 </body>
 </html>

@@ -77,9 +77,9 @@
 
   <!-- Quick Actions -->
   <div class="quick-actions">
-    <button class="btn btn-primary" onclick="parent.document.querySelector('[data-page=\\'pages/orders.html\\']').click()">+ 新建订单</button>
-    <button class="btn btn-outline" onclick="parent.document.querySelector('[data-page=\\'pages/rooms.html\\']').click()">📅 查看房态</button>
-    <button class="btn btn-outline" onclick="parent.document.querySelector('[data-page=\\'pages/cleaning.html\\']').click()">🧹 保洁派单</button>
+    <button class="btn btn-primary" onclick="parent.document.querySelector('[data-page=\'pages/orders.html\']').click()">+ 新建订单</button>
+    <button class="btn btn-outline" onclick="parent.document.querySelector('[data-page=\'pages/rooms.html\']').click()">📅 查看房态</button>
+    <button class="btn btn-outline" onclick="parent.document.querySelector('[data-page=\'pages/cleaning.html\']').click()">🧹 保洁派单</button>
     <button class="btn btn-outline">📄 导出日报</button>
   </div>
 
@@ -138,11 +138,10 @@
 
 </div>
 
+<!-- admin-common.js 由父框架 srcdoc 注入 -->
 <script>
-const token = localStorage.getItem('yjr_token');
-const headers = { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+// ── 使用 YJ 统一库 ──
 
-function fmtMoney(n) { return '¥' + Number(n||0).toLocaleString('zh-CN', {minimumFractionDigits:0,maximumFractionDigits:0}); }
 function fmtDate(d) { return d.getMonth()+1+'月'+d.getDate()+'日'; }
 
 function renderPerfCompare(perf) {
@@ -175,17 +174,17 @@ function renderPerfCompare(perf) {
 
 async function loadDashboard() {
   try {
-    const [statsRes, activityRes, perfRes] = await Promise.all([
-      fetch('/api/dashboard/stats', { headers }),
-      fetch('/api/dashboard/activity?limit=15', { headers }),
-      fetch('/api/dashboard/perf', { headers }).catch(() => null) // optional endpoint
+    var results = await Promise.all([
+      YJ.get('/api/dashboard/stats'),
+      YJ.get('/api/dashboard/activity', {limit: 15}),
+      YJ.get('/api/dashboard/perf').catch(function() { return null; }) // optional endpoint
     ]);
-    if (statsRes.status === 401 || activityRes.status === 401) { window.top.location.href = 'pages/login.html'; return; }
-    const stats = (await statsRes.json()).data;
-    const activities = (await activityRes.json()).data || [];
+    var stats = results[0];
+    var activities = results[1] || [];
+    var perfData = results[2];
 
     renderStatCards(stats);
-    renderPerfCompare(perfRes ? (await perfRes.json()).data : null);
+    renderPerfCompare(perfData);
     renderRevenueChart(stats.revenue_trend || []);
     renderOccupancyChart(stats.occupancy_trend || []);
     renderActivity(activities);
@@ -198,8 +197,8 @@ async function loadDashboard() {
 }
 
 function renderStatCards(d) {
-  const vsOrders = d.orders_today - (d.orders_yesterday||0);
-  const vsRevenue = d.revenue_today - (d.revenue_yesterday||0);
+  var vsOrders = d.orders_today - (d.orders_yesterday||0);
+  var vsRevenue = d.revenue_today - (d.revenue_yesterday||0);
 
   function trendHtml(v) {
     if (v > 0) return '<span class="trend-up">↑' + v + '</span>';
@@ -210,17 +209,9 @@ function renderStatCards(d) {
   document.getElementById('statCards').innerHTML = [
     { icon:'📋', cls:'gold', val:d.orders_today, label:'今日订单数', sub:'vs 昨日 ' + trendHtml(vsOrders) },
     { icon:'🏠', cls:'green', val:d.occupancy_rate+'%', label:'入住率', sub:d.occupied_rooms+'/'+d.total_rooms+'间' },
-    { icon:'💰', cls:'blue', val:fmtMoney(d.revenue_today), label:'今日营收', sub:'vs 昨日 ' + trendHtml(vsRevenue) },
+    { icon:'💰', cls:'blue', val:YJ.fmtMoney(d.revenue_today), label:'今日营收', sub:'vs 昨日 ' + trendHtml(vsRevenue) },
     { icon:'🧹', cls:'red', val:d.pending_cleaning_count, label:'待清洁' },
-  ].map(s => `
-    <div class="stat-card">
-      <div class="stat-icon ${s.cls}">${s.icon}</div>
-      <div class="stat-info">
-        <div class="stat-value">${s.val}</div>
-        <div class="stat-label">${s.label}</div>
-        ${s.sub ? '<div class="stat-change" style="font-size:11px;">'+s.sub+'</div>' : ''}
-      </div>
-    </div>`).join('');
+  ].map(function(s) { return '\n    <div class="stat-card">\n      <div class="stat-icon '+s.cls+'">'+s.icon+'</div>\n      <div class="stat-info">\n        <div class="stat-value">'+s.val+'</div>\n        <div class="stat-label">'+s.label+'</div>\n        '+(s.sub ? '<div class="stat-change" style="font-size:11px;">'+s.sub+'</div>' : '')+'\n      </div>\n    </div>'; }).join('');
 }
 
 function renderRevenueChart(trend) {
@@ -228,13 +219,8 @@ function renderRevenueChart(trend) {
     document.getElementById('revenueChart').innerHTML = '<div class="empty">暂无数据</div>';
     return;
   }
-  const max = Math.max(...trend.map(t => t.value), 1);
-  document.getElementById('revenueChart').innerHTML = trend.map(t => `
-    <div class="chart-bar-col">
-      <div class="chart-bar-val">${t.value > 0 ? '¥'+(t.value/10000).toFixed(1)+'w' : ''}</div>
-      <div class="chart-bar-fill" style="height:${Math.max(t.value/max*140, 2)}px;" title="${t.label}: ¥${t.value.toLocaleString()}"></div>
-      <div class="chart-bar-label">${t.label}</div>
-    </div>`).join('');
+  var max = Math.max.apply(null, trend.map(function(t) { return t.value; }).concat([1]));
+  document.getElementById('revenueChart').innerHTML = trend.map(function(t) { return '\n    <div class="chart-bar-col">\n      <div class="chart-bar-val">'+(t.value > 0 ? '¥'+(t.value/10000).toFixed(1)+'w' : '')+'</div>\n      <div class="chart-bar-fill" style="height:'+Math.max(t.value/max*140, 2)+'px;" title="'+t.label+': ¥'+t.value.toLocaleString()+'"></div>\n      <div class="chart-bar-label">'+t.label+'</div>\n    </div>'; }).join('');
 }
 
 function renderOccupancyChart(trend) {
@@ -242,32 +228,21 @@ function renderOccupancyChart(trend) {
     document.getElementById('occupancyChart').innerHTML = '<div class="empty">暂无数据</div>';
     return;
   }
-  document.getElementById('occupancyChart').innerHTML = trend.map(t => `
-    <div class="chart-bar-col">
-      <div class="chart-bar-val">${t.value}%</div>
-      <div class="chart-bar-fill occ" style="height:${Math.max(t.value/100*140, 2)}px;" title="${t.label}: ${t.value}%"></div>
-      <div class="chart-bar-label">${t.label}</div>
-    </div>`).join('');
+  document.getElementById('occupancyChart').innerHTML = trend.map(function(t) { return '\n    <div class="chart-bar-col">\n      <div class="chart-bar-val">'+t.value+'%</div>\n      <div class="chart-bar-fill occ" style="height:'+Math.max(t.value/100*140, 2)+'px;" title="'+t.label+': '+t.value+'%"></div>\n      <div class="chart-bar-label">'+t.label+'</div>\n    </div>'; }).join('');
 }
 
 function renderActivity(activities) {
-  const el = document.getElementById('activityList');
+  var el = document.getElementById('activityList');
   if (!activities.length) {
     el.innerHTML = '<li class="empty">暂无动态</li>';
     return;
   }
-  const icons = { order: '📋', checkin: '🚪', checkout: '🏃', cleaning: '🧹' };
-  el.innerHTML = activities.map(a => `
-    <li>
-      <div class="activity-dot ${a.type}"></div>
-      <span>${icons[a.type]||'📌'} ${a.content}</span>
-      <span class="activity-hotel">${a.hotel_name||''}</span>
-      <span class="activity-time">${a.time||''}</span>
-    </li>`).join('');
+  var icons = { order: '📋', checkin: '🚪', checkout: '🏃', cleaning: '🧹' };
+  el.innerHTML = activities.map(function(a) { return '\n    <li>\n      <div class="activity-dot '+a.type+'"></div>\n      <span>'+(icons[a.type]||'📌')+' '+a.content+'</span>\n      <span class="activity-hotel">'+(a.hotel_name||'')+'</span>\n      <span class="activity-time">'+(a.time||'')+'</span>\n    </li>'; }).join('');
 }
 
 function renderTodaySummary(d) {
-  const today = new Date();
+  var today = new Date();
   document.getElementById('summaryTitle').textContent =
     '今日运营概览 ' + today.getFullYear()+'年'+fmtDate(today)+' ' + ['日','一','二','三','四','五','六'][today.getDay()];
 
@@ -277,14 +252,16 @@ function renderTodaySummary(d) {
     { num:d.total_rooms-d.occupied_rooms, lbl:'空房' },
     { num:d.occupancy_rate+'%', lbl:'入住率' },
     { num:d.pending_cleaning_count, lbl:'待清洁' },
-    { num:fmtMoney(d.revenue_today), lbl:'今日营收' },
-    { num:d.revenue_today>0&&d.orders_today>0 ? fmtMoney(Math.round(d.revenue_today/d.orders_today)) : '¥0', lbl:'平均房价' },
+    { num:YJ.fmtMoney(d.revenue_today), lbl:'今日营收' },
+    { num:d.revenue_today>0&&d.orders_today>0 ? YJ.fmtMoney(Math.round(d.revenue_today/d.orders_today)) : '¥0', lbl:'平均房价' },
     { num:d.hotel_name||'全部门店', lbl:'当前门店' },
-  ].map(i => `<div class="summary-item"><div class="num">${i.num}</div><div class="lbl">${i.lbl}</div></div>`).join('');
+  ].map(function(i) { return '<div class="summary-item"><div class="num">'+i.num+'</div><div class="lbl">'+i.lbl+'</div></div>'; }).join('');
 }
 
-loadDashboard();
-setInterval(loadDashboard, 30000);
+YJ.init().then(function() {
+  loadDashboard();
+  setInterval(loadDashboard, 30000);
+});
 </script>
 </body>
 </html>

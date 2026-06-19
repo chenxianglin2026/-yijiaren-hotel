@@ -75,24 +75,13 @@
   </div>
 </div>
 
+<!-- admin-common.js 由父框架 srcdoc 注入, 提供 YJ 全局对象 -->
 <script>
-var T='';try{T=localStorage.getItem('yjr_token')||''}catch(e){}
-const H = { 'Authorization':'Bearer '+T };
-const F = n => '¥'+Number(n||0).toLocaleString();
+// ── 使用 YJ 统一库 (由 admin-common.js 提供: YJ.api, YJ.get, YJ.toast, YJ.fmtDate, YJ.init) ──
+const F = function(n){ return '¥'+Number(n||0).toLocaleString(); };
 const STATUS = {pending:'待支付',paid:'已支付',checked_in:'已入住',completed:'已完成',cancelled:'已取消'};
 
-let page=1, pageSize=10, totalCount=0;
-
-function toast(msg, type) {
-  type = type || 'info';
-  var c = document.getElementById('toastContainer');
-  if (!c) { c = document.createElement('div'); c.id = 'toastContainer'; c.className = 'toast-container'; document.body.appendChild(c); }
-  var t = document.createElement('div'); t.className = 'toast toast-' + type; t.textContent = msg;
-  c.appendChild(t);
-  setTimeout(function() { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(function() { t.remove(); }, 300); }, 3000);
-}
-
-function fmtDateISO(d) { return d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0'); }
+var page=1, pageSize=10, totalCount=0;
 
 function setDatePreset(range, el) {
   document.querySelectorAll('.date-preset').forEach(function(p){ p.classList.remove('active'); });
@@ -100,15 +89,15 @@ function setDatePreset(range, el) {
   var now = new Date();
   var from = '', to = '';
   if (range === 'today') {
-    from = to = fmtDateISO(now);
+    from = to = YJ.fmtDate(now);
   } else if (range === 'week') {
     var dow = now.getDay() || 7;
     var mon = new Date(now); mon.setDate(now.getDate() - dow + 1);
     var sun = new Date(now); sun.setDate(now.getDate() + (7 - dow));
-    from = fmtDateISO(mon); to = fmtDateISO(sun);
+    from = YJ.fmtDate(mon); to = YJ.fmtDate(sun);
   } else if (range === 'month') {
     from = now.getFullYear()+'-'+(now.getMonth()+1).toString().padStart(2,'0')+'-01';
-    to = fmtDateISO(now);
+    to = YJ.fmtDate(now);
   }
   document.getElementById('dateFrom').value = from;
   document.getElementById('dateTo').value = to;
@@ -117,58 +106,56 @@ function setDatePreset(range, el) {
 }
 
 async function loadOrders(){
-  let params = new URLSearchParams();
-  let s = document.getElementById('search').value.trim();
-  if(s) params.set('keyword',s);
-  let st = document.getElementById('status').value;
-  if(st) params.set('status',st);
-  let df = document.getElementById('dateFrom').value;
-  if(df) params.set('start_date',df);
-  let dt = document.getElementById('dateTo').value;
-  if(dt) params.set('end_date',dt);
-  params.set('page',page); params.set('page_size',pageSize);
+  var params = {};
+  var s = document.getElementById('search').value.trim();
+  if(s) params.keyword = s;
+  var st = document.getElementById('status').value;
+  if(st) params.status = st;
+  var df = document.getElementById('dateFrom').value;
+  if(df) params.start_date = df;
+  var dt = document.getElementById('dateTo').value;
+  if(dt) params.end_date = dt;
+  params.page = page;
+  params.page_size = pageSize;
 
   try{
-    let r = await fetch('/api/orders?'+params,{headers:H});
-    if (r.status === 401) { window.top.location.href = 'pages/login.html'; return; }
-    let j = await r.json();
-    if(j.code!==0) throw new Error(j.msg);
-    let items = j.data?.items || j.data || [];
-    totalCount = j.data?.total || items.length;
+    var j = await YJ.api('/api/orders', { params: params });
+    var items = YJ.parseItems(j);
+    totalCount = j.data && j.data.total ? j.data.total : items.length;
 
     // Stat cards
-    let stats = {total:totalCount, paid:0, pending:0};
-    items.forEach(i=>{ stats.paid+=i.status==='paid'||i.status==='checked_in'?1:0; stats.pending+=i.status==='pending'?1:0; });
+    var stats = {total:totalCount, paid:0, pending:0};
+    items.forEach(function(i){ stats.paid += i.status==='paid'||i.status==='checked_in'?1:0; stats.pending += i.status==='pending'?1:0; });
     document.getElementById('statCards').innerHTML = [
       {icon:'📋',cls:'gold',val:totalCount,label:'查询结果'},
       {icon:'✅',cls:'green',val:stats.paid,label:'已支付/入住'},
-      {icon:'💰',cls:'blue',val:F(items.reduce((s,i)=>s+(i.total_price||0),0)),label:'金额合计'},
+      {icon:'💰',cls:'blue',val:F(items.reduce(function(s,i){return s+(i.total_price||0)},0)),label:'金额合计'},
       {icon:'🕐',cls:'red',val:stats.pending,label:'待支付'}
-    ].map(s=>`<div class="stat-card"><div class="stat-icon ${s.cls}">${s.icon}</div><div class="stat-info"><div class="stat-value">${s.val}</div><div class="stat-label">${s.label}</div></div></div>`).join('');
+    ].map(function(s){return '<div class="stat-card"><div class="stat-icon '+s.cls+'">'+s.icon+'</div><div class="stat-info"><div class="stat-value">'+s.val+'</div><div class="stat-label">'+s.label+'</div></div></div>';}).join('');
 
     // Table
-    document.getElementById('ordersBody').innerHTML = items.length ? items.map(o=>{
-      let d = new Date(o.created_at||o.checkin_date||''), ds = d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');
-      return `<tr>
-        <td><a href="javascript:void(0)" onclick="showDetail('${o.id}')" style="color:var(--gold-dark);font-weight:600;">${o.order_no||o.id}</a></td>
-        <td>${o.guest_name||'-'}</td>
-        <td>${o.room_type||'-'}</td>
-        <td>${o.checkin_date||'-'} ~ ${o.checkout_date||'-'}</td>
-        <td class="text-right" style="font-weight:600;">${F(o.total_price)}</td>
-        <td><span class="status-tag ${o.status||''}">${STATUS[o.status]||o.status}</span></td>
-        <td>${ds}</td>
-        <td><button class="btn btn-outline btn-sm" onclick="showDetail('${o.id}')">详情</button></td>
-      </tr>`;
+    document.getElementById('ordersBody').innerHTML = items.length ? items.map(function(o){
+      var d = new Date(o.created_at||o.checkin_date||''), ds = YJ.fmtDate(d);
+      return '<tr>'+
+        '<td><a href="javascript:void(0)" onclick="showDetail(\''+o.id+'\')" style="color:var(--gold-dark);font-weight:600;">'+(o.order_no||o.id)+'</a></td>'+
+        '<td>'+(o.guest_name||'-')+'</td>'+
+        '<td>'+(o.room_type||'-')+'</td>'+
+        '<td>'+(o.checkin_date||'-')+' ~ '+(o.checkout_date||'-')+'</td>'+
+        '<td class="text-right" style="font-weight:600;">'+F(o.total_price)+'</td>'+
+        '<td><span class="status-tag '+(o.status||'')+'">'+(STATUS[o.status]||o.status)+'</span></td>'+
+        '<td>'+ds+'</td>'+
+        '<td><button class="btn btn-outline btn-sm" onclick="showDetail(\''+o.id+'\')">详情</button></td>'+
+      '</tr>';
     }).join('') : '<tr><td colspan="8"><div class="empty-state"><span class="empty-icon">📋</span><div class="empty-text">暂无订单数据</div><div class="empty-hint">调整筛选条件或创建新订单</div></div></td></tr>';
 
     // Pagination
-    let tp = Math.ceil(totalCount/pageSize);
-    let pag = '';
-    pag += `<button class="page-btn" ${page<=1?'disabled':''} onclick="goPage(${page-1})">&laquo;</button>`;
-    for(let i=Math.max(1,page-2);i<=Math.min(tp,page+2);i++)
-      pag += `<button class="page-btn${i===page?' active':''}" onclick="goPage(${i})">${i}</button>`;
-    pag += `<button class="page-btn" ${page>=tp?'disabled':''} onclick="goPage(${page+1})">&raquo;</button>`;
-    pag += `<span style="font-size:12px;color:var(--text-muted);margin-left:12px;">共${totalCount}条</span>`;
+    var tp = Math.ceil(totalCount/pageSize);
+    var pag = '';
+    pag += '<button class="page-btn" '+(page<=1?'disabled':'')+' onclick="goPage('+(page-1)+')">&laquo;</button>';
+    for(var i=Math.max(1,page-2);i<=Math.min(tp,page+2);i++)
+      pag += '<button class="page-btn'+(i===page?' active':'')+'" onclick="goPage('+i+')">'+i+'</button>';
+    pag += '<button class="page-btn" '+(page>=tp?'disabled':'')+' onclick="goPage('+(page+1)+')">&raquo;</button>';
+    pag += '<span style="font-size:12px;color:var(--text-muted);margin-left:12px;">共'+totalCount+'条</span>';
     document.getElementById('pagination').innerHTML = pag;
   }catch(e){
     document.getElementById('ordersBody').innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--error);padding:20px;">加载失败: '+e.message+'</td></tr>';
@@ -176,7 +163,7 @@ async function loadOrders(){
 }
 
 function goPage(p){
-  let tp = Math.ceil(totalCount/pageSize);
+  var tp = Math.ceil(totalCount/pageSize);
   if(p<1||p>tp) return;
   page=p; loadOrders();
 }
@@ -194,10 +181,7 @@ function resetFilters(){
 
 async function showDetail(id){
   try{
-    let r = await fetch('/api/orders/'+id,{headers:H});
-    if (r.status === 401) { window.top.location.href = 'pages/login.html'; return; }
-    let j = await r.json();
-    let o = j.code!==undefined?(j.code===0?j.data:null):j;
+    var o = await YJ.get('/api/orders/'+id);
     document.getElementById('detailContent').innerHTML = 
       '<div class="detail-row"><span class="detail-label">订单编号</span><span class="detail-value">'+(o.order_no||id)+'</span></div>'+
       '<div class="detail-row"><span class="detail-label">客人</span><span class="detail-value">'+(o.guest_name||'-')+' ('+(o.guest_phone||'-')+')</span></div>'+
@@ -208,24 +192,24 @@ async function showDetail(id){
       '<div class="detail-row"><span class="detail-label">状态</span><span class="detail-value"><span class="status-tag '+(o.status||'')+'">'+(STATUS[o.status]||o.status||'-')+'</span></span></div>';
     document.getElementById('detailModal').classList.add('show');
   }catch(e){
-    toast('加载详情失败，请重试', 'error');
+    YJ.toast('加载详情失败，请重试', 'error');
   }
 }
 
 function closeModal(){ document.getElementById('detailModal').classList.remove('show'); }
 
 function exportCSV(){
-  let rows=[['订单号','客人','房型','入住','退房','金额','状态']];
-  document.querySelectorAll('#ordersBody tr').forEach(r=>{
+  var rows=[['订单号','客人','房型','入住','退房','金额','状态']];
+  document.querySelectorAll('#ordersBody tr').forEach(function(r){
     if(r.cells.length<7) return;
-    rows.push([].map.call(r.cells,(c,i)=>i<7?c.textContent.trim():'').filter(Boolean));
+    rows.push([].map.call(r.cells,function(c,i){return i<7?c.textContent.trim():''}).filter(Boolean));
   });
-  let csv = '\uFEFF'+rows.map(r=>r.map(c=>'"'+c.replace(/"/g,'""')+'"').join(',')).join('\n');
-  let b = new Blob([csv],{type:'text/csv'});
-  let a = document.createElement('a'); a.href=URL.createObjectURL(b); a.download='orders_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
+  var csv = '\uFEFF'+rows.map(function(r){return r.map(function(c){return '"'+c.replace(/"/g,'""')+'"'}).join(',')}).join('\n');
+  var b = new Blob([csv],{type:'text/csv'});
+  var a = document.createElement('a'); a.href=URL.createObjectURL(b); a.download='orders_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
 }
 
-loadOrders();
+YJ.init().then(function(){ loadOrders(); });
 </script>
 </body>
 </html>
