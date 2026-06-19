@@ -158,6 +158,13 @@
       breadcrumb.textContent = title;
     });
   });
+  // Inject token into iframe after each page load
+  iframe.addEventListener('load', function() {
+    try {
+      iframe.contentWindow.YJR_TOKEN = token;
+      iframe.contentWindow.YJR_USER = savedUser;
+    } catch(e) {}
+  });
 
   // Store switcher
   async function loadStores() {
