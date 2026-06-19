@@ -49,7 +49,7 @@
 </div>
 
 <script>
-const T=localStorage.getItem('yjr_token'),H={'Authorization':'Bearer '+T};
+var T='';try{T=localStorage.getItem('yjr_token')||''}catch(e){} var H={'Authorization':'Bearer '+T};
 const STATUS_ICON={pending:'🕐',accepted:'📋',in_progress:'🧹',completed:'✅'};
 const STATUS_BADGE={pending:'badge-warning',accepted:'badge-info',in_progress:'badge-processing',completed:'badge-success'};
 const STATUS_TEXT={pending:'待派单',accepted:'已接单',in_progress:'进行中',completed:'已完成'};
@@ -71,7 +71,7 @@ async function loadTasks(){
     if (r.status === 401) { window.top.location.href = 'pages/login.html'; return; }
     let j=await r.json();
     if(j.code&&j.code!==0) throw new Error(j.msg);
-    let items=j.data?.items||j.data||[], total=items.length;
+    let items=j.items||j.data?.items||j.data||[], total=items.length;
     let pending=items.filter(i=>i.status==='pending').length;
     let doing=items.filter(i=>i.status==='in_progress'||i.status==='accepted').length;
     let done=items.filter(i=>i.status==='completed').length;
