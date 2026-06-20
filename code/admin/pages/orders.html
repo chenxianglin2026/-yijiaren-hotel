@@ -28,14 +28,13 @@ tr:hover{background:#fafafa}
 var BADGE={pending:'badge-pending',paid:'badge-paid',checked_in:'badge-checked',completed:'badge-done'};
 var LABEL={pending:'待支付',paid:'已支付',checked_in:'已入住',completed:'已完成'};
 
-fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},
-  body:JSON.stringify({username:'admin',password:'admin123'})})
-.then(function(r){return r.json()})
-.then(function(j){
-  var tok=j.access_token;
-  return fetch('/api/orders?page_size=100',{headers:{'Authorization':'Bearer '+tok}});
+var T=localStorage.getItem('yjr_token');
+if(!T){window.top.location.href='pages/login.html';}
+fetch('/api/orders?page_size=100',{headers:{'Authorization':'Bearer '+T}})
+.then(function(r){
+  if(r.status===401){window.top.location.href='pages/login.html';return;}
+  return r.json();
 })
-.then(function(r){return r.json()})
 .then(function(j){
   var items=j.items||[];
   if(!items.length){document.getElementById('table').innerHTML='<div class=empty>暂无订单</div>';return}

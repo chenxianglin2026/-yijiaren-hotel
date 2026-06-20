@@ -5,16 +5,20 @@
 
   YJ.init = function() {
     if (_token) return Promise.resolve(_token);
-    return fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: 'admin', password: 'admin123' })
-    }).then(function(r) { return r.json(); })
-      .then(function(j) {
-        _token = j.access_token || '';
-        if (_token) try { localStorage.setItem('yjr_token', _token); } catch(e) {}
-        return _token;
-      });
+    // 从 localStorage 读取已保存的 token
+    var savedToken = null;
+    try { savedToken = localStorage.getItem('yjr_token'); } catch(e) {}
+    if (savedToken) {
+      _token = savedToken;
+      return Promise.resolve(_token);
+    }
+    // 没有登录凭据，跳转到登录页
+    if (window.top && window.top.location) {
+      window.top.location.href = 'pages/login.html';
+    } else {
+      location.href = 'pages/login.html';
+    }
+    return Promise.reject(new Error('未登录：请先登录'));
   };
 
   YJ.api = function(url, opt) {
@@ -33,7 +37,16 @@
       var fo = { method: opt.method || 'GET', headers: h };
       if (opt.body) fo.body = JSON.stringify(opt.body);
       return fetch(u, fo).then(function(r) {
-        if (r.status === 401) { _token = ''; return YJ.init().then(function() { return call(); }); }
+        if (r.status === 401) {
+          _token = '';
+          try { localStorage.removeItem('yjr_token'); } catch(e) {}
+          if (window.top && window.top.location) {
+            window.top.location.href = 'pages/login.html';
+          } else {
+            location.href = 'pages/login.html';
+          }
+          throw new Error('登录已过期，请重新登录');
+        }
         return r.json().then(function(j) {
           if (!r.ok) throw new Error(j.detail || j.msg || 'HTTP ' + r.status);
           return j;

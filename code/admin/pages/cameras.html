@@ -8,10 +8,13 @@
 .online{background:rgba(82,196,26,.3);color:#95de64}.offline{background:rgba(255,77,79,.3);color:#ff7875}
 </style></head><body><div class="page"><div class="title">📷 监控摄像头</div><div class="grid" id="grid"></div></div>
 <script>
-fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'admin',password:'admin123'})})
-.then(function(r){return r.json()}).then(function(j){
-return fetch('/api/cameras?page_size=50',{headers:{'Authorization':'Bearer '+j.access_token}})})
-.then(function(r){return r.json()}).then(function(j){
+var T=localStorage.getItem('yjr_token');
+if(!T){window.top.location.href='pages/login.html';}
+fetch('/api/cameras?page_size=50',{headers:{'Authorization':'Bearer '+T}})
+.then(function(r){
+  if(r.status===401){window.top.location.href='pages/login.html';return;}
+  return r.json();
+}).then(function(j){
 var items=j.items||j.data||[];
 if(!items.length){document.getElementById('grid').innerHTML='<div style=text-align:center;padding:40px;color:#999;grid-column:1/-1>暂无摄像头</div>';return}
 var h='';

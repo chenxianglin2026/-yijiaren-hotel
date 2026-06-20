@@ -10,10 +10,13 @@
 var ICON={pending:'🕐',in_progress:'🧹',completed:'✅'};
 var BADGE={pending:'badge-pending',in_progress:'badge-progress',completed:'badge-done'};
 var LABEL={pending:'待处理',in_progress:'进行中',completed:'已完成'};
-fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'admin',password:'admin123'})})
-.then(function(r){return r.json()}).then(function(j){
-return fetch('/api/cleaning/tasks?page_size=100',{headers:{'Authorization':'Bearer '+j.access_token}})})
-.then(function(r){return r.json()}).then(function(j){
+var T=localStorage.getItem('yjr_token');
+if(!T){window.top.location.href='pages/login.html';}
+fetch('/api/cleaning/tasks?page_size=100',{headers:{'Authorization':'Bearer '+T}})
+.then(function(r){
+  if(r.status===401){window.top.location.href='pages/login.html';return;}
+  return r.json();
+}).then(function(j){
 var items=j.items||[];
 if(!items.length){document.getElementById('list').innerHTML='<div class=empty>暂无工单</div>';return}
 var s={total:items.length,pending:0,doing:0,done:0};

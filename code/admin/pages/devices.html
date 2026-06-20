@@ -8,10 +8,13 @@
 </style></head><body><div class="page"><div class="title">🔧 设备监控</div><div class="stats" id="stats"></div><div class="grid" id="grid"></div></div>
 <script>
 var ICONS={lock:'🔐',camera:'📷',smoke_sensor:'🔥',water_sensor:'💧',env_sensor:'🌡',power_meter:'⚡',door_sensor:'🚪',temp_sensor:'🌡'};
-fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'admin',password:'admin123'})})
-.then(function(r){return r.json()}).then(function(j){
-return fetch('/api/devices?page_size=200',{headers:{'Authorization':'Bearer '+j.access_token}})})
-.then(function(r){return r.json()}).then(function(j){
+var T=localStorage.getItem('yjr_token');
+if(!T){window.top.location.href='pages/login.html';}
+fetch('/api/devices?page_size=200',{headers:{'Authorization':'Bearer '+T}})
+.then(function(r){
+  if(r.status===401){window.top.location.href='pages/login.html';return;}
+  return r.json();
+}).then(function(j){
 var items=j.items||j.data||[];
 if(!items.length){document.getElementById('grid').innerHTML='<div style=text-align:center;padding:40px;color:#999;grid-column:1/-1>暂无设备</div>';return}
 var o=items.filter(function(i){return i.status==='online'}).length;

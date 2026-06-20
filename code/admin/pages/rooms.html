@@ -7,10 +7,13 @@
 .card-num{font-size:20px;font-weight:700}.card-type{font-size:11px;color:#999;margin:4px 0}.card-price{font-size:13px;color:#666}.card-status{font-size:11px;margin-top:6px;color:#389e0d}
 </style></head><body><div class="page"><div class="title">🚪 房态管理</div><div class="stats" id="stats"></div><div class="grid" id="grid"></div></div>
 <script>
-fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'admin',password:'admin123'})})
-.then(function(r){return r.json()}).then(function(j){
-return fetch('/api/rooms/status',{headers:{'Authorization':'Bearer '+j.access_token}})})
-.then(function(r){return r.json()}).then(function(j){
+var T=localStorage.getItem('yjr_token');
+if(!T){window.top.location.href='pages/login.html';}
+fetch('/api/rooms/status',{headers:{'Authorization':'Bearer '+T}})
+.then(function(r){
+  if(r.status===401){window.top.location.href='pages/login.html';return;}
+  return r.json();
+}).then(function(j){
 document.getElementById('stats').innerHTML='<div class=stat><div class=stat-val>'+(j.total_rooms||0)+'</div><div class=stat-lbl>总房间</div></div><div class=stat><div class=stat-val style=color:#389e0d>'+(j.available_total||0)+'</div><div class=stat-lbl>可订</div></div><div class=stat><div class=stat-val style=color:#096dd9>'+(j.occupied_total||0)+'</div><div class=stat-lbl>已入住</div></div><div class=stat><div class=stat-val style=color:#d48806>'+(j.cleaning_total||0)+'</div><div class=stat-lbl>清洁中</div></div>';
 var items=j.items||[];
 if(!items.length){document.getElementById('grid').innerHTML='<div style=text-align:center;padding:40px;color:#999;grid-column:1/-1>暂无数据</div>';return}
