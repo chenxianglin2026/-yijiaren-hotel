@@ -1,215 +1,53 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<head><meta charset="UTF-8"><title>订单管理</title>
 <link rel="stylesheet" href="../css/admin.css">
 <style>
-.detail-row { display:flex; padding:10px 0; border-bottom:1px solid var(--border); }
-.detail-label { width:90px; font-size:13px; color:var(--text-muted); flex-shrink:0; }
-.detail-value { font-size:14px; color:var(--text-primary); }
-/* status color labels */
-.status-tag { display:inline-block; padding:2px 10px; border-radius:12px; font-size:12px; font-weight:500; }
-.status-tag.pending { background:#fffbe6; color:#d48806; border:1px solid #ffe58f; }
-.status-tag.paid { background:#f0faf0; color:#389e0d; border:1px solid #b7eb8f; }
-.status-tag.checked_in { background:#e8f4fd; color:#096dd9; border:1px solid #91d5ff; }
-.status-tag.completed { background:#faf8f3; color:#9a7a32; border:1px solid #e0c882; }
-.status-tag.cancelled { background:#f5f5f5; color:#8c8c8c; border:1px solid #d9d9d9; }
-/* date presets */
-.date-presets { display:flex; gap:6px; margin-right:8px; }
-.date-preset { padding:4px 10px; border:1px solid var(--border); border-radius:4px; background:#fff; cursor:pointer; font-size:12px; color:var(--text-secondary); white-space:nowrap; transition:var(--transition); }
-.date-preset:hover { border-color:var(--gold); color:var(--gold); }
-.date-preset.active { background:var(--gold); color:#fff; border-color:var(--gold); }
-/* responsive */
-@media(max-width:768px){
-  .filter-bar{flex-wrap:wrap;gap:8px}
-  .filter-bar .form-input{width:100%!important}
-  .filter-bar .form-select{width:100%!important}
-  .date-presets{width:100%;justify-content:flex-start}
-  .date-preset{padding:4px 8px;font-size:11px}
-}
-@media(max-width:480px){
-  .stat-cards{grid-template-columns:repeat(2,1fr)}
-}
+.page{padding:16px}.title{font-size:18px;font-weight:700;margin-bottom:16px}
+.stats{display:flex;gap:12px;margin-bottom:16px}
+.stat{padding:14px 20px;background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.06);flex:1;text-align:center}
+.stat-val{font-size:24px;font-weight:700}.stat-lbl{font-size:12px;color:#999;margin-top:4px}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+th{background:#fafafa;padding:12px;text-align:left;font-size:12px;color:#666;font-weight:600}
+td{padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px}
+tr:hover{background:#fafafa}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.badge-pending{background:#fff7e6;color:#d48806}
+.badge-paid{background:#f6ffed;color:#389e0d}
+.badge-checked{background:#e6f7ff;color:#096dd9}
+.badge-done{background:#f0f0f0;color:#666}
+.empty{text-align:center;padding:60px;color:#999}
 </style>
 </head>
-<body>
-<div class="page">
-  <div class="page-title">订单管理</div>
-
-  <div class="stat-cards" id="statCards"></div>
-
-  <div class="card">
-    <div class="filter-bar">
-      <input class="form-input" id="search" placeholder="🔍 搜索订单号/客人姓名..." style="width:220px;">
-      <select class="form-select" id="status"><option value="">全部状态</option><option>pending</option><option>paid</option><option>checked_in</option><option>completed</option><option>cancelled</option></select>
-      <div class="date-presets">
-        <span class="date-preset active" data-range="all" onclick="setDatePreset('all',this)">全部</span>
-        <span class="date-preset" data-range="today" onclick="setDatePreset('today',this)">今天</span>
-        <span class="date-preset" data-range="week" onclick="setDatePreset('week',this)">本周</span>
-        <span class="date-preset" data-range="month" onclick="setDatePreset('month',this)">本月</span>
-      </div>
-      <input class="form-input" type="date" id="dateFrom" style="width:140px;">
-      <span style="color:var(--text-muted);">至</span>
-      <input class="form-input" type="date" id="dateTo" style="width:140px;">
-      <button class="btn btn-primary btn-sm" onclick="loadOrders()">查询</button>
-      <button class="btn btn-outline btn-sm" onclick="resetFilters()">重置</button>
-      <button class="btn btn-outline btn-sm" style="margin-left:auto;" onclick="exportCSV()">📥 导出</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="table-wrap">
-      <table><thead><tr>
-        <th>订单号</th><th>客人</th><th>房型</th><th>入住/退房</th><th class="text-right">金额</th><th>状态</th><th>创建时间</th><th>操作</th>
-      </tr></thead><tbody id="ordersBody"><tr><td colspan="8" class="loading-row">加载中...</td></tr></tbody></table>
-    </div>
-    <div class="pagination" id="pagination"></div>
-  </div>
-
-  <div class="modal-overlay" id="detailModal">
-    <div class="modal">
-      <div class="modal-header"><div class="modal-title">订单详情</div><button class="modal-close" onclick="closeModal()">✕</button></div>
-      <div class="modal-body" id="detailContent"></div>
-    </div>
-  </div>
+<body><div class="page">
+<div class="title">📋 订单管理</div>
+<div class="stats" id="stats"></div>
+<div id="table"><div class="empty">加载中...</div></div>
 </div>
-
-<!-- admin-common.js 由父框架 srcdoc 注入, 提供 YJ 全局对象 -->
 <script>
-// ── 使用 YJ 统一库 (由 admin-common.js 提供: YJ.api, YJ.get, YJ.toast, YJ.fmtDate, YJ.init) ──
-const F = function(n){ return '¥'+Number(n||0).toLocaleString(); };
-const STATUS = {pending:'待支付',paid:'已支付',checked_in:'已入住',completed:'已完成',cancelled:'已取消'};
+var BADGE={pending:'badge-pending',paid:'badge-paid',checked_in:'badge-checked',completed:'badge-done'};
+var LABEL={pending:'待支付',paid:'已支付',checked_in:'已入住',completed:'已完成'};
 
-var page=1, pageSize=10, totalCount=0;
-
-function setDatePreset(range, el) {
-  document.querySelectorAll('.date-preset').forEach(function(p){ p.classList.remove('active'); });
-  el.classList.add('active');
-  var now = new Date();
-  var from = '', to = '';
-  if (range === 'today') {
-    from = to = YJ.fmtDate(now);
-  } else if (range === 'week') {
-    var dow = now.getDay() || 7;
-    var mon = new Date(now); mon.setDate(now.getDate() - dow + 1);
-    var sun = new Date(now); sun.setDate(now.getDate() + (7 - dow));
-    from = YJ.fmtDate(mon); to = YJ.fmtDate(sun);
-  } else if (range === 'month') {
-    from = now.getFullYear()+'-'+(now.getMonth()+1).toString().padStart(2,'0')+'-01';
-    to = YJ.fmtDate(now);
-  }
-  document.getElementById('dateFrom').value = from;
-  document.getElementById('dateTo').value = to;
-  if (range === 'all') { document.getElementById('dateFrom').value = ''; document.getElementById('dateTo').value = ''; }
-  page = 1; loadOrders();
-}
-
-async function loadOrders(){
-  var params = {};
-  var s = document.getElementById('search').value.trim();
-  if(s) params.keyword = s;
-  var st = document.getElementById('status').value;
-  if(st) params.status = st;
-  var df = document.getElementById('dateFrom').value;
-  if(df) params.start_date = df;
-  var dt = document.getElementById('dateTo').value;
-  if(dt) params.end_date = dt;
-  params.page = page;
-  params.page_size = pageSize;
-
-  try{
-    var j = await YJ.api('/api/orders', { params: params });
-    var items = YJ.parseItems(j);
-    totalCount = j.data && j.data.total ? j.data.total : items.length;
-
-    // Stat cards
-    var stats = {total:totalCount, paid:0, pending:0};
-    items.forEach(function(i){ stats.paid += i.status==='paid'||i.status==='checked_in'?1:0; stats.pending += i.status==='pending'?1:0; });
-    document.getElementById('statCards').innerHTML = [
-      {icon:'📋',cls:'gold',val:totalCount,label:'查询结果'},
-      {icon:'✅',cls:'green',val:stats.paid,label:'已支付/入住'},
-      {icon:'💰',cls:'blue',val:F(items.reduce(function(s,i){return s+(i.total_price||0)},0)),label:'金额合计'},
-      {icon:'🕐',cls:'red',val:stats.pending,label:'待支付'}
-    ].map(function(s){return '<div class="stat-card"><div class="stat-icon '+s.cls+'">'+s.icon+'</div><div class="stat-info"><div class="stat-value">'+s.val+'</div><div class="stat-label">'+s.label+'</div></div></div>';}).join('');
-
-    // Table
-    document.getElementById('ordersBody').innerHTML = items.length ? items.map(function(o){
-      var d = new Date(o.created_at||o.checkin_date||''), ds = YJ.fmtDate(d);
-      return '<tr>'+
-        '<td><a href="javascript:void(0)" onclick="showDetail(\''+o.id+'\')" style="color:var(--gold-dark);font-weight:600;">'+(o.order_no||o.id)+'</a></td>'+
-        '<td>'+(o.guest_name||'-')+'</td>'+
-        '<td>'+(o.room_type||'-')+'</td>'+
-        '<td>'+(o.checkin_date||'-')+' ~ '+(o.checkout_date||'-')+'</td>'+
-        '<td class="text-right" style="font-weight:600;">'+F(o.total_price)+'</td>'+
-        '<td><span class="status-tag '+(o.status||'')+'">'+(STATUS[o.status]||o.status)+'</span></td>'+
-        '<td>'+ds+'</td>'+
-        '<td><button class="btn btn-outline btn-sm" onclick="showDetail(\''+o.id+'\')">详情</button></td>'+
-      '</tr>';
-    }).join('') : '<tr><td colspan="8"><div class="empty-state"><span class="empty-icon">📋</span><div class="empty-text">暂无订单数据</div><div class="empty-hint">调整筛选条件或创建新订单</div></div></td></tr>';
-
-    // Pagination
-    var tp = Math.ceil(totalCount/pageSize);
-    var pag = '';
-    pag += '<button class="page-btn" '+(page<=1?'disabled':'')+' onclick="goPage('+(page-1)+')">&laquo;</button>';
-    for(var i=Math.max(1,page-2);i<=Math.min(tp,page+2);i++)
-      pag += '<button class="page-btn'+(i===page?' active':'')+'" onclick="goPage('+i+')">'+i+'</button>';
-    pag += '<button class="page-btn" '+(page>=tp?'disabled':'')+' onclick="goPage('+(page+1)+')">&raquo;</button>';
-    pag += '<span style="font-size:12px;color:var(--text-muted);margin-left:12px;">共'+totalCount+'条</span>';
-    document.getElementById('pagination').innerHTML = pag;
-  }catch(e){
-    document.getElementById('ordersBody').innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--error);padding:20px;">加载失败: '+e.message+'</td></tr>';
-  }
-}
-
-function goPage(p){
-  var tp = Math.ceil(totalCount/pageSize);
-  if(p<1||p>tp) return;
-  page=p; loadOrders();
-}
-
-function resetFilters(){
-  document.getElementById('search').value='';
-  document.getElementById('status').value='';
-  document.getElementById('dateFrom').value='';
-  document.getElementById('dateTo').value='';
-  document.querySelectorAll('.date-preset').forEach(function(p){ p.classList.remove('active'); });
-  var allPreset = document.querySelector('.date-preset[data-range="all"]');
-  if (allPreset) allPreset.classList.add('active');
-  page=1; loadOrders();
-}
-
-async function showDetail(id){
-  try{
-    var o = await YJ.get('/api/orders/'+id);
-    document.getElementById('detailContent').innerHTML = 
-      '<div class="detail-row"><span class="detail-label">订单编号</span><span class="detail-value">'+(o.order_no||id)+'</span></div>'+
-      '<div class="detail-row"><span class="detail-label">客人</span><span class="detail-value">'+(o.guest_name||'-')+' ('+(o.guest_phone||'-')+')</span></div>'+
-      '<div class="detail-row"><span class="detail-label">房型</span><span class="detail-value">'+(o.room_type||'-')+'</span></div>'+
-      '<div class="detail-row"><span class="detail-label">入住</span><span class="detail-value">'+(o.checkin_date||'-')+'</span></div>'+
-      '<div class="detail-row"><span class="detail-label">退房</span><span class="detail-value">'+(o.checkout_date||'-')+'</span></div>'+
-      '<div class="detail-row"><span class="detail-label">金额</span><span class="detail-value" style="font-weight:700;color:var(--gold-dark);">'+F(o.total_price)+'</span></div>'+
-      '<div class="detail-row"><span class="detail-label">状态</span><span class="detail-value"><span class="status-tag '+(o.status||'')+'">'+(STATUS[o.status]||o.status||'-')+'</span></span></div>';
-    document.getElementById('detailModal').classList.add('show');
-  }catch(e){
-    YJ.toast('加载详情失败，请重试', 'error');
-  }
-}
-
-function closeModal(){ document.getElementById('detailModal').classList.remove('show'); }
-
-function exportCSV(){
-  var rows=[['订单号','客人','房型','入住','退房','金额','状态']];
-  document.querySelectorAll('#ordersBody tr').forEach(function(r){
-    if(r.cells.length<7) return;
-    rows.push([].map.call(r.cells,function(c,i){return i<7?c.textContent.trim():''}).filter(Boolean));
+fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},
+  body:JSON.stringify({username:'admin',password:'admin123'})})
+.then(function(r){return r.json()})
+.then(function(j){
+  var tok=j.access_token;
+  return fetch('/api/orders?page_size=100',{headers:{'Authorization':'Bearer '+tok}});
+})
+.then(function(r){return r.json()})
+.then(function(j){
+  var items=j.items||[];
+  if(!items.length){document.getElementById('table').innerHTML='<div class=empty>暂无订单</div>';return}
+  var st=items.reduce(function(a,i){a.total++;if(i.status==='pending')a.pending++;if(i.status==='paid'||i.status==='checked_in')a.active++;return a},{total:0,pending:0,active:0});
+  document.getElementById('stats').innerHTML='<div class=stat><div class=stat-val>'+st.total+'</div><div class=stat-lbl>总订单</div></div><div class=stat><div class=stat-val style=color:#d48806>'+st.pending+'</div><div class=stat-lbl>待支付</div></div><div class=stat><div class=stat-val style=color:#096dd9>'+st.active+'</div><div class=stat-lbl>进行中</div></div>';
+  var h='<table><tr><th>订单号</th><th>客人</th><th>酒店</th><th>入住</th><th>离店</th><th>金额</th><th>状态</th></tr>';
+  items.forEach(function(o){
+    h+='<tr><td>'+(o.order_no||'#')+'</td><td>'+o.guest_name+'</td><td>'+o.hotel_name+'</td><td>'+o.checkin_date+'</td><td>'+o.checkout_date+'</td><td>¥'+(o.total_price||0)+'</td><td><span class=badge '+(BADGE[o.status]||'')+'>'+(LABEL[o.status]||o.status)+'</span></td></tr>';
   });
-  var csv = '\uFEFF'+rows.map(function(r){return r.map(function(c){return '"'+c.replace(/"/g,'""')+'"'}).join(',')}).join('\n');
-  var b = new Blob([csv],{type:'text/csv'});
-  var a = document.createElement('a'); a.href=URL.createObjectURL(b); a.download='orders_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
-}
-
-YJ.init().then(function(){ loadOrders(); });
+  h+='</table>';
+  document.getElementById('table').innerHTML=h;
+})
+.catch(function(e){document.getElementById('table').innerHTML='<div class=empty>加载失败: '+e.message+'</div>'});
 </script>
-</body>
-</html>
+</body></html>

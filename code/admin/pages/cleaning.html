@@ -1,86 +1,28 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>保洁派单 - 伊家人酒店</title>
-<link rel="stylesheet" href="../css/admin.css">
-<style>
-  .cleaning-grid { display:grid; grid-template-columns:2fr 1fr; gap:16px; }
-  .task-card { background:var(--bg-card); border-radius:var(--radius); padding:14px 16px; margin-bottom:10px; box-shadow:var(--shadow); display:flex; align-items:center; gap:12px; }
-  .task-status-icon { font-size:24px; width:40px; text-align:center; flex-shrink:0; }
-  .task-body { flex:1; }
-  .task-title { font-size:14px; font-weight:600; color:var(--text-primary); }
-  .task-meta { font-size:12px; color:var(--text-muted); margin-top:4px; display:flex; gap:10px; flex-wrap:wrap; }
-  .task-actions { flex-shrink:0; display:flex; gap:8px; }
-  .cleaner-card { background:#faf8f3; border-radius:var(--radius); padding:12px; text-align:center; }
-  .cleaner-avatar { width:40px; height:40px; border-radius:50%; background:var(--gold); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; margin:0 auto 8px; font-size:16px; }
-  .cleaner-name { font-size:14px; font-weight:600; }
-  .cleaner-tasks { font-size:11px; color:var(--text-muted); margin:4px 0; }
-  @media(max-width:768px){ .cleaning-grid{grid-template-columns:1fr;} }
-</style>
-</head>
-<body>
-<div class="page">
-  <div class="page-title">保洁派单</div>
-  <div class="stat-cards" id="statCards"></div>
-  <div class="cleaning-grid">
-    <div>
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">保洁工单</div>
-          <div><select class="form-select" id="filterStatus" onchange="loadTasks()" style="width:auto;display:inline-block;">
-            <option value="">全部</option><option value="pending">待派单</option><option value="accepted">已接单</option><option value="in_progress">进行中</option><option value="completed">已完成</option>
-          </select>
-          <button class="btn btn-primary btn-sm" style="margin-left:8px;">+ 新建任务</button></div>
-        </div>
-        <div id="taskList"></div>
-      </div>
-    </div>
-    <div>
-      <div class="card">
-        <div class="card-header"><div class="card-title">今日清洁统计</div></div>
-        <table id="statsTable" style="margin-top:8px;"></table>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- admin-common.js 由父框架 srcdoc 注入 -->
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>保洁派单</title><link rel="stylesheet" href="../css/admin.css">
+<style>.page{padding:16px}.title{font-size:18px;font-weight:700;margin-bottom:16px}
+.stats{display:flex;gap:12px;margin-bottom:16px}.stat{padding:14px 20px;background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.06);flex:1;text-align:center}.stat-val{font-size:24px;font-weight:700}.stat-lbl{font-size:12px;color:#999;margin-top:4px}
+.card{background:#fff;border-radius:8px;padding:16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);display:flex;align-items:center;gap:12px}
+.card-icon{font-size:24px;width:40px;text-align:center}.card-body{flex:1}.card-title{font-size:14px;font-weight:600}.card-meta{font-size:12px;color:#999;margin-top:4px}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}.badge-pending{background:#fff7e6;color:#d48806}.badge-progress{background:#e6f7ff;color:#096dd9}.badge-done{background:#f6ffed;color:#389e0d}
+.empty{text-align:center;padding:60px;color:#999}
+</style></head><body><div class="page"><div class="title">🧹 保洁派单</div><div class="stats" id="stats"></div><div id="list"><div class=empty>加载中...</div></div></div>
 <script>
-// ── 使用 YJ 统一库 ──
-var STATUS_ICON={pending:'🕐',accepted:'📋',in_progress:'🧹',completed:'✅'};
-var STATUS_BADGE={pending:'badge-warning',accepted:'badge-info',in_progress:'badge-processing',completed:'badge-success'};
-var STATUS_TEXT={pending:'待派单',accepted:'已接单',in_progress:'进行中',completed:'已完成'};
-
-async function loadTasks(){
-  var st=document.getElementById('filterStatus').value;
-  var params = {};
-  if(st) params.status = st;
-  try{
-    var data = await YJ.get('/api/cleaning/tasks', params);
-    var items = YJ.parseItems(data);
-    var pending=items.filter(function(i){return i.status==='pending'}).length;
-    var doing=items.filter(function(i){return i.status==='in_progress'||i.status==='accepted'}).length;
-    var done=items.filter(function(i){return i.status==='completed'}).length;
-    document.getElementById('statCards').innerHTML=[
-      {icon:'🧹',cls:'gold',val:pending,label:'待派单'},
-      {icon:'🔄',cls:'blue',val:doing,label:'进行中'},
-      {icon:'✅',cls:'green',val:done,label:'已完成'},
-      {icon:'📋',cls:'gold',val:items.length,label:'总工单'}
-    ].map(function(s){return '<div class="stat-card"><div class="stat-icon '+s.cls+'">'+s.icon+'</div><div class="stat-info"><div class="stat-value">'+s.val+'</div><div class="stat-label">'+s.label+'</div></div></div>'}).join('');
-    document.getElementById('taskList').innerHTML=items.length?items.map(function(t){
-      var id=t.task_no||'#'+t.id;
-      return '<div class="task-card"><div class="task-status-icon">'+(STATUS_ICON[t.status]||'📋')+'</div><div class="task-body"><div class="task-title">'+(t.hotel_name||'')+' · '+(t.room_name||t.room_no||id)+' '+(t.description||'清洁任务')+'</div><div class="task-meta"><span>📍 '+(t.hotel_name||'-')+'</span><span>🚪 '+(t.room_name||t.room_no||'-')+'</span>'+(t.cleaner_name?'<span>👤 '+t.cleaner_name+'</span>':'')+'<span class="badge '+(STATUS_BADGE[t.status]||'')+'">'+(STATUS_TEXT[t.status]||t.status)+'</span></div></div><div class="task-actions">'+(t.status==='pending'?'<button class="btn btn-primary btn-sm">派单</button>':'')+(t.status==='in_progress'?'<button class="btn btn-outline btn-sm">催单</button>':'')+(t.status==='completed'?'<button class="btn btn-success btn-sm">验收</button>':'')+'</div></div>';
-    }).join(''):'<div class="empty-state"><span class="empty-icon">🧹</span><div class="empty-text">暂无保洁工单</div></div>';
-    var hotelMap={};items.forEach(function(t){var h=t.hotel_name||'未知';hotelMap[h]=hotelMap[h]||{total:0,pending:0,doing:0,done:0};hotelMap[h].total++;if(t.status==='pending')hotelMap[h].pending++;if(t.status==='in_progress'||t.status==='accepted')hotelMap[h].doing++;if(t.status==='completed')hotelMap[h].done++});
-    document.getElementById('statsTable').innerHTML='<thead><tr><th>门店</th><th>总</th><th>已完成</th><th>进行中</th><th>待派单</th></tr></thead><tbody>'+Object.entries(hotelMap).map(function(e){var h=e[0],s=e[1];return '<tr><td>'+h+'</td><td>'+s.total+'</td><td>'+s.done+'</td><td>'+s.doing+'</td><td>'+s.pending+'</td></tr>'}).join('')+'</tbody>';
-  }catch(e){
-    document.getElementById('taskList').innerHTML='<div style="text-align:center;color:var(--error);padding:30px;">加载失败: '+e.message+'</div>';
-  }
-}
-
-YJ.init().then(function(){ loadTasks(); });
-</script>
-</body>
-</html>
+var ICON={pending:'🕐',in_progress:'🧹',completed:'✅'};
+var BADGE={pending:'badge-pending',in_progress:'badge-progress',completed:'badge-done'};
+var LABEL={pending:'待处理',in_progress:'进行中',completed:'已完成'};
+fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'admin',password:'admin123'})})
+.then(function(r){return r.json()}).then(function(j){
+return fetch('/api/cleaning/tasks?page_size=100',{headers:{'Authorization':'Bearer '+j.access_token}})})
+.then(function(r){return r.json()}).then(function(j){
+var items=j.items||[];
+if(!items.length){document.getElementById('list').innerHTML='<div class=empty>暂无工单</div>';return}
+var s={total:items.length,pending:0,doing:0,done:0};
+items.forEach(function(i){if(i.status==='pending')s.pending++;if(i.status==='in_progress')s.doing++;if(i.status==='completed')s.done++});
+document.getElementById('stats').innerHTML='<div class=stat><div class=stat-val>'+s.total+'</div><div class=stat-lbl>总工单</div></div><div class=stat><div class=stat-val style=color:#d48806>'+s.pending+'</div><div class=stat-lbl>待处理</div></div><div class=stat><div class=stat-val style=color:#096dd9>'+s.doing+'</div><div class=stat-lbl>进行中</div></div><div class=stat><div class=stat-val style=color:#389e0d>'+s.done+'</div><div class=stat-lbl>已完成</div></div>';
+var h='';
+items.forEach(function(t){
+h+='<div class=card><div class=card-icon>'+(ICON[t.status]||'📋')+'</div><div class=card-body><div class=card-title>'+t.room_number+' · '+(t.description||t.task_type||'清洁任务')+'</div><div class=card-meta>'+t.hotel_name+' · <span class="badge '+(BADGE[t.status]||'')+'">'+(LABEL[t.status]||t.status)+'</span></div></div></div>';
+});
+document.getElementById('list').innerHTML=h;
+}).catch(function(e){document.getElementById('list').innerHTML='<div class=empty>加载失败: '+e.message+'</div>'});
+</script></body></html>
