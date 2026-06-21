@@ -1,0 +1,327 @@
+{
+  "hotels": [
+    {
+      "hotel_id": 1,
+      "name": "伊家智慧酒店",
+      "desc": "伊家智慧酒店位于城市核心商圈，采用全套智能管理系统，从入住到退房全程无接触。酒店以暖金色调为主，融合现代科技与东方美学，为每一位宾客打造温馨、便捷、安全的住宿体验。配备智能门锁、语音客房控制、自动入住终端等前沿设施。",
+      "cover": "https://picsum.photos/seed/yjr-hotel-cover/1200/600",
+      "features": [
+        "全程无接触入住",
+        "智能语音客房控制",
+        "自助入住终端",
+        "24小时智能安防",
+        "微信小程序一键操作",
+        "充电桩配套"
+      ],
+      "facilities": [
+        "免费高速WiFi",
+        "地下停车场（含充电桩）",
+        "健身房（24小时）",
+        "自助洗衣房",
+        "商务会议室",
+        "大堂咖啡吧",
+        "行李寄存柜",
+        "公共休息区"
+      ],
+      "checkin_time": "14:00",
+      "checkout_time": "12:00"
+    }
+  ],
+  "galleries": [
+    {
+      "room_id": 1,
+      "room_name": "标准大床房",
+      "room_type": "大床房",
+      "images": [
+        "https://picsum.photos/seed/yjr-r1-1/800/600",
+        "https://picsum.photos/seed/yjr-r1-2/800/600",
+        "https://picsum.photos/seed/yjr-r1-3/800/600",
+        "https://picsum.photos/seed/yjr-r1-4/800/600",
+        "https://picsum.photos/seed/yjr-r1-5/800/600",
+        "https://picsum.photos/seed/yjr-r1-6/800/600",
+        "https://picsum.photos/seed/yjr-r1-7/800/600"
+      ],
+      "video": "",
+      "vr_url": "",
+      "desc": "温馨舒适的标准大床房，配备1.8米大床，暖金色调设计，超大落地窗让阳光洒满房间。适合商务出行和情侣度假。",
+      "amenities": [
+        "免费WiFi",
+        "中央空调",
+        "55寸智能电视",
+        "电子保险箱",
+        "智能门锁",
+        "电热水壶",
+        "迷你冰箱",
+        "吹风机",
+        "智能马桶",
+        "电动窗帘"
+      ],
+      "perks": [
+        "欢迎果盘",
+        "两瓶矿泉水",
+        "精品茶包"
+      ]
+    },
+    {
+      "room_id": 2,
+      "room_name": "豪华双床房",
+      "room_type": "双床房",
+      "images": [
+        "https://picsum.photos/seed/yjr-r2-1/800/600",
+        "https://picsum.photos/seed/yjr-r2-2/800/600",
+        "https://picsum.photos/seed/yjr-r2-3/800/600",
+        "https://picsum.photos/seed/yjr-r2-4/800/600",
+        "https://picsum.photos/seed/yjr-r2-5/800/600",
+        "https://picsum.photos/seed/yjr-r2-6/800/600",
+        "https://picsum.photos/seed/yjr-r2-7/800/600"
+      ],
+      "video": "",
+      "vr_url": "",
+      "desc": "宽敞明亮的豪华双床房，配备两张1.5米大床，独立工作区与休闲区分离设计。适合家庭出行或结伴旅行。",
+      "amenities": [
+        "免费WiFi",
+        "中央空调",
+        "65寸智能电视",
+        "电子保险箱",
+        "智能门锁",
+        "电热水壶",
+        "迷你冰箱",
+        "吹风机",
+        "智能马桶",
+        "电动窗帘",
+        "浴缸",
+        "办公桌"
+      ],
+      "perks": [
+        "欢迎果盘",
+        "四瓶矿泉水",
+        "精品茶包",
+        "免费停车"
+      ]
+    },
+    {
+      "room_id": 3,
+      "room_name": "行政套房",
+      "room_type": "套房",
+      "images": [
+        "https://picsum.photos/seed/yjr-r3-1/800/600",
+        "https://picsum.photos/seed/yjr-r3-2/800/600",
+        "https://picsum.photos/seed/yjr-r3-3/800/600",
+        "https://picsum.photos/seed/yjr-r3-4/800/600",
+        "https://picsum.photos/seed/yjr-r3-5/800/600",
+        "https://picsum.photos/seed/yjr-r3-6/800/600",
+        "https://picsum.photos/seed/yjr-r3-7/800/600",
+        "https://picsum.photos/seed/yjr-r3-8/800/600"
+      ],
+      "video": "",
+      "vr_url": "",
+      "desc": "尊贵行政套房，独立客厅+卧室布局，180度城市天际线景观。配备Nespresso咖啡机、Bose音响等高端设施，享受行政楼层专属服务。",
+      "amenities": [
+        "免费WiFi",
+        "独立空调",
+        "75寸智能电视",
+        "电子保险箱",
+        "智能门锁",
+        "Nespresso咖啡机",
+        "迷你吧",
+        "Bose蓝牙音响",
+        "智能马桶",
+        "电动窗帘",
+        "独立浴缸",
+        "雨淋花洒",
+        "办公桌",
+        "会客沙发区"
+      ],
+      "perks": [
+        "欢迎果盘+红酒",
+        "免费接机一次",
+        "行政酒廊使用权",
+        "延迟退房至14:00",
+        "每日夜床服务"
+      ]
+    },
+    {
+      "room_id": 4,
+      "room_name": "亲子家庭房",
+      "room_type": "家庭房",
+      "images": [
+        "https://picsum.photos/seed/yjr-r4-1/800/600",
+        "https://picsum.photos/seed/yjr-r4-2/800/600",
+        "https://picsum.photos/seed/yjr-r4-3/800/600",
+        "https://picsum.photos/seed/yjr-r4-4/800/600",
+        "https://picsum.photos/seed/yjr-r4-5/800/600",
+        "https://picsum.photos/seed/yjr-r4-6/800/600",
+        "https://picsum.photos/seed/yjr-r4-7/800/600"
+      ],
+      "video": "",
+      "vr_url": "",
+      "desc": "充满童趣的亲子家庭房，1.8米大床+1.2米儿童床，配备儿童专属洗漱用品、绘本和玩具。独立分区设计让大人小孩各有空间。",
+      "amenities": [
+        "免费WiFi",
+        "中央空调",
+        "55寸智能电视",
+        "电子保险箱",
+        "智能门锁",
+        "电热水壶",
+        "迷你冰箱",
+        "儿童洗漱套装",
+        "智能马桶",
+        "电动窗帘",
+        "儿童拖鞋浴袍",
+        "绘本玩具"
+      ],
+      "perks": [
+        "欢迎果盘+儿童零食",
+        "四瓶矿泉水",
+        "儿童洗漱礼包",
+        "免费加床"
+      ]
+    },
+    {
+      "room_id": 5,
+      "room_name": "商务大床房",
+      "room_type": "大床房",
+      "images": [
+        "https://picsum.photos/seed/yjr-r5-1/800/600",
+        "https://picsum.photos/seed/yjr-r5-2/800/600",
+        "https://picsum.photos/seed/yjr-r5-3/800/600",
+        "https://picsum.photos/seed/yjr-r5-4/800/600",
+        "https://picsum.photos/seed/yjr-r5-5/800/600",
+        "https://picsum.photos/seed/yjr-r5-6/800/600",
+        "https://picsum.photos/seed/yjr-r5-7/800/600"
+      ],
+      "video": "",
+      "vr_url": "",
+      "desc": "专为商务人士设计的大床房，配备人体工学办公椅和宽大办公桌，高速WiFi确保远程办公无忧。安静楼层保证优质睡眠。",
+      "amenities": [
+        "免费WiFi（千兆）",
+        "中央空调",
+        "55寸智能电视",
+        "电子保险箱",
+        "智能门锁",
+        "电热水壶",
+        "迷你冰箱",
+        "吹风机",
+        "人体工学办公椅",
+        "宽大办公桌",
+        "多口USB充电站",
+        "护眼台灯"
+      ],
+      "perks": [
+        "欢迎果盘",
+        "免费打印10页",
+        "商务会议室1小时",
+        "两瓶矿泉水"
+      ]
+    }
+  ],
+  "surroundings": [
+    {
+      "name": "湘味人家",
+      "type": "餐饮",
+      "address": "酒店东侧100米",
+      "distance": "约100m",
+      "rating": 4.7,
+      "image": "https://picsum.photos/seed/yjr-surround-1/400/300",
+      "desc": "地道湘菜馆，招牌剁椒鱼头、小炒黄牛肉广受好评",
+      "lat": 28.228,
+      "lng": 112.938,
+      "phone": ""
+    },
+    {
+      "name": "星巴克咖啡",
+      "type": "餐饮",
+      "address": "商业广场1楼",
+      "distance": "约200m",
+      "rating": 4.3,
+      "image": "https://picsum.photos/seed/yjr-surround-2/400/300",
+      "desc": "连锁咖啡店，提供各类咖啡饮品和轻食",
+      "lat": 28.229,
+      "lng": 112.937,
+      "phone": ""
+    },
+    {
+      "name": "万象汇购物中心",
+      "type": "购物",
+      "address": "中山路188号",
+      "distance": "约500m",
+      "rating": 4.6,
+      "image": "https://picsum.photos/seed/yjr-surround-3/400/300",
+      "desc": "大型综合购物中心，集购物、餐饮、娱乐于一体",
+      "lat": 28.23,
+      "lng": 112.936,
+      "phone": ""
+    },
+    {
+      "name": "地铁2号线五一广场站",
+      "type": "交通",
+      "address": "五一大道",
+      "distance": "约300m",
+      "rating": 4.5,
+      "image": "https://picsum.photos/seed/yjr-surround-4/400/300",
+      "desc": "步行3分钟可达，直达高铁站和机场",
+      "lat": 28.227,
+      "lng": 112.939,
+      "phone": ""
+    },
+    {
+      "name": "岳麓山风景区",
+      "type": "景点",
+      "address": "岳麓区登高路",
+      "distance": "约3km",
+      "rating": 4.8,
+      "image": "https://picsum.photos/seed/yjr-surround-5/400/300",
+      "desc": "国家5A级旅游景区，拥有千年学府岳麓书院",
+      "lat": 28.185,
+      "lng": 112.931,
+      "phone": ""
+    },
+    {
+      "name": "万达影城",
+      "type": "娱乐",
+      "address": "商业广场5楼",
+      "distance": "约200m",
+      "rating": 4.4,
+      "image": "https://picsum.photos/seed/yjr-surround-6/400/300",
+      "desc": "IMAX影厅，最新院线大片",
+      "lat": 28.229,
+      "lng": 112.937,
+      "phone": ""
+    },
+    {
+      "name": "市中心医院",
+      "type": "医疗",
+      "address": "解放路256号",
+      "distance": "约1km",
+      "rating": 4.2,
+      "image": "https://picsum.photos/seed/yjr-surround-7/400/300",
+      "desc": "三甲综合医院，24小时急诊",
+      "lat": 28.22,
+      "lng": 112.94,
+      "phone": ""
+    }
+  ],
+  "reviews_show": [
+    {
+      "user_name": "张先生",
+      "rating": 5,
+      "content": "全智能入住体验太棒了！从手机开门到语音控制灯光窗帘，科技感满满。房间干净整洁，床品舒适，下次还来！",
+      "images": [],
+      "date": "2025-06-15"
+    },
+    {
+      "user_name": "李女士",
+      "rating": 5,
+      "content": "带小朋友入住的亲子房，孩子特别喜欢房间里的玩具和绘本。服务很贴心，还送了儿童洗漱礼包。",
+      "images": [],
+      "date": "2025-06-10"
+    },
+    {
+      "user_name": "王总",
+      "rating": 4,
+      "content": "出差常住这里，商务房设施齐全，网速快，办公桌够大。充电桩也很方便，电动车出行无压力。",
+      "images": [],
+      "date": "2025-06-08"
+    }
+  ]
+}
