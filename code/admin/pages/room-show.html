@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>房型展示 · 维也纳标准</title>
+<style>
+:root{--gold:#C5A46B;--gold-dark:#B8933B;--gold-light:#E8D5A3;--bg:#1e1c18;--bg-card:#252218;--bg-card2:#2c2416;--text:#F5EDD6;--text-dim:#A09780;--red:#E8553D;--red-tag:#C0392B;--tag-bg:rgba(196,160,75,.15);--radius:12px;--shadow:0 2px 16px rgba(0,0,0,.3)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px}
+/* Header */
+.header{padding:16px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(196,160,75,.15)}
+.header-back{color:var(--gold);font-size:20px;cursor:pointer;text-decoration:none}
+.header-title{font-size:17px;font-weight:700}
+.header-sub{font-size:12px;color:var(--text-dim);margin-left:auto}
+/* Hotel Info Banner */
+.hotel-banner{margin:16px;padding:20px;background:linear-gradient(135deg,var(--bg-card),var(--bg-card2));border-radius:var(--radius);border:1px solid rgba(196,160,75,.12);position:relative;overflow:hidden}
+.hotel-banner::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold),var(--gold-light),var(--gold-dark))}
+.hotel-name{font-size:20px;font-weight:700;color:var(--gold);margin-bottom:6px}
+.hotel-desc{font-size:13px;color:var(--text-dim);line-height:1.6;margin-bottom:12px}
+.hotel-features{display:flex;flex-wrap:wrap;gap:6px}
+.ftag{font-size:11px;padding:3px 10px;background:var(--tag-bg);color:var(--gold-light);border-radius:20px;border:1px solid rgba(196,160,75,.2)}
+/* Room Cards */
+.room-list{padding:0 16px;display:flex;flex-direction:column;gap:16px}
+.room-card{background:var(--bg-card);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);border:1px solid rgba(196,160,75,.08);transition:transform .2s,border-color .2s}
+.room-card:hover{transform:translateY(-2px);border-color:rgba(196,160,75,.2)}
+/* Image Placeholder — Warm Gold Gradient */
+.room-img{height:200px;position:relative;overflow:hidden}
+.room-img::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,#2c2416 0%,#3d3020 30%,#5a4a2a 60%,#3d3020 80%,#1e1c18 100%)}
+.room-img::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 40% 35%,rgba(212,168,83,.25) 0%,transparent 70%),radial-gradient(ellipse at 70% 60%,rgba(196,160,75,.15) 0%,transparent 60%),linear-gradient(to bottom,transparent 60%,rgba(0,0,0,.5) 100%)}
+.room-img-gold{position:absolute;top:16px;right:16px;font-size:11px;font-weight:700;color:var(--gold);background:rgba(0,0,0,.5);padding:4px 10px;border-radius:12px;z-index:1;border:1px solid rgba(196,160,75,.3)}
+/* Room Level Badge */
+.room-level{position:absolute;top:16px;left:16px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:4px;z-index:1}
+.level-standard{background:rgba(196,160,75,.2);color:var(--gold-light)}
+.level-superior,.level-高级{background:rgba(196,160,75,.25);color:#E8D5A3}
+.level-business,.level-商务{background:rgba(0,123,255,.2);color:#7EB8FF}
+.level-deluxe,.level-豪华{background:rgba(196,160,75,.3);color:#F0C040}
+.level-executive,.level-行政{background:rgba(192,57,43,.2);color:#E8A090}
+.level-舒适{background:rgba(46,204,113,.2);color:#82E0AA}
+.level-雅致{background:rgba(155,89,182,.2);color:#CBA0E0}
+.level-轻奢{background:rgba(196,160,75,.3);color:#F0C040}
+/* Room Info */
+.room-info{padding:16px}
+.room-name-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.room-name{font-size:17px;font-weight:700}
+.room-name-en{font-size:11px;color:var(--text-dim)}
+.room-tags{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}
+.rtag{font-size:10px;padding:2px 8px;border-radius:10px}
+.rtag-hot{background:rgba(232,85,61,.15);color:var(--red);border:1px solid rgba(232,85,61,.2)}
+.rtag-gold{background:var(--tag-bg);color:var(--gold-light);border:1px solid rgba(196,160,75,.2)}
+/* Core Info Row */
+.core-info{display:flex;gap:16px;margin:10px 0;padding:10px 0;border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06)}
+.core-item{text-align:center;flex:1}
+.core-item .val{font-size:14px;font-weight:600;color:var(--gold-light)}
+.core-item .lbl{font-size:10px;color:var(--text-dim);margin-top:2px}
+/* Desc */
+.room-desc{font-size:13px;color:var(--text-dim);line-height:1.6;margin:10px 0}
+/* Facilities — Three Levels */
+.facilities{margin:10px 0}
+.fac-section{margin-bottom:8px}
+.fac-label{font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600}
+.fac-icons{display:flex;flex-wrap:wrap;gap:6px}
+.fac-icon{font-size:12px;padding:4px 10px;background:rgba(255,255,255,.04);border-radius:6px;color:var(--text-dim);display:flex;align-items:center;gap:4px;border:1px solid rgba(255,255,255,.05)}
+.fac-icon .fi{font-size:14px}
+.fac-icon.has{color:#AAC080;background:rgba(170,192,128,.08);border-color:rgba(170,192,128,.15)}
+/* Price Section */
+.price-row{display:flex;align-items:baseline;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06)}
+.price-left{display:flex;align-items:baseline;gap:6px}
+.price-current{font-size:28px;font-weight:800;color:var(--red);font-family:'Helvetica Neue',sans-serif}
+.price-unit{font-size:12px;color:var(--text-dim)}
+.price-original{font-size:13px;color:var(--text-dim);text-decoration:line-through}
+.price-discount{font-size:11px;font-weight:700;padding:2px 8px;background:rgba(232,85,61,.15);color:var(--red);border-radius:4px}
+/* Perks */
+.perks{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.perk{font-size:10px;padding:2px 8px;background:rgba(46,204,113,.08);color:#82E0AA;border-radius:10px}
+/* Bottom Booking Bar */
+.bottom-bar{position:fixed;bottom:0;left:0;right:0;background:rgba(30,28,24,.95);backdrop-filter:blur(20px);border-top:1px solid rgba(196,160,75,.15);padding:12px 16px;display:flex;align-items:center;gap:12px;z-index:100}
+.bottom-price{flex:1}
+.bottom-price .bp{font-size:24px;font-weight:800;color:var(--red)}
+.bottom-price .bpu{font-size:11px;color:var(--text-dim)}
+.btn-book{flex:none;padding:12px 36px;background:linear-gradient(135deg,var(--gold-dark),var(--gold));color:#1a1a1a;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.btn-book:hover{opacity:.9}
+/* Loading / Empty */
+.loading{padding:60px 20px;text-align:center;color:var(--text-dim);font-size:14px}
+/* Section Title */
+.section-title{font-size:15px;font-weight:700;color:var(--gold-light);padding:16px 16px 8px;display:flex;align-items:center;gap:8px}
+/* Surroundings Grid */
+.surround-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;padding:0 16px 16px}
+.surround-card{background:var(--bg-card);border-radius:8px;padding:12px;text-align:center;border:1px solid rgba(255,255,255,.05)}
+.surround-card .stype{font-size:20px;margin-bottom:4px}
+.surround-card .sname{font-size:13px;font-weight:600;margin-bottom:2px}
+.surround-card .sdist{font-size:10px;color:var(--text-dim)}
+.surround-card .srate{font-size:11px;color:var(--gold)}
+/* Reviews */
+.review-list{padding:0 16px 16px;display:flex;flex-direction:column;gap:10px}
+.review-card{background:var(--bg-card);border-radius:8px;padding:14px;border:1px solid rgba(255,255,255,.05)}
+.review-header{display:flex;justify-content:space-between;margin-bottom:6px}
+.review-user{font-size:13px;font-weight:600}
+.review-date{font-size:11px;color:var(--text-dim)}
+.review-stars{color:var(--gold);font-size:12px;margin-bottom:4px}
+.review-text{font-size:13px;color:var(--text-dim);line-height:1.5}
+/* Responsive */
+@media(min-width:768px){
+  .room-list{display:grid;grid-template-columns:repeat(2,1fr);padding:0 24px;gap:20px}
+  .room-card{display:flex;flex-direction:column}
+  .room-img{height:240px}
+  .hotel-banner{margin:20px 24px;padding:24px}
+  .section-title{padding:20px 24px 12px}
+  .surround-grid{padding:0 24px 20px}
+  .review-list{padding:0 24px 20px}
+}
+@media(min-width:1024px){
+  .room-list{grid-template-columns:repeat(3,1fr);max-width:1200px;margin:0 auto;padding:0}
+  .hotel-banner{max-width:1200px;margin:20px auto}
+  .section-title{max-width:1200px;margin:0 auto}
+  .surround-grid{max-width:1200px;margin:0 auto}
+  .review-list{max-width:1200px;margin:0 auto}
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="javascript:history.back()" class="header-back">←</a>
+  <span class="header-title" id="hotelName">房型展示</span>
+  <span class="header-sub" id="roomCount"></span>
+</div>
+
+<div class="hotel-banner" id="hotelBanner"></div>
+
+<div class="room-list" id="roomList">
+  <div class="loading">🟡 加载中...</div>
+</div>
+
+<div class="section-title">🏞️ 周边推荐</div>
+<div class="surround-grid" id="surroundGrid"></div>
+
+<div class="section-title">⭐ 精选评价</div>
+<div class="review-list" id="reviewList"></div>
+
+<div class="bottom-bar" id="bottomBar" style="display:none">
+  <div class="bottom-price">
+    <span class="bp" id="bottomPrice">¥--</span>
+    <span class="bpu">/晚</span>
+  </div>
+  <button class="btn-book" onclick="bookRoom()">立即预订</button>
+</div>
+
+<script>
+var PROJ = (function(){
+  var h=location.hostname||'';
+  if(h.indexOf('yijia888')>=0||location.port==='8001') return 'yijiaren';
+  if(h.indexOf('yijia888vip')>=0||location.port==='8000') return 'apartment';
+  if(h.indexOf('xyz')>=0||location.port==='8002') return 'scenic';
+  if(location.pathname.indexOf('apartment')>=0) return 'apartment';
+  if(location.pathname.indexOf('scenic')>=0) return 'scenic';
+  return 'yijiaren';
+})();
+
+var API = '/api/content';
+
+// Facility icon map (emoji)
+var FAC_ICONS = {
+  '免费WiFi':'📶','千兆WiFi':'📶','WiFi':'📶','空调':'❄️','中央空调':'❄️','独立空调':'❄️',
+  '24h热水':'🚿','24小时热水':'🚿','热水':'🚿','热水器':'🚿',
+  '电视':'📺','55寸电视':'📺','65寸电视':'📺','75寸电视':'📺','50寸电视':'📺','55寸智能电视':'📺','品牌电视':'📺',
+  '有窗':'🪟','落地窗':'🪟','全景落地窗':'🪟','山景阳台':'🏞️','湖景落地窗':'🌊','竹林窗景':'🎋','双阳台':'🪟','180°全景':'🌅','全景天窗':'⭐','外窗/落地窗':'🪟',
+  '吹风机':'💨','品牌吹风机':'💨',
+  '智能马桶':'🚽','独立浴缸':'🛁','浴缸':'🛁','雨淋花洒':'🚿',
+  '迷你吧':'🍸','迷你冰箱':'🧊','冰箱':'🧊','双门冰箱':'🧊','对开门冰箱':'🧊',
+  '电动窗帘':'🪟','Bose音响':'🔊','Bose蓝牙音响':'🔊','蓝牙音响':'🔊',
+  '电热水壶':'🫖','Nespresso咖啡机':'☕',
+  '保险箱':'🔒','电子保险箱':'🔒',
+  '办公桌':'🪑','办公桌椅':'🪑','书桌椅':'🪑',
+  '微波炉':'♨️','烤箱':'🔥','电磁炉':'♨️','燃气灶':'🔥','抽油烟机':'💨',
+  '洗衣机':'👕','洗衣机(带烘干)':'👕','洗衣机+烘干机':'👕',
+  '大衣柜':'🚪','衣柜':'🚪','沙发':'🛋️','沙发茶几':'🛋️','餐桌椅':'🍽️',
+  '独立卫浴':'🚿','独立卫生间':'🚿',
+  '120寸投影':'🎬','影院音响':'🔊','零压床垫':'😴','电动遮光帘':'🪟',
+  '智能门锁':'🔐','人脸识别门禁':'👤',
+  '观景躺椅':'🪑','望远镜':'🔭','防蚊设备':'🦟','雨伞':'☂️',
+  '白噪音助眠仪':'🌙','榻榻米茶席':'🍵','草本香薰机':'🌸','日式浴衣':'👘','竹制茶具':'🎋',
+  '儿童洗漱套装':'🧒','婴儿浴盆':'👶','儿童安全护栏':'🛡️','绘本玩具箱':'📚','儿童马桶座':'🚽',
+  '净水器':'💧','香薰加湿器':'💨','私人露台':'🏖️','双人洗漱台':'🚿',
+  '免费早餐':'🍳','自助早餐':'🍳','行政早餐':'🍽️','含双早':'🍳',
+  '免费停车':'🅿️','免费停车场':'🅿️','地下停车场':'🅿️',
+  '行李寄存':'🧳','叫醒服务':'⏰','管家服务':'🤵','接站服务':'🚉','免费接机':'✈️','免费接机一次':'✈️',
+  '商务会议室':'💼','会议室1小时':'💼','健身房':'🏋️','公区健身房':'🏋️',
+  '穿梭巴士':'🚌','景区穿梭巴士':'🚌',
+  '多口USB充电':'🔌','充电桩':'🔌',
+  '洗碗机':'🍽️','吧台':'🍸','阳台':'🪟'
+};
+
+function facIcon(name){
+  for(var k in FAC_ICONS){if(name.indexOf(k)>=0||k.indexOf(name)>=0) return FAC_ICONS[k];}
+  return '✨';
+}
+
+function starStr(n){var s='';for(var i=1;i<=5;i++)s+=i<=n?'★':'☆';return s;}
+
+function renderHotel(d){
+  var h=d.hotels||d.properties||[];
+  if(!h.length) return;
+  var hotel=h[0];
+  document.getElementById('hotelName').textContent=hotel.name;
+  
+  var featHtml='';
+  (hotel.features||[]).forEach(function(f){featHtml+='<span class=ftag>'+f+'</span>';});
+  
+  var fac=hotel.facilities;
+  var facHtml='';
+  if(fac&&typeof fac==='object'&&!Array.isArray(fac)){
+    if(fac.core&&fac.core.length) facHtml+='<div class=fac-section><div class=fac-label>🏠 核心设施</div><div class=fac-icons>'+fac.core.map(function(f){return '<span class="fac-icon has"><span class=fi>'+facIcon(f)+'</span>'+f+'</span>';}).join('')+'</div></div>';
+    if(fac.upgrade&&fac.upgrade.length) facHtml+='<div class=fac-section><div class=fac-label>⭐ 升级设施</div><div class=fac-icons>'+fac.upgrade.map(function(f){return '<span class="fac-icon"><span class=fi>'+facIcon(f)+'</span>'+f+'</span>';}).join('')+'</div></div>';
+    if(fac.service&&fac.service.length) facHtml+='<div class=fac-section><div class=fac-label>🎁 酒店服务</div><div class=fac-icons>'+fac.service.map(function(f){return '<span class="fac-icon"><span class=fi>'+facIcon(f)+'</span>'+f+'</span>';}).join('')+'</div></div>';
+  }else if(Array.isArray(fac)){
+    facHtml='<div class=fac-icons>'+fac.map(function(f){return '<span class="fac-icon"><span class=fi>'+facIcon(f)+'</span>'+f+'</span>';}).join('')+'</div>';
+  }
+  
+  document.getElementById('hotelBanner').innerHTML=
+    '<div class=hotel-name>🏨 '+hotel.name+'</div>'+
+    '<div class=hotel-desc>'+(hotel.desc||'')+'</div>'+
+    '<div class=hotel-features>'+featHtml+'</div>'+
+    facHtml;
+}
+
+function renderRooms(galleries){
+  var list=document.getElementById('roomList');
+  if(!galleries||!galleries.length){list.innerHTML='<div class=loading>暂无房型数据</div>';return;}
+  document.getElementById('roomCount').textContent=galleries.length+'个房型';
+  
+  var html='';
+  galleries.forEach(function(r,idx){
+    var level=r.level||'';
+    var lvCls='level-'+level;
+    var tagsHtml='';
+    (r.tags||[]).forEach(function(t){
+      var tc=t.indexOf('折')>=0||t.indexOf('减')>=0?'rtag-hot':'rtag-gold';
+      tagsHtml+='<span class="rtag '+tc+'">'+t+'</span>';
+    });
+    
+    // Facilities
+    var am=r.amenities;
+    var facHtml='';
+    if(am&&typeof am==='object'&&!Array.isArray(am)){
+      if(am.core&&am.core.length) facHtml+='<div class=fac-section><div class=fac-label>🏠 核心设施</div><div class=fac-icons>'+am.core.map(function(f){return '<span class="fac-icon has"><span class=fi>'+facIcon(f)+'</span>'+f+'</span>';}).join('')+'</div></div>';
+      if(am.upgrade&&am.upgrade.length) facHtml+='<div class=fac-section><div class=fac-label>⭐ 升级设施</div><div class=fac-icons>'+am.upgrade.map(function(f){return '<span class="fac-icon"><span class=fi>'+facIcon(f)+'</span>'+f+'</span>';}).join('')+'</div></div>';
+      if(am.service&&am.service.length) facHtml+='<div class=fac-section><div class=fac-label>🎁 增值服务</div><div class=fac-icons>'+am.service.map(function(f){return '<span class="fac-icon"><span class=fi>'+facIcon(f)+'</span>'+f+'</span>';}).join('')+'</div></div>';
+    }else if(Array.isArray(am)){
+      facHtml='<div class=fac-icons>'+am.map(function(f){return '<span class="fac-icon"><span class=fi>'+facIcon(f)+'</span>'+f+'</span>';}).join('')+'</div>';
+    }
+    
+    // Perks
+    var perksHtml='';
+    if(r.perks&&r.perks.length) perksHtml='<div class=perks>'+r.perks.map(function(p){return '<span class=perk>🎁 '+p+'</span>';}).join('')+'</div>';
+    
+    // Level + Feature display
+    var feature=r.feature||'';
+    var levelBadge=level+(feature?' · '+feature:'');
+    
+    html+=
+    '<div class=room-card id=room-'+idx+'>'+
+      '<div class=room-img>'+
+        (levelBadge?'<div class="room-level '+lvCls+'">'+levelBadge+'</div>':'')+
+        '<div class=room-img-gold>维也纳标准</div>'+
+      '</div>'+
+      '<div class=room-info>'+
+        '<div class=room-name-row><span class=room-name>'+r.room_name+'</span>'+
+        (r.name_en?'<span class=room-name-en>'+r.name_en+'</span>':'')+'</div>'+
+        '<div class=room-tags>'+tagsHtml+'</div>'+
+        '<div class=core-info>'+
+          '<div class=core-item><div class=val>'+(r.bed_size||'—')+'</div><div class=lbl>床型</div></div>'+
+          '<div class=core-item><div class=val>'+(r.area_m2||'—')+'m²</div><div class=lbl>面积</div></div>'+
+          '<div class=core-item><div class=val>'+(r.occupancy||'—')+'人</div><div class=lbl>可住</div></div>'+
+          '<div class=core-item><div class=val>'+(r.window||'—')+'</div><div class=lbl>窗户</div></div>'+
+        '</div>'+
+        '<div class=room-desc>'+(r.desc||'')+'</div>'+
+        '<div class=facilities>'+facHtml+'</div>'+
+        perksHtml+
+        '<div class=price-row>'+
+          '<div class=price-left>'+
+            '<span class=price-current>¥'+(r.price||'—')+'</span>'+
+            '<span class=price-unit>'+(r.price_unit||'/晚')+'</span>'+
+            (r.original_price?'<span class=price-original>¥'+r.original_price+'</span>':'')+
+            (r.discount?'<span class=price-discount>'+r.discount+'</span>':'')+
+          '</div>'+
+          '<button class=btn-book style="padding:8px 20px;font-size:13px" onclick="selectRoom('+idx+','+r.price+')">预订</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  });
+  list.innerHTML=html;
+  
+  // Default select first room for bottom bar
+  if(galleries.length>0){selectRoom(0,galleries[0].price);}
+}
+
+function renderSurroundings(items){
+  var g=document.getElementById('surroundGrid');
+  if(!items||!items.length){g.innerHTML='<div class=loading>暂无数据</div>';return;}
+  g.innerHTML=items.map(function(s){
+    return '<div class=surround-card><div class=stype>'+
+      (s.type==='餐饮'?'🍜':s.type==='交通'?'🚇':s.type==='购物'?'🛍️':s.type==='景点'?'🏯':s.type==='娱乐'?'🎮':s.type==='医疗'?'🏥':'📍')+
+      '</div><div class=sname>'+s.name+'</div><div class=sdist>'+s.distance+'</div><div class=srate>'+starStr(Math.round(s.rating||4))+' '+(s.rating||'')+'</div></div>';
+  }).join('');
+}
+
+function renderReviews(items){
+  var l=document.getElementById('reviewList');
+  if(!items||!items.length){l.innerHTML='<div class=loading>暂无评价</div>';return;}
+  l.innerHTML=items.map(function(r){
+    return '<div class=review-card><div class=review-header><span class=review-user>'+r.user_name+'</span><span class=review-date>'+r.date+'</span></div><div class=review-stars>'+starStr(r.rating)+'</div><div class=review-text>'+r.content+'</div></div>';
+  }).join('');
+}
+
+function selectRoom(idx,price){
+  // Highlight selected card
+  var cards=document.querySelectorAll('.room-card');
+  cards.forEach(function(c,i){c.style.borderColor=i===idx?'rgba(196,160,75,.4)':'rgba(196,160,75,.08)';});
+  // Update bottom bar
+  document.getElementById('bottomPrice').textContent='¥'+(price||'--');
+  document.getElementById('bottomBar').style.display='flex';
+}
+
+function bookRoom(){
+  alert('预订功能即将上线！\n请通过小程序或致电前台完成预订。');
+}
+
+// Load all data
+function loadAll(){
+  // Load hotel info
+  var hotelEp=PROJ==='apartment'?'/properties':'/hotels';
+  fetch(API+hotelEp).then(function(r){return r.json();}).then(renderHotel).catch(function(e){console.error(e);});
+  
+  // Load rooms
+  fetch(API+'/gallery').then(function(r){return r.json();}).then(renderRooms).catch(function(e){document.getElementById('roomList').innerHTML='<div class=loading>加载失败: '+e.message+'</div>';});
+  
+  // Load surroundings
+  fetch(API+'/surrounding').then(function(r){return r.json();}).then(renderSurroundings).catch(function(){});
+  
+  // Load reviews
+  fetch(API+'/reviews-show').then(function(r){return r.json();}).then(renderReviews).catch(function(){});
+}
+
+loadAll();
+</script>
+</body>
+</html>
