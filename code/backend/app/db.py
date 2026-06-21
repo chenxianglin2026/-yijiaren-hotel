@@ -215,6 +215,65 @@ class Checkin(Base):
     hotel: Mapped["Hotel"] = relationship(back_populates="checkins")
 
 
+# ── 通行管理模型 ─────────────────────────────────────
+class Elevator(Base):
+    """电梯"""
+    __tablename__ = "elevators"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    hotel_id: Mapped[Optional[int]] = mapped_column(ForeignKey("hotels.id", ondelete="SET NULL"), index=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False, comment="电梯名称")
+    elevator_no: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, comment="电梯编号")
+    floors_count: Mapped[int] = mapped_column(Integer, default=0, comment="楼层数")
+    status: Mapped[str] = mapped_column(String(20), default="active", comment="active/maintenance/offline")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class Floor(Base):
+    """楼层"""
+    __tablename__ = "access_floors"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    elevator_id: Mapped[int] = mapped_column(ForeignKey("elevators.id", ondelete="CASCADE"), index=True, nullable=False)
+    floor_number: Mapped[int] = mapped_column(Integer, nullable=False, comment="楼层号(如1,2,-1)")
+    floor_name: Mapped[str] = mapped_column(String(50), nullable=False, comment="楼层名称(如1楼大堂,2楼客房)")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class Area(Base):
+    """通行区域（泳池/健身房/VIP室等）"""
+    __tablename__ = "access_areas"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    hotel_id: Mapped[Optional[int]] = mapped_column(ForeignKey("hotels.id", ondelete="SET NULL"), index=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False, comment="区域名称")
+    area_type: Mapped[str] = mapped_column(String(50), nullable=False, comment="区域类型: pool/gym/vip/restaurant")
+    description: Mapped[Optional[str]] = mapped_column(Text, comment="区域描述")
+    capacity: Mapped[int] = mapped_column(Integer, default=0, comment="容量/人数上限")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class CardBinding(Base):
+    """房卡绑定（梯控权限）"""
+    __tablename__ = "card_bindings"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    card_no: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False, comment="房卡号")
+    guest_name: Mapped[str] = mapped_column(String(50), nullable=False, comment="客人姓名")
+    user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
+    elevator_id: Mapped[Optional[int]] = mapped_column(ForeignKey("elevators.id", ondelete="SET NULL"), index=True)
+    floor_ids: Mapped[Optional[str]] = mapped_column(Text, comment="授权楼层ID列表 JSON [1,2,3]")
+    hotel_id: Mapped[Optional[int]] = mapped_column(ForeignKey("hotels.id", ondelete="SET NULL"), index=True)
+    active_from: Mapped[Optional[datetime]] = mapped_column(DateTime, comment="生效时间")
+    active_until: Mapped[Optional[datetime]] = mapped_column(DateTime, comment="失效时间")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 # ── 设备模型 ─────────────────────────────────────────
 class Device(Base):
     """物联网设备：智能门锁、客控面板、传感器等"""

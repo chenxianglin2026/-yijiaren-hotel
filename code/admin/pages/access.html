@@ -1,0 +1,541 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>通行管理</title><link rel="stylesheet" href="../css/admin.css">
+<style>
+.page{padding:16px}.title{font-size:18px;font-weight:700;margin-bottom:16px}
+.tabs{display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid #f0f0f0}
+.tab{padding:8px 20px;cursor:pointer;font-size:14px;color:#999;border-bottom:2px solid transparent;margin-bottom:-2px;transition:.2s}
+.tab.active{color:#c8a052;border-bottom-color:#c8a052;font-weight:600}
+.tab:hover{color:#c8a052}
+.panel{display:none}.panel.active{display:block}
+.toolbar{display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap}
+.btn{padding:6px 14px;border:1px solid #d9d9d9;border-radius:4px;background:#fff;cursor:pointer;font-size:12px;transition:.2s}
+.btn:hover{border-color:#c8a052;color:#c8a052}
+.btn-primary{background:#c8a052;color:#fff;border-color:#c8a052}.btn-primary:hover{background:#b38a3e;color:#fff}
+.btn-danger{color:#cf1322;border-color:#cf1322}.btn-danger:hover{background:#cf1322;color:#fff}
+.btn-sm{padding:3px 8px;font-size:11px}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+th{background:#fafafa;padding:10px 12px;text-align:left;font-size:12px;color:#666;font-weight:600;white-space:nowrap}
+td{padding:8px 12px;border-bottom:1px solid #f5f5f5;font-size:13px}
+tr:hover{background:#fafafa}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.badge-active{background:#f6ffed;color:#389e0d}.badge-maintenance{background:#fff7e6;color:#d48806}.badge-offline{background:#f0f0f0;color:#999}
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:1000;justify-content:center;align-items:center}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:8px;padding:24px;width:420px;max-width:90vw;box-shadow:0 4px 12px rgba(0,0,0,.15);max-height:80vh;overflow-y:auto}
+.modal-title{font-size:16px;font-weight:600;margin-bottom:16px}
+.form-group{margin-bottom:12px}
+.form-group label{display:block;font-size:12px;color:#666;margin-bottom:4px}
+.form-group input,.form-group select{width:100%;padding:6px 10px;border:1px solid #d9d9d9;border-radius:4px;font-size:13px;box-sizing:border-box}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:#c8a052;box-shadow:0 0 0 2px rgba(200,160,82,.2)}
+.form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:16px}
+.card{border:1px solid #f0f0f0;border-radius:8px;padding:14px;cursor:pointer;transition:.2s;background:#fff}
+.card:hover{border-color:#c8a052;box-shadow:0 2px 8px rgba(200,160,82,.15)}
+.card.selected{border-color:#c8a052;background:#fdf8f0}
+.card-name{font-size:14px;font-weight:600;margin-bottom:4px}
+.card-no{font-size:11px;color:#999}.card-info{font-size:11px;color:#666;margin-top:6px}
+.section-title{font-size:14px;font-weight:600;margin:16px 0 8px;color:#333;padding-bottom:8px;border-bottom:1px solid #f0f0f0}
+.floor-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.floor-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;background:#f0f0f0;border-radius:12px;font-size:11px}
+.floor-tag .del{cursor:pointer;color:#ccc;font-weight:700}.floor-tag .del:hover{color:#cf1322}
+.empty{text-align:center;padding:60px;color:#999;grid-column:1/-1}
+</style></head><body><div class="page">
+<div class="title">🔑 通行管理</div>
+<!-- Tabs -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('elevator')">🛗 梯控管理</div>
+  <div class="tab" onclick="switchTab('area')">🏊 区域权限</div>
+</div>
+<!-- Panel: 梯控 -->
+<div class="panel active" id="panel-elevator">
+  <div class="toolbar">
+    <button class="btn btn-primary" onclick="showElevatorModal()">+ 添加电梯</button>
+    <span style="font-size:12px;color:#999">选择电梯管理楼层和房卡绑定</span>
+  </div>
+  <div class="card-grid" id="elevatorGrid"><div class="empty">加载中...</div></div>
+  <div id="elevatorDetail" style="display:none">
+    <div class="section-title">楼层管理 <button class="btn btn-sm btn-primary" onclick="showFloorModal()">+ 添加楼层</button> <button class="btn btn-sm" onclick="showFloorBatchModal()">批量添加</button></div>
+    <div class="floor-tags" id="floorTags"></div>
+    <div class="section-title">房卡绑定 <button class="btn btn-sm btn-primary" onclick="showCardModal()">+ 绑定房卡</button></div>
+    <div id="cardTable"></div>
+  </div>
+</div>
+<!-- Panel: 区域 -->
+<div class="panel" id="panel-area">
+  <div class="toolbar">
+    <button class="btn btn-primary" onclick="showAreaModal()">+ 添加区域</button>
+    <select id="areaTypeFilter" onchange="loadAreas()" style="padding:4px 8px;border:1px solid #d9d9d9;border-radius:4px;font-size:12px">
+      <option value="">全部类型</option><option value="pool">泳池</option><option value="gym">健身房</option><option value="vip">VIP室</option><option value="restaurant">餐厅</option>
+    </select>
+  </div>
+  <div id="areaTable"></div>
+</div>
+</div>
+<!-- Elevator Modal -->
+<div class="modal-overlay" id="elevatorModal">
+  <div class="modal">
+    <div class="modal-title" id="elevatorModalTitle">添加电梯</div>
+    <div class="form-group"><label>电梯名称</label><input id="evName" placeholder="如 1号梯"></div>
+    <div class="form-group"><label>电梯编号</label><input id="evNo" placeholder="如 EL-001"></div>
+    <div class="form-group"><label>楼层数</label><input id="evFloorsCount" type="number" value="0" min="0"></div>
+    <div class="form-group"><label>状态</label><select id="evStatus"><option value="active">运行中</option><option value="maintenance">维护中</option><option value="offline">离线</option></select></div>
+    <div class="form-actions">
+      <button class="btn" onclick="closeElevatorModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveElevator()" id="evSaveBtn">保存</button>
+    </div>
+  </div>
+</div>
+<!-- Floor Modal -->
+<div class="modal-overlay" id="floorModal">
+  <div class="modal">
+    <div class="modal-title" id="floorModalTitle">添加楼层</div>
+    <div class="form-group"><label>楼层号</label><input id="flNumber" type="number" placeholder="如 1 (负层用-1)"></div>
+    <div class="form-group"><label>楼层名称</label><input id="flName" placeholder="如 1楼大堂"></div>
+    <div class="form-actions">
+      <button class="btn" onclick="closeFloorModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveFloor()">保存</button>
+    </div>
+  </div>
+</div>
+<!-- Floor Batch Modal -->
+<div class="modal-overlay" id="floorBatchModal">
+  <div class="modal">
+    <div class="modal-title">批量添加楼层</div>
+    <div style="font-size:12px;color:#999;margin-bottom:12px">每行一个楼层：楼层号,楼层名称（如 1,1楼大堂）</div>
+    <textarea id="flBatch" style="width:100%;height:120px;border:1px solid #d9d9d9;border-radius:4px;padding:8px;font-size:12px;box-sizing:border-box" placeholder="1,1楼大堂&#10;2,2楼客房&#10;3,3楼客房&#10;-1,地下一层"></textarea>
+    <div class="form-actions">
+      <button class="btn" onclick="closeFloorBatchModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveFloorBatch()">批量添加</button>
+    </div>
+  </div>
+</div>
+<!-- Card Modal -->
+<div class="modal-overlay" id="cardModal">
+  <div class="modal">
+    <div class="modal-title" id="cardModalTitle">绑定房卡</div>
+    <div class="form-group"><label>房卡号</label><input id="cdNo" placeholder="如 CARD-001"></div>
+    <div class="form-group"><label>客人姓名</label><input id="cdGuest" placeholder="如 张三"></div>
+    <div class="form-group"><label>授权楼层 (多选)</label><div id="cdFloors" style="max-height:120px;overflow-y:auto;font-size:12px"></div></div>
+    <div class="form-actions">
+      <button class="btn" onclick="closeCardModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveCard()">保存</button>
+    </div>
+  </div>
+</div>
+<!-- Area Modal -->
+<div class="modal-overlay" id="areaModal">
+  <div class="modal">
+    <div class="modal-title" id="areaModalTitle">添加区域</div>
+    <div class="form-group"><label>区域名称</label><input id="arName" placeholder="如 游泳池"></div>
+    <div class="form-group"><label>区域类型</label><select id="arType"><option value="pool">泳池</option><option value="gym">健身房</option><option value="vip">VIP室</option><option value="restaurant">餐厅</option></select></div>
+    <div class="form-group"><label>描述</label><input id="arDesc" placeholder="如 酒店住客免费使用"></div>
+    <div class="form-group"><label>容量(人)</label><input id="arCapacity" type="number" value="0" min="0"></div>
+    <div class="form-actions">
+      <button class="btn" onclick="closeAreaModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveArea()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var API = '/api/access';
+var TOKEN = '';
+var editingElevatorId = null;
+var editingFloorId = null;
+var editingCardId = null;
+var editingAreaId = null;
+var selectedElevatorId = null;
+var elevatorsData = [];
+var floorsData = [];
+var cardsData = [];
+var areasData = [];
+
+// ── Auth ─────────────────────────────────────────
+function login() {
+  return fetch('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: 'admin', password: 'admin123' })
+  }).then(function (r) { return r.json(); }).then(function (j) {
+    var t = j.access_token || (j.data && j.data.access_token);
+    if (!t) { alert('登录失败'); return; }
+    TOKEN = t; return t;
+  });
+}
+
+function hdrs() {
+  return { 'Authorization': 'Bearer ' + TOKEN, 'Content-Type': 'application/json' };
+}
+
+function get(u) {
+  return fetch(u, { headers: hdrs() }).then(function (r) {
+    if (r.status === 401) { return login().then(function () { return fetch(u, { headers: hdrs() }).then(function (r2) { return r2.json(); }); }); }
+    return r.json();
+  });
+}
+
+function post(u, d) {
+  return fetch(u, { method: 'POST', headers: hdrs(), body: JSON.stringify(d) }).then(function (r) {
+    if (r.status === 401) { return login().then(function () { return post(u, d); }); }
+    return r.json();
+  });
+}
+
+function put(u, d) {
+  return fetch(u, { method: 'PUT', headers: hdrs(), body: JSON.stringify(d) }).then(function (r) {
+    if (r.status === 401) { return login().then(function () { return put(u, d); }); }
+    return r.json();
+  });
+}
+
+function del(u) {
+  return fetch(u, { method: 'DELETE', headers: hdrs() }).then(function (r) {
+    if (r.status === 401) { return login().then(function () { return del(u); }); }
+    return r.json();
+  });
+}
+
+// ── Tabs ─────────────────────────────────────────
+function switchTab(name) {
+  var tabs = document.querySelectorAll('.tab');
+  var panels = document.querySelectorAll('.panel');
+  for (var i = 0; i < tabs.length; i++) { tabs[i].classList.remove('active'); }
+  for (var j = 0; j < panels.length; j++) { panels[j].classList.remove('active'); }
+  document.querySelector('.tab[onclick*="' + name + '"]').classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+  if (name === 'elevator') { loadElevators(); }
+  if (name === 'area') { loadAreas(); }
+}
+
+// ── Elevators ────────────────────────────────────
+function loadElevators() {
+  get(API + '/elevators').then(function (j) {
+    elevatorsData = j.data || j.items || [];
+    renderElevators();
+  }).catch(function (e) { document.getElementById('elevatorGrid').innerHTML = '<div class="empty">加载失败: ' + e.message + '</div>'; });
+}
+
+function renderElevators() {
+  var items = elevatorsData;
+  var grid = document.getElementById('elevatorGrid');
+  if (!items.length) { grid.innerHTML = '<div class="empty">暂无电梯，点击上方按钮添加</div>'; return; }
+  var STATUS_MAP = { active: '运行中', maintenance: '维护中', offline: '离线' };
+  var STATUS_CLS = { active: 'badge-active', maintenance: 'badge-maintenance', offline: 'badge-offline' };
+  var h = '';
+  for (var i = 0; i < items.length; i++) {
+    var e = items[i];
+    var cls = (selectedElevatorId === e.id) ? ' selected' : '';
+    h += '<div class="card' + cls + '" onclick="selectElevator(' + e.id + ')">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
+      '<div class="card-name">🛗 ' + e.name + '</div>' +
+      '<span class="badge ' + (STATUS_CLS[e.status] || '') + '">' + (STATUS_MAP[e.status] || e.status) + '</span></div>' +
+      '<div class="card-no">编号: ' + e.elevator_no + ' | 楼层: ' + e.floors_count + '层</div>' +
+      '<div style="margin-top:8px;display:flex;gap:4px">' +
+      '<button class="btn btn-sm" onclick="event.stopPropagation();editElevator(' + e.id + ')">编辑</button>' +
+      '<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteElevator(' + e.id + ')">删除</button></div></div>';
+  }
+  grid.innerHTML = h;
+}
+
+function selectElevator(id) {
+  selectedElevatorId = id;
+  renderElevators();
+  loadFloors();
+  loadCards();
+  document.getElementById('elevatorDetail').style.display = 'block';
+}
+
+function showElevatorModal() {
+  editingElevatorId = null;
+  document.getElementById('elevatorModalTitle').textContent = '添加电梯';
+  document.getElementById('evName').value = '';
+  document.getElementById('evNo').value = '';
+  document.getElementById('evFloorsCount').value = '0';
+  document.getElementById('evStatus').value = 'active';
+  document.getElementById('elevatorModal').classList.add('show');
+}
+
+function editElevator(id) {
+  var e = elevatorsData.find(function (x) { return x.id === id; });
+  if (!e) return;
+  editingElevatorId = id;
+  document.getElementById('elevatorModalTitle').textContent = '编辑电梯';
+  document.getElementById('evName').value = e.name;
+  document.getElementById('evNo').value = e.elevator_no;
+  document.getElementById('evFloorsCount').value = e.floors_count;
+  document.getElementById('evStatus').value = e.status;
+  document.getElementById('elevatorModal').classList.add('show');
+}
+
+function closeElevatorModal() {
+  document.getElementById('elevatorModal').classList.remove('show');
+}
+
+function saveElevator() {
+  var data = {
+    name: document.getElementById('evName').value.trim(),
+    elevator_no: document.getElementById('evNo').value.trim(),
+    floors_count: parseInt(document.getElementById('evFloorsCount').value) || 0,
+    status: document.getElementById('evStatus').value
+  };
+  if (!data.name || !data.elevator_no) { alert('名称和编号不能为空'); return; }
+  var p;
+  if (editingElevatorId) {
+    p = put(API + '/elevators/' + editingElevatorId, data);
+  } else {
+    p = post(API + '/elevators', data);
+  }
+  p.then(function (j) {
+    if (j.code === 0) { closeElevatorModal(); loadElevators(); } else { alert(j.msg || j.detail || '操作失败'); }
+  }).catch(function (e) { alert('操作失败: ' + e.message); });
+}
+
+function deleteElevator(id) {
+  if (!confirm('确定删除此电梯？关联的楼层也将被删除')) return;
+  del(API + '/elevators/' + id).then(function (j) {
+    if (j.code === 0) { if (selectedElevatorId === id) { selectedElevatorId = null; document.getElementById('elevatorDetail').style.display = 'none'; } loadElevators(); }
+  }).catch(function (e) { alert('删除失败'); });
+}
+
+// ── Floors ───────────────────────────────────────
+function loadFloors() {
+  if (!selectedElevatorId) return;
+  get(API + '/floors?elevator_id=' + selectedElevatorId).then(function (j) {
+    floorsData = j.data || j.items || [];
+    renderFloors();
+  });
+}
+
+function renderFloors() {
+  var items = floorsData;
+  var tags = document.getElementById('floorTags');
+  if (!items.length) { tags.innerHTML = '<span style="font-size:12px;color:#999">暂无楼层</span>'; return; }
+  // sort by floor_number
+  items.sort(function (a, b) { return a.floor_number - b.floor_number; });
+  var h = '';
+  for (var i = 0; i < items.length; i++) {
+    var f = items[i];
+    h += '<span class="floor-tag">' + f.floor_name + ' (' + f.floor_number + 'F)<span class="del" onclick="deleteFloor(' + f.id + ')">×</span></span>';
+  }
+  tags.innerHTML = h;
+}
+
+function showFloorModal() {
+  editingFloorId = null;
+  document.getElementById('floorModalTitle').textContent = '添加楼层';
+  document.getElementById('flNumber').value = '';
+  document.getElementById('flName').value = '';
+  document.getElementById('floorModal').classList.add('show');
+}
+
+function closeFloorModal() {
+  document.getElementById('floorModal').classList.remove('show');
+}
+
+function saveFloor() {
+  var data = {
+    elevator_id: selectedElevatorId,
+    floor_number: parseInt(document.getElementById('flNumber').value),
+    floor_name: document.getElementById('flName').value.trim()
+  };
+  if (!data.floor_name || isNaN(data.floor_number)) { alert('请填写完整信息'); return; }
+  post(API + '/floors', data).then(function (j) {
+    if (j.code === 0) { closeFloorModal(); loadFloors(); loadElevators(); } else { alert(j.msg || j.detail || '添加失败'); }
+  }).catch(function (e) { alert('添加失败: ' + e.message); });
+}
+
+function showFloorBatchModal() {
+  document.getElementById('flBatch').value = '';
+  document.getElementById('floorBatchModal').classList.add('show');
+}
+
+function closeFloorBatchModal() {
+  document.getElementById('floorBatchModal').classList.remove('show');
+}
+
+function saveFloorBatch() {
+  var text = document.getElementById('flBatch').value.trim();
+  if (!text) return;
+  var lines = text.split('\n');
+  var floors = [];
+  for (var i = 0; i < lines.length; i++) {
+    var parts = lines[i].split(',');
+    if (parts.length >= 2) {
+      var num = parseInt(parts[0].trim());
+      var name = parts.slice(1).join(',').trim();
+      if (!isNaN(num) && name) { floors.push({ elevator_id: selectedElevatorId, floor_number: num, floor_name: name }); }
+    }
+  }
+  if (!floors.length) { alert('未识别到有效楼层数据'); return; }
+  post(API + '/floors/batch', { elevator_id: selectedElevatorId, floors: floors }).then(function (j) {
+    if (j.code === 0) { closeFloorBatchModal(); loadFloors(); loadElevators(); } else { alert(j.msg || '批量添加失败'); }
+  }).catch(function (e) { alert('批量添加失败: ' + e.message); });
+}
+
+function deleteFloor(id) {
+  if (!confirm('确定删除此楼层？')) return;
+  del(API + '/floors/' + id).then(function (j) {
+    if (j.code === 0) { loadFloors(); loadElevators(); loadCards(); }
+  }).catch(function (e) { alert('删除失败'); });
+}
+
+// ── Cards ────────────────────────────────────────
+function loadCards() {
+  if (!selectedElevatorId) return;
+  get(API + '/cards?elevator_id=' + selectedElevatorId).then(function (j) {
+    cardsData = j.data || j.items || [];
+    renderCards();
+  });
+}
+
+function renderCards() {
+  var items = cardsData;
+  var div = document.getElementById('cardTable');
+  if (!items.length) { div.innerHTML = '<div style="text-align:center;padding:30px;color:#999">暂无房卡绑定</div>'; return; }
+  var h = '<table><tr><th>房卡号</th><th>客人</th><th>授权楼层</th><th>状态</th><th>操作</th></tr>';
+  for (var i = 0; i < items.length; i++) {
+    var c = items[i];
+    var floorNames = [];
+    if (c.floor_ids && c.floor_ids.length) {
+      for (var j = 0; j < c.floor_ids.length; j++) {
+        var f = floorsData.find(function (x) { return x.id === c.floor_ids[j]; });
+        floorNames.push(f ? f.floor_name : '#' + c.floor_ids[j]);
+      }
+    }
+    h += '<tr><td>' + c.card_no + '</td><td>' + c.guest_name + '</td><td>' + (floorNames.join(', ') || '-') + '</td>' +
+      '<td><span class="badge ' + (c.is_active ? 'badge-active' : 'badge-offline') + '">' + (c.is_active ? '有效' : '停用') + '</span></td>' +
+      '<td><button class="btn btn-sm btn-danger" onclick="deleteCard(' + c.id + ')">解绑</button></td></tr>';
+  }
+  h += '</table>';
+  div.innerHTML = h;
+}
+
+function showCardModal() {
+  editingCardId = null;
+  document.getElementById('cardModalTitle').textContent = '绑定房卡';
+  document.getElementById('cdNo').value = '';
+  document.getElementById('cdGuest').value = '';
+  // render floor checkboxes
+  var div = document.getElementById('cdFloors');
+  if (!floorsData.length) { div.innerHTML = '<span style="color:#999">请先添加楼层</span>'; } else {
+    var h = '';
+    for (var i = 0; i < floorsData.length; i++) {
+      var f = floorsData[i];
+      h += '<label style="display:inline-block;margin-right:12px"><input type="checkbox" value="' + f.id + '" class="cdFloorCb"> ' + f.floor_name + '</label>';
+    }
+    div.innerHTML = h;
+  }
+  document.getElementById('cardModal').classList.add('show');
+}
+
+function closeCardModal() {
+  document.getElementById('cardModal').classList.remove('show');
+}
+
+function saveCard() {
+  var cbs = document.querySelectorAll('.cdFloorCb:checked');
+  var fids = [];
+  for (var i = 0; i < cbs.length; i++) { fids.push(parseInt(cbs[i].value)); }
+  var data = {
+    card_no: document.getElementById('cdNo').value.trim(),
+    guest_name: document.getElementById('cdGuest').value.trim(),
+    elevator_id: selectedElevatorId,
+    floor_ids: JSON.stringify(fids)
+  };
+  if (!data.card_no || !data.guest_name) { alert('房卡号和客人姓名不能为空'); return; }
+  post(API + '/cards', data).then(function (j) {
+    if (j.code === 0) { closeCardModal(); loadCards(); } else { alert(j.msg || '绑定失败'); }
+  }).catch(function (e) { alert('绑定失败: ' + e.message); });
+}
+
+function deleteCard(id) {
+  if (!confirm('确定解绑此房卡？')) return;
+  del(API + '/cards/' + id).then(function (j) {
+    if (j.code === 0) { loadCards(); }
+  }).catch(function (e) { alert('解绑失败'); });
+}
+
+// ── Areas ────────────────────────────────────────
+function loadAreas() {
+  var type = document.getElementById('areaTypeFilter').value;
+  var url = API + '/areas';
+  if (type) url += '?area_type=' + type;
+  get(url).then(function (j) {
+    areasData = j.data || j.items || [];
+    renderAreas();
+  }).catch(function (e) { document.getElementById('areaTable').innerHTML = '<div class="empty">加载失败: ' + e.message + '</div>'; });
+}
+
+function renderAreas() {
+  var items = areasData;
+  var div = document.getElementById('areaTable');
+  if (!items.length) { div.innerHTML = '<div class="empty">暂无区域，点击上方按钮添加</div>'; return; }
+  var TYPE_MAP = { pool: '🏊 泳池', gym: '🏋️ 健身房', vip: '👑 VIP室', restaurant: '🍽️ 餐厅' };
+  var h = '<table><tr><th>名称</th><th>类型</th><th>描述</th><th>容量</th><th>状态</th><th>操作</th></tr>';
+  for (var i = 0; i < items.length; i++) {
+    var a = items[i];
+    h += '<tr><td>' + a.name + '</td><td>' + (TYPE_MAP[a.area_type] || a.area_type) + '</td><td>' + (a.description || '-') + '</td>' +
+      '<td>' + (a.capacity || 0) + '人</td>' +
+      '<td><span class="badge ' + (a.is_active ? 'badge-active' : 'badge-offline') + '">' + (a.is_active ? '启用' : '停用') + '</span></td>' +
+      '<td><button class="btn btn-sm" onclick="editArea(' + a.id + ')">编辑</button> ' +
+      '<button class="btn btn-sm btn-danger" onclick="deleteArea(' + a.id + ')">删除</button></td></tr>';
+  }
+  h += '</table>';
+  div.innerHTML = h;
+}
+
+function showAreaModal() {
+  editingAreaId = null;
+  document.getElementById('areaModalTitle').textContent = '添加区域';
+  document.getElementById('arName').value = '';
+  document.getElementById('arType').value = 'pool';
+  document.getElementById('arDesc').value = '';
+  document.getElementById('arCapacity').value = '0';
+  document.getElementById('areaModal').classList.add('show');
+}
+
+function editArea(id) {
+  var a = areasData.find(function (x) { return x.id === id; });
+  if (!a) return;
+  editingAreaId = id;
+  document.getElementById('areaModalTitle').textContent = '编辑区域';
+  document.getElementById('arName').value = a.name;
+  document.getElementById('arType').value = a.area_type;
+  document.getElementById('arDesc').value = a.description || '';
+  document.getElementById('arCapacity').value = a.capacity || 0;
+  document.getElementById('areaModal').classList.add('show');
+}
+
+function closeAreaModal() {
+  document.getElementById('areaModal').classList.remove('show');
+}
+
+function saveArea() {
+  var data = {
+    name: document.getElementById('arName').value.trim(),
+    area_type: document.getElementById('arType').value,
+    description: document.getElementById('arDesc').value.trim(),
+    capacity: parseInt(document.getElementById('arCapacity').value) || 0,
+    is_active: true
+  };
+  if (!data.name) { alert('名称不能为空'); return; }
+  var p;
+  if (editingAreaId) {
+    p = put(API + '/areas/' + editingAreaId, data);
+  } else {
+    p = post(API + '/areas', data);
+  }
+  p.then(function (j) {
+    if (j.code === 0) { closeAreaModal(); loadAreas(); } else { alert(j.msg || '操作失败'); }
+  }).catch(function (e) { alert('操作失败: ' + e.message); });
+}
+
+function deleteArea(id) {
+  if (!confirm('确定删除此区域？')) return;
+  del(API + '/areas/' + id).then(function (j) {
+    if (j.code === 0) { loadAreas(); }
+  }).catch(function (e) { alert('删除失败'); });
+}
+
+// ── Init ─────────────────────────────────────────
+login().then(function () { loadElevators(); loadAreas(); });
+</script></body></html>
