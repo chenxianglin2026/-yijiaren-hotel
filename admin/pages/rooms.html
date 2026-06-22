@@ -2,300 +2,234 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>房态操作面板 - 伊家智慧酒店</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>房态管理 · 伊家人</title>
 <style>
+:root {
+  --gold: #c8a052;
+  --gold-light: #e0c882;
+  --bg: #f0f2f5;
+  --bg-card: #ffffff;
+  --text: #262626;
+  --text-secondary: #595959;
+  --text-muted: #8c8c8c;
+  --border: #e8e8e8;
+  --success: #52c41a;
+  --info: #1890ff;
+  --warning: #fa8c16;
+  --radius: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,.08);
+}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#1a1814;color:#e0d8c8;display:flex;min-height:100vh}
-/* Sidebar */
-.side{width:200px;background:#151310;padding:16px 0;flex-shrink:0;border-right:1px solid #2a2418}
-.side .logo{text-align:center;padding:8px 16px 20px}
-.side .logo .icon{display:inline-block;width:40px;height:40px;background:#c8a052;color:#1a1814;font-size:22px;line-height:40px;border-radius:8px;font-weight:bold}
-.side .logo .txt{color:#c8a052;font-size:14px;margin-top:6px;font-weight:600}
-.side a{display:block;padding:10px 20px;color:#a09070;text-decoration:none;font-size:13px;transition:.2s}
-.side a:hover,.side a.on{color:#c8a052;background:#1e1c16}
-.side a.on{border-left:3px solid #c8a052;padding-left:17px}
-/* Main */
-.main{flex:1;overflow-y:auto;padding:20px}
-/* Top bar */
-.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
-.top h1{font-size:20px;color:#c8a052;font-weight:600}
-.top .user{font-size:12px;color:#807060}
-.top .logout{color:#c8a052;cursor:pointer;margin-left:12px;font-size:12px}
-/* Stat cards */
-.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
-.stat-card{background:#1e1c16;border:1px solid #2a2418;border-radius:8px;padding:14px;text-align:center}
-.stat-card .num{font-size:28px;font-weight:bold;color:#c8a052}
-.stat-card .label{font-size:11px;color:#807060;margin-top:4px}
-.stat-card.avail .num{color:#5a9e6f}
-.stat-card.occ .num{color:#d4845a}
-.stat-card.book .num{color:#6a8fbf}
-.stat-card.clean .num{color:#c8a052}
-/* Filter tabs */
-.filters{display:flex;gap:8px;margin-bottom:16px}
-.filters button{padding:6px 16px;border:1px solid #2a2418;background:#1e1c16;color:#a09070;border-radius:6px;cursor:pointer;font-size:12px;transition:.2s}
-.filters button:hover,.filters button.on{border-color:#c8a052;color:#c8a052}
-.filters button.on{background:#2c2416}
-/* Two columns */
-.cols{display:grid;grid-template-columns:1fr 320px;gap:16px}
-/* Room grid */
-.room-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
-.room-card{background:#1e1c16;border:1px solid #2a2418;border-radius:8px;padding:14px;cursor:pointer;transition:.2s;position:relative}
-.room-card:hover{border-color:#5a4a2a}
-.room-card.selected{border-color:#c8a052;background:#2c2416}
-.room-card .chk{position:absolute;top:8px;right:8px;width:16px;height:16px;border:2px solid #4a3a20;border-radius:3px;display:flex;align-items:center;justify-content:center}
-.room-card.selected .chk{background:#c8a052;border-color:#c8a052}
-.room-card.selected .chk::after{content:'✓';color:#1a1814;font-size:10px;font-weight:bold}
-.room-card .rname{font-size:15px;font-weight:600;color:#e0d8c8;margin-bottom:4px}
-.room-card .rtype{font-size:11px;color:#807060;margin-bottom:6px}
-.room-card .rprice{font-size:16px;color:#c8a052;font-weight:bold;margin-bottom:8px}
-.room-card .rprice span{font-size:11px;color:#807060;font-weight:normal;margin-left:2px}
-.room-card .rtags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}
-.tag{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:500}
-.tag.avail{background:#1a3a1a;color:#5a9e6f}
-.tag.occ{background:#3a1a0a;color:#d4845a}
-.tag.book{background:#1a2a3a;color:#6a8fbf}
-.tag.clean{background:#3a2a0a;color:#c8a052}
-.tag.maint{background:#2a1a2a;color:#a060a0}
-.room-card .racts{display:flex;gap:6px;margin-top:6px}
-.room-card .racts button{padding:3px 10px;font-size:11px;border-radius:4px;cursor:pointer;border:none;transition:.2s}
-.btn-ci{background:#3a2a1a;color:#c8a052}
-.btn-ci:hover{background:#5a3a1a}
-.btn-co{background:#3a1a1a;color:#d4845a}
-.btn-co:hover{background:#5a2a2a}
-/* Right panels */
-.rpanel{background:#1e1c16;border:1px solid #2a2418;border-radius:8px;padding:16px;margin-bottom:12px}
-.rpanel h3{font-size:13px;color:#c8a052;margin-bottom:10px;font-weight:600}
-.rlist-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #2a2418;font-size:12px}
-.rlist-item:last-child{border-bottom:none}
-.rlist-item .gname{color:#e0d8c8;font-weight:500}
-.rlist-item .groom{color:#807060}
-.rlist-item .gtime{color:#c8a052;font-size:11px}
-.rlist-item .gact{color:#807060;cursor:pointer;font-size:11px;margin-left:8px}
-.rlist-item .gact:hover{color:#c8a052}
-/* Batch bar */
-.batch-bar{position:fixed;bottom:0;left:200px;right:0;background:#151310;border-top:1px solid #2a2418;padding:12px 20px;display:flex;align-items:center;gap:16px;display:none;z-index:100}
-.batch-bar.show{display:flex}
-.batch-bar .bcount{color:#c8a052;font-size:13px;font-weight:600}
-.batch-bar button{padding:8px 16px;border-radius:6px;cursor:pointer;font-size:12px;border:none;transition:.2s;font-weight:500}
-.batch-bar .bci{background:#4a3a1a;color:#c8a052}
-.batch-bar .bci:hover{background:#6a5a2a}
-.batch-bar .bclr{background:#2a2a2a;color:#807060}
-.batch-bar .bclr:hover{background:#3a3a3a}
-/* Modal */
-.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:200;display:none}
-.modal.show{display:flex}
-.modal-box{background:#1e1c16;border:1px solid #2a2418;border-radius:12px;padding:24px;width:400px;max-width:90%}
-.modal-box h3{color:#c8a052;font-size:15px;margin-bottom:16px}
-.modal-box label{display:block;font-size:12px;color:#807060;margin-bottom:4px}
-.modal-box input,.modal-box select{width:100%;padding:8px 12px;background:#151310;border:1px solid #2a2418;border-radius:6px;color:#e0d8c8;font-size:13px;margin-bottom:12px}
-.modal-box .mbtns{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
-.modal-box .mbtns button{padding:8px 16px;border-radius:6px;cursor:pointer;font-size:12px;border:none}
-.modal-box .mok{background:#c8a052;color:#1a1814;font-weight:600}
-.modal-box .mcancel{background:#2a2a2a;color:#807060}
-/* Loading / error */
-.loading{text-align:center;padding:40px;color:#807060}
-.error{background:#3a1a1a;color:#d4845a;padding:12px;border-radius:6px;margin:12px 0;font-size:12px}
-/* Responsive */
-@media(max-width:900px){.cols{grid-template-columns:1fr}.side{width:48px}.side .logo .txt,.side a span{display:none}.side a{padding:10px 12px}.batch-bar{left:48px}.room-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh}
+.page{max-width:1400px;margin:0 auto;padding:20px}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.header h1{font-size:22px;font-weight:700}
+.header .time{font-size:13px;color:var(--text-muted)}
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+.stat{background:var(--bg-card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);text-align:center;border-left:3px solid var(--border)}
+.stat.s0{border-left-color:var(--success)}.stat.s1{border-left-color:var(--info)}
+.stat.s2{border-left-color:var(--warning)}.stat.s3{border-left-color:#faad14}
+.stat-val{font-size:28px;font-weight:700;line-height:1.2}
+.stat-lbl{font-size:12px;color:var(--text-muted);margin-top:4px}
+/* filters */
+.filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.filters button{padding:6px 16px;border:1px solid var(--border);border-radius:20px;background:var(--bg-card);color:var(--text-secondary);cursor:pointer;font-size:13px;transition:all .2s}
+.filters button:hover{border-color:var(--gold);color:var(--gold)}
+.filters button.active{background:var(--gold);color:#fff;border-color:var(--gold)}
+/* titles */
+.section-title{font-size:16px;font-weight:600;margin:24px 0 12px;display:flex;align-items:center;gap:8px}
+.section-title .badge{font-size:12px;background:var(--gold);color:#fff;padding:2px 10px;border-radius:10px;font-weight:400}
+/* grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:24px}
+.card{background:var(--bg-card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);border-top:3px solid var(--success);transition:transform .15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 3px 12px rgba(0,0,0,.1)}
+.card.occupied{border-top-color:var(--info)}
+.card.booked{border-top-color:var(--warning)}
+.card.cleaning{border-top-color:#faad14}
+.card-num{font-size:20px;font-weight:700}
+.card-type{font-size:12px;color:var(--text-muted);margin:4px 0}
+.card-meta{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.card-price{font-size:16px;font-weight:600;color:var(--gold)}
+.card-status{font-size:12px;padding:2px 8px;border-radius:4px;font-weight:500}
+.card-status.available{background:#f6ffed;color:var(--success)}
+.card-status.occupied{background:#e6f7ff;color:var(--info)}
+.card-status.booked{background:#fff7e6;color:var(--warning)}
+.card-status.cleaning{background:#fffbe6;color:#d48806}
+.card-actions{margin-top:10px;display:flex;gap:6px}
+.card-actions button{flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg-card);cursor:pointer;font-size:12px;transition:all .15s}
+.card-actions button.ci-btn{border-color:var(--info);color:var(--info)}
+.card-actions button.ci-btn:hover{background:var(--info);color:#fff}
+.card-actions button.co-btn{border-color:#f5222d;color:#f5222d}
+.card-actions button.co-btn:hover{background:#f5222d;color:#fff}
+/* table */
+.table-wrap{background:var(--bg-card);border-radius:var(--radius);box-shadow:var(--shadow);overflow-x:auto;margin-bottom:20px}
+table{width:100%;border-collapse:collapse}
+th{background:#fafafa;padding:10px 12px;text-align:left;font-size:12px;font-weight:600;color:var(--text-secondary);border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:10px 12px;font-size:13px;border-bottom:1px solid #f5f5f5}
+tr:hover td{background:#fafafa}
+/* buttons */
+.btn{padding:6px 14px;border:none;border-radius:4px;cursor:pointer;font-size:13px;font-weight:500;transition:all .15s}
+.btn-gold{background:var(--gold);color:#fff}.btn-gold:hover{opacity:.85}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text-secondary)}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold)}
+.btn-sm{padding:3px 10px;font-size:12px}
+.btn-danger{background:#f5222d;color:#fff}.btn-danger:hover{opacity:.85}
+/* modal */
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.35);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg-card);border-radius:var(--radius);padding:24px;width:90%;max-width:420px;box-shadow:0 4px 20px rgba(0,0,0,.15)}
+.modal h3{font-size:16px;margin-bottom:16px}
+.modal label{display:block;font-size:13px;color:var(--text-secondary);margin-bottom:4px}
+.modal input{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:4px;font-size:14px;margin-bottom:12px}
+.modal input:focus{border-color:var(--gold);outline:none}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+/* misc */
+.loading{text-align:center;padding:40px;color:var(--text-muted)}
+.error-msg{text-align:center;padding:40px;color:#f5222d}
+.empty{text-align:center;padding:30px;color:var(--text-muted);font-size:13px}
+.toast{position:fixed;top:20px;right:20px;padding:10px 20px;border-radius:4px;color:#fff;font-size:13px;z-index:2000;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+.toast.ok{background:var(--success)}
+.toast.err{background:#f5222d}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+@media(max-width:768px){.two-col{grid-template-columns:1fr}.grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}}
 </style>
 </head>
 <body>
-
-<div class="side">
-  <div class="logo"><div class="icon">伊</div><div class="txt">伊家智慧酒店</div></div>
-  <a href="../index.html"><span>📊 仪表盘</span></a>
-  <a class="on" href="rooms.html"><span>🏨 房态面板</span></a>
-  <a href="orders.html"><span>📋 订单管理</span></a>
-  <a href="checkin.html"><span>🔑 入住管理</span></a>
-  <a href="cleaning.html"><span>🧹 保洁管理</span></a>
-  <a href="settings.html"><span>⚙️ 系统设置</span></a>
-</div>
-
-<div class="main">
-  <div class="top">
-    <h1>🏨 房态操作面板</h1>
-    <div>
-      <span class="user" id="username">加载中...</span>
-      <span class="logout" onclick="doLogout()">退出</span>
-    </div>
+<div class="page">
+  <div class="header">
+    <h1>🚪 房态操作面板</h1>
+    <div class="time" id="clock"></div>
   </div>
-
-  <div id="autherr" class="error" style="display:none"></div>
-
-  <!-- Stats -->
   <div class="stats" id="stats"></div>
-
-  <!-- Filters + search -->
-  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
-    <div class="filters" id="filters">
-      <button class="on" data-f="all">全部</button>
-      <button data-f="available">空闲</button>
-      <button data-f="occupied">已入住</button>
-      <button data-f="booked">已预订</button>
-      <button data-f="cleaning">清洁中</button>
-    </div>
-    <input type="text" id="search" placeholder="搜索房号..." style="padding:6px 12px;background:#151310;border:1px solid #2a2418;border-radius:6px;color:#e0d8c8;font-size:12px;width:140px" oninput="renderRooms()">
+  <div class="filters">
+    <button class="active" onclick="setFilter('all')">全部</button>
+    <button onclick="setFilter('available')">🟢 空闲</button>
+    <button onclick="setFilter('occupied')">🔵 已入住</button>
+    <button onclick="setFilter('booked')">🟠 已预订</button>
+    <button onclick="setFilter('cleaning')">🟡 清洁中</button>
   </div>
-
-  <!-- Two columns -->
-  <div class="cols">
+  <div class="grid" id="grid"></div>
+  <div class="two-col">
     <div>
-      <div id="roomgrid" class="room-grid"><div class="loading">加载中...</div></div>
+      <div class="section-title">📋 今日入住 <span class="badge" id="today-count">0</span></div>
+      <div class="table-wrap"><table><thead><tr><th>房间</th><th>客人</th><th>入住时间</th><th>状态</th><th>操作</th></tr></thead><tbody id="today-body"></tbody></table></div>
     </div>
     <div>
-      <div class="rpanel">
-        <h3>📥 今日预计入住</h3>
-        <div id="todayIn"></div>
-      </div>
-      <div class="rpanel">
-        <h3>📤 今日预计退房</h3>
-        <div id="todayOut"></div>
-      </div>
+      <div class="section-title">📝 最近入住 <span class="badge" id="recent-count">0</span></div>
+      <div class="table-wrap"><table><thead><tr><th>房间</th><th>客人</th><th>入住时间</th><th>状态</th><th>操作</th></tr></thead><tbody id="recent-body"></tbody></table></div>
     </div>
   </div>
 </div>
 
-<!-- Batch bar -->
-<div class="batch-bar" id="batchBar">
-  <span class="bcount" id="bcount">已选 0 间</span>
-  <button class="bci" onclick="batchCheckin()">批量入住</button>
-  <button class="bclr" onclick="clearSelection()">清除选择</button>
-</div>
-
-<!-- Check-in modal -->
-<div class="modal" id="checkinModal">
-  <div class="modal-box">
-    <h3>办理入住</h3>
-    <p style="color:#807060;font-size:12px;margin-bottom:12px" id="ciRoomInfo"></p>
-    <label>订单ID</label>
-    <input type="number" id="ciOrderId" placeholder="输入订单ID">
+<div class="modal-overlay" id="checkin-modal">
+  <div class="modal">
+    <h3>🏨 办理入住</h3>
     <label>房间号</label>
-    <input type="text" id="ciRoomNo" placeholder="房间号">
-    <div class="mbtns">
-      <button class="mcancel" onclick="closeModal('checkinModal')">取消</button>
-      <button class="mok" onclick="doCheckin()">确认入住</button>
+    <input type="text" id="ci-room" placeholder="如 A101">
+    <label>订单ID</label>
+    <input type="number" id="ci-order" placeholder="订单号">
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">取消</button>
+      <button class="btn btn-gold" onclick="doCheckin()">确认入住</button>
     </div>
   </div>
 </div>
 
-<!-- Message toast -->
-<div id="toast" style="position:fixed;top:20px;right:20px;padding:10px 20px;border-radius:8px;font-size:13px;z-index:300;display:none;max-width:300px"></div>
+<div class="toast" id="toast"></div>
 
 <script>
-// ── State ──
-var _t = '';           // token
-var _rooms = [];       // all rooms
-var _checkins = [];    // checkin records
-var _orders = [];      // all orders
-var _selected = {};     // selected room ids
-var _filter = 'all';
-var _today = '';
+var currentFilter = 'all';
+var roomsData = [];
+var checkinsData = [];
+var AUTH_TOKEN = '';
 
-function initDate() {
-  var now = new Date();
-  var y = now.getFullYear();
-  var m = String(now.getMonth()+1).padStart(2,'0');
-  var d = String(now.getDate()).padStart(2,'0');
-  _today = y + '-' + m + '-' + d;
-  document.getElementById('filters').querySelectorAll('button').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      document.getElementById('filters').querySelectorAll('button').forEach(function(b){b.classList.remove('on')});
-      btn.classList.add('on');
-      _filter = btn.getAttribute('data-f');
-      renderRooms();
-    });
-  });
-}
-
-// ── API helpers ──
-function apiGet(url) {
-  return fetch(url, { headers: {'Authorization': 'Bearer ' + _t} }).then(function(r){
-    return r.text().then(function(t){
-      try { return JSON.parse(t); }
-      catch(e) { return {_err: 'JSON parse error: ' + t.substring(0,80)}; }
-    });
-  });
-}
-
-function apiPost(url, body) {
-  return fetch(url, {
+// Login helper
+async function doLogin() {
+  var r = await fetch('/api/auth/login', {
     method: 'POST',
-    headers: {'Authorization': 'Bearer ' + _t, 'Content-Type': 'application/json'},
-    body: JSON.stringify(body)
-  }).then(function(r){
-    return r.text().then(function(t){
-      try { return JSON.parse(t); }
-      catch(e) { return {_err: 'JSON parse error: ' + t.substring(0,80)}; }
-    });
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: 'admin', password: 'admin123' })
   });
+  var j = await r.json();
+  AUTH_TOKEN = j.access_token || (j.data && j.data.access_token) || '';
+  if (!AUTH_TOKEN) throw new Error('登录失败，无法获取token');
 }
 
-function showToast(msg, ok) {
+async function api(url, opts) {
+  opts = opts || {};
+  opts.headers = opts.headers || {};
+  opts.headers['Authorization'] = 'Bearer ' + AUTH_TOKEN;
+  var r = await fetch('/api' + url, opts);
+  if (r.status === 401) {
+    await doLogin();
+    opts.headers['Authorization'] = 'Bearer ' + AUTH_TOKEN;
+    r = await fetch('/api' + url, opts);
+  }
+  if (!r.ok) {
+    var ej = await r.json().catch(function(){ return {}; });
+    throw new Error(ej.detail || '请求失败 (' + r.status + ')');
+  }
+  return r;
+}
+
+function toast(msg, type) {
   var el = document.getElementById('toast');
   el.textContent = msg;
-  el.style.display = 'block';
-  el.style.background = ok ? '#1a3a1a' : '#3a1a1a';
-  el.style.color = ok ? '#5a9e6f' : '#d4845a';
-  setTimeout(function(){ el.style.display = 'none'; }, 3000);
+  el.className = 'toast ' + (type === 'error' ? 'err' : 'ok') + ' show';
+  setTimeout(function() { el.className = 'toast'; }, 2500);
 }
 
-// ── Login ──
-function doLogin() {
-  document.getElementById('autherr').style.display = 'none';
-  fetch('/api/auth/login', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({username: 'admin', password: 'admin123'})
-  }).then(function(r){ return r.text().then(function(t){ try{return JSON.parse(t)}catch(e){return null} }) })
-    .then(function(j){
-      if (!j || j.detail) {
-        document.getElementById('autherr').textContent = '登录失败: ' + (j&&j.detail||'unknown');
-        document.getElementById('autherr').style.display = 'block';
-        setTimeout(doLogin, 3000);
-        return;
-      }
-      _t = j.access_token || (j.data && j.data.access_token);
-      if (!_t) {
-        document.getElementById('autherr').textContent = '未获取到token';
-        document.getElementById('autherr').style.display = 'block';
-        return;
-      }
-      document.getElementById('username').textContent = j.username || 'admin';
-      loadAll();
-    }).catch(function(e){
-      document.getElementById('autherr').textContent = '登录异常: ' + e.message;
-      document.getElementById('autherr').style.display = 'block';
-      setTimeout(doLogin, 3000);
+function openCheckinModal(roomName) {
+  document.getElementById('ci-room').value = roomName || '';
+  document.getElementById('ci-order').value = '';
+  document.getElementById('checkin-modal').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('checkin-modal').classList.remove('show');
+}
+
+async function doCheckin() {
+  var room = document.getElementById('ci-room').value.trim();
+  var orderId = parseInt(document.getElementById('ci-order').value) || 0;
+  if (!room) { toast('请输入房间号', 'error'); return; }
+  if (!orderId) { toast('请输入订单ID', 'error'); return; }
+  try {
+    var r = await api('/checkin/in', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order_id: orderId, room_number: room })
     });
+    var j = await r.json();
+    toast('✅ ' + room + ' 入住成功 - 记录ID:' + j.id);
+    closeModal();
+    loadAll();
+  } catch(e) {
+    toast('❌ 入住失败: ' + e.message, 'error');
+  }
 }
 
-// ── Load Data ──
-function loadAll() {
-  Promise.all([
-    apiGet('/api/rooms/status'),
-    apiGet('/api/checkin?page_size=200'),
-    apiGet('/api/orders?page_size=200')
-  ]).then(function(d){
-    // Rooms
-    var rs = d[0];
-    _rooms = rs.items || rs.data && rs.data.items || rs.data || [];
-    // Checkins
-    var ck = d[1];
-    _checkins = ck.items || ck.data && ck.data.items || ck.data || [];
-    // Orders
-    var od = d[2];
-    _orders = od.items || od.data && od.data.items || od.data || [];
-
-    renderStats();
-    renderRooms();
-    renderTodayLists();
-  }).catch(function(e){
-    document.getElementById('roomgrid').innerHTML = '<div class="error">加载失败: ' + e.message + '</div>';
-  });
+async function doCheckout(checkinId) {
+  if (!confirm('确认办理退房？')) return;
+  try {
+    var r = await api('/checkin/out/' + checkinId, { method: 'POST' });
+    toast('✅ 退房成功');
+    loadAll();
+  } catch(e) {
+    toast('❌ 退房失败: ' + e.message, 'error');
+  }
 }
 
-// ── Room status ──
+function setFilter(f) {
+  currentFilter = f;
+  var btns = document.querySelectorAll('.filters button');
+  var map = { all:0, available:1, occupied:2, booked:3, cleaning:4 };
+  btns.forEach(function(b, i) { b.classList.toggle('active', i === (map[f] || 0)); });
+  renderGrid();
+}
+
 function roomStatus(r) {
   if (r.occupied_count > 0) return 'occupied';
   if (r.cleaning_count > 0) return 'cleaning';
@@ -304,265 +238,119 @@ function roomStatus(r) {
 }
 
 function statusLabel(s) {
-  var map = {available:'空闲', occupied:'已入住', booked:'已预订', cleaning:'清洁中'};
-  return map[s] || s;
+  var m = { available:'可订', occupied:'已入住', booked:'已预订', cleaning:'清洁中' };
+  return m[s] || s;
 }
 
-// ── Render Stats ──
-function renderStats() {
-  var total = _rooms.length;
-  var avail = 0, occ = 0, book = 0, clean = 0;
-  _rooms.forEach(function(r){
-    var s = roomStatus(r);
-    if (s == 'available') avail++;
-    else if (s == 'occupied') occ++;
-    else if (s == 'booked') book++;
-    else if (s == 'cleaning') clean++;
+function renderGrid() {
+  var items = roomsData.filter(function(r) {
+    if (currentFilter === 'all') return true;
+    return roomStatus(r) === currentFilter;
   });
-  document.getElementById('stats').innerHTML =
-    '<div class="stat-card"><div class="num">' + total + '</div><div class="label">总房间</div></div>' +
-    '<div class="stat-card avail"><div class="num">' + avail + '</div><div class="label">空闲</div></div>' +
-    '<div class="stat-card occ"><div class="num">' + occ + '</div><div class="label">已入住</div></div>' +
-    '<div class="stat-card book"><div class="num">' + book + '</div><div class="label">已预订</div></div>' +
-    '<div class="stat-card clean"><div class="num">' + clean + '</div><div class="label">清洁中</div></div>';
-}
-
-// ── Render Rooms ──
-function renderRooms() {
-  var search = (document.getElementById('search').value || '').toLowerCase();
-  var html = '';
-  var shown = 0;
-  _rooms.forEach(function(r){
-    var s = roomStatus(r);
-    if (_filter != 'all' && _filter != s) return;
-    if (search && r.name.toLowerCase().indexOf(search) < 0) return;
-    shown++;
-    var sel = _selected[r.id] ? ' selected' : '';
-    var chkHtml = '<div class="chk"></div>';
-    html += '<div class="room-card' + sel + '" data-id="' + r.id + '" onclick="toggleRoom(' + r.id + ',event)">' +
-      chkHtml +
-      '<div class="rname">' + r.name + '</div>' +
-      '<div class="rtype">' + (r.room_type || '标准间') + ' · ' + (r.bed_type || '大床') + ' · ' + (r.area || '') + '㎡</div>' +
-      '<div class="rprice">¥' + r.price + '<span>/晚</span></div>' +
-      '<div class="rtags">' +
-        '<span class="tag ' + s + '">' + statusLabel(s) + '</span>' +
-        (r.max_guests ? '<span style="font-size:10px;color:#807060">' + r.max_guests + '人</span>' : '') +
-      '</div>' +
-      '<div class="racts">';
-    if (s == 'available' || s == 'booked') {
-      html += '<button class="btn-ci" onclick="event.stopPropagation();openCheckin(' + r.id + ',\'' + r.name + '\')">入住</button>';
-    }
-    if (s == 'occupied') {
-      html += '<button class="btn-co" onclick="event.stopPropagation();doCheckoutRoom(' + r.id + ')">退房</button>';
-    }
-    if (s == 'cleaning') {
-      html += '<button class="btn-ci" style="background:#2a2a1a;color:#a09070" onclick="event.stopPropagation();markCleanDone(' + r.id + ')">清洁完成</button>';
-    }
-    html += '</div></div>';
-  });
-
-  if (shown == 0) {
-    html = '<div class="loading" style="grid-column:1/-1">没有匹配的房间</div>';
-  }
-  document.getElementById('roomgrid').innerHTML = html;
-}
-
-// ── Toggle room selection ──
-function toggleRoom(id, ev) {
-  if (_selected[id]) {
-    delete _selected[id];
+  var h = '';
+  if (!items.length) {
+    h = '<div class="empty" style="grid-column:1/-1">暂无数据</div>';
   } else {
-    _selected[id] = true;
-  }
-  updateBatchBar();
-  renderRooms();
-}
-
-function clearSelection() {
-  _selected = {};
-  updateBatchBar();
-  renderRooms();
-}
-
-function updateBatchBar() {
-  var keys = Object.keys(_selected);
-  var bar = document.getElementById('batchBar');
-  if (keys.length > 0) {
-    bar.classList.add('show');
-    document.getElementById('bcount').textContent = '已选 ' + keys.length + ' 间';
-  } else {
-    bar.classList.remove('show');
-  }
-}
-
-// ── Check-in ──
-var _ciRoomId = 0;
-var _ciRoomName = '';
-
-function openCheckin(roomId, roomName) {
-  _ciRoomId = roomId;
-  _ciRoomName = roomName;
-  document.getElementById('ciRoomInfo').textContent = '房间: ' + roomName + ' (ID: ' + roomId + ')';
-  document.getElementById('ciRoomNo').value = roomName;
-  document.getElementById('ciOrderId').value = '';
-
-  // Auto-fill order if this room has a booked order for today
-  var found = null;
-  _orders.forEach(function(o){
-    if (o.room_id == roomId && (o.status == 'paid' || o.status == 'confirmed' || o.status == 'pending')) {
-      found = o;
-    }
-  });
-  if (found) {
-    document.getElementById('ciOrderId').value = found.id;
-  }
-
-  document.getElementById('checkinModal').classList.add('show');
-}
-
-function closeModal(id) {
-  document.getElementById(id).classList.remove('show');
-}
-
-function doCheckin() {
-  var orderId = parseInt(document.getElementById('ciOrderId').value);
-  var roomNo = document.getElementById('ciRoomNo').value.trim();
-
-  if (!orderId) { showToast('请输入订单ID', false); return; }
-  if (!roomNo) { showToast('请输入房间号', false); return; }
-
-  apiPost('/api/checkin/in', {order_id: orderId, room_number: roomNo}).then(function(j){
-    if (j._err || j.detail) {
-      showToast('入住失败: ' + (j.detail || j._err), false);
-      return;
-    }
-    showToast('入住成功! ' + roomNo, true);
-    closeModal('checkinModal');
-    loadAll();
-  });
-}
-
-// ── Check-out ──
-function doCheckoutRoom(roomId) {
-  // Find checkin for this room
-  var room = null;
-  _rooms.forEach(function(r){ if (r.id == roomId) room = r; });
-  if (!room) return;
-
-  // Find checkin record by room_number matching room.name
-  var cin = null;
-  _checkins.forEach(function(c){
-    if (c.room_number == room.name && (c.status == 'active' || c.status == 'checked_in')) {
-      cin = c;
-    }
-  });
-
-  if (!cin) {
-    showToast('未找到入住记录: ' + room.name, false);
-    return;
-  }
-
-  if (!confirm('确认退房: ' + room.name + '?\n住客: ' + (cin.guest_name||'未知'))) return;
-
-  fetch('/api/checkin/out/' + cin.id, {method: 'POST', headers: {'Authorization': 'Bearer ' + _t}})
-    .then(function(r){ return r.text().then(function(t){ try{return JSON.parse(t)}catch(e){return null} }) })
-    .then(function(j){
-      if (!j || j.detail) { showToast('退房失败: ' + (j&&j.detail||'error'), false); return; }
-      showToast('退房成功! ' + room.name, true);
-      loadAll();
-    });
-}
-
-// ── Batch check-in ──
-function batchCheckin() {
-  var ids = Object.keys(_selected);
-  if (ids.length == 0) return;
-  var rname = [];
-  ids.forEach(function(id){
-    _rooms.forEach(function(r){ if (r.id == parseInt(id)) rname.push(r.name); });
-  });
-  document.getElementById('ciRoomInfo').textContent = '批量入住 ' + ids.length + ' 间: ' + rname.join(', ');
-  document.getElementById('ciRoomNo').value = rname[0] || '';
-  document.getElementById('ciOrderId').value = '';
-  document.getElementById('checkinModal').classList.add('show');
-}
-
-// ── Clean done ──
-function markCleanDone(roomId) {
-  showToast('清洁完成标记功能需后端支持（当前模拟）', true);
-  // In future: POST /api/rooms/{id}/status with cleaning→available
-}
-
-// ── Today's lists ──
-function renderTodayLists() {
-  // Today arrivals: orders with checkin_date == today
-  var arrIn = [];
-  _orders.forEach(function(o){
-    if (o.checkin_date == _today) {
-      arrIn.push(o);
-    }
-  });
-  // Also check checkin records with checkin_date == today
-  _checkins.forEach(function(c){
-    if (c.checkin_date == _today) {
-      var exists = false;
-      arrIn.forEach(function(a){ if (a.id == c.order_id) exists = true; });
-      if (!exists) arrIn.push(c);
-    }
-  });
-
-  var htmlIn = '';
-  if (arrIn.length == 0) {
-    htmlIn = '<div style="color:#807060;font-size:12px;padding:8px 0">今日无预计入住</div>';
-  } else {
-    arrIn.slice(0, 20).forEach(function(item){
-      var n = item.guest_name || item.room_name || '--';
-      var r = item.room_number || item.room_name || '--';
-      var st = item.status || '';
-      var stTag = st == 'active' || st == 'checked_in' ? '<span style="color:#5a9e6f;font-size:10px">✓已入住</span>' :
-                  st == 'paid' ? '<span style="color:#6a8fbf;font-size:10px">已支付</span>' : '';
-      htmlIn += '<div class="rlist-item"><div><div class="gname">' + n + ' ' + stTag + '</div><div class="groom">' + r + '</div></div></div>';
+    items.forEach(function(r) {
+      var s = roomStatus(r);
+      h += '<div class="card ' + s + '">';
+      h += '<div class="card-num">' + (r.name || '---') + '</div>';
+      h += '<div class="card-type">' + (r.room_type || '') + ' · ' + (r.bed_type || '') + '</div>';
+      h += '<div class="card-meta"><span class="card-price">¥' + (r.price || 0) + '</span>';
+      h += '<span class="card-status ' + s + '">' + statusLabel(s) + '</span></div>';
+      var ci = checkinsData.find(function(c) { return c.room_number === r.name && c.status === 'checked_in'; });
+      if (s === 'available') {
+        h += '<div class="card-actions"><button class="ci-btn" onclick="openCheckinModal(\'' + (r.name || '') + '\')">➕ 入住</button></div>';
+      } else if (s === 'occupied' && ci) {
+        h += '<div class="card-actions"><button class="co-btn btn-sm" onclick="doCheckout(' + ci.id + ')">退房</button></div>';
+      }
+      h += '</div>';
     });
   }
-  document.getElementById('todayIn').innerHTML = htmlIn;
+  document.getElementById('grid').innerHTML = h;
+}
 
-  // Today departures: orders with checkout_date == today
-  var arrOut = [];
-  _orders.forEach(function(o){
-    if (o.checkout_date == _today) {
-      arrOut.push(o);
-    }
+async function loadRooms() {
+  var r = await api('/rooms/status');
+  var j = await r.json();
+  roomsData = j.items || [];
+  var rows = [
+    { val: j.total_rooms || 0, cls: '', lbl: '总房间', color: '' },
+    { val: j.available_total || 0, cls: 's0', lbl: '可订', color: '#52c41a' },
+    { val: j.occupied_total || 0, cls: 's1', lbl: '已入住', color: '#1890ff' },
+    { val: j.booked_total || 0, cls: 's2', lbl: '已预订', color: '#fa8c16' },
+    { val: j.cleaning_total || 0, cls: 's3', lbl: '清洁中', color: '#d48806' }
+  ];
+  var sh = '';
+  rows.forEach(function(r) {
+    sh += '<div class="stat ' + r.cls + '"><div class="stat-val"' + (r.color ? ' style="color:' + r.color + '"' : '') + '>' + r.val + '</div><div class="stat-lbl">' + r.lbl + '</div></div>';
   });
-  _checkins.forEach(function(c){
-    if (c.checkout_date == _today) {
-      var exists = false;
-      arrOut.forEach(function(a){ if (a.id == c.order_id) exists = true; });
-      if (!exists) arrOut.push(c);
-    }
-  });
+  document.getElementById('stats').innerHTML = sh;
+}
 
-  var htmlOut = '';
-  if (arrOut.length == 0) {
-    htmlOut = '<div style="color:#807060;font-size:12px;padding:8px 0">今日无预计退房</div>';
+async function loadCheckins() {
+  var r = await api('/checkin?page_size=50');
+  var j = await r.json();
+  checkinsData = j.items || [];
+  var today = new Date().toISOString().slice(0, 10);
+
+  var todays = checkinsData.filter(function(c) {
+    return c.checkin_time && c.checkin_time.slice(0, 10) === today;
+  });
+  document.getElementById('today-count').textContent = todays.length;
+  var th = '';
+  if (!todays.length) {
+    th = '<tr><td colspan="5" class="empty">今日暂无入住</td></tr>';
   } else {
-    arrOut.slice(0, 20).forEach(function(item){
-      var n = item.guest_name || item.room_name || '--';
-      var r = item.room_number || item.room_name || '--';
-      htmlOut += '<div class="rlist-item"><div><div class="gname">' + n + '</div><div class="groom">' + r + '</div></div><div class="gtime">' + (item.checkout_date||'') + '</div></div>';
+    todays.forEach(function(c) {
+      th += '<tr><td>' + (c.room_number || '---') + '</td><td>' + (c.guest_name || c.guest_phone || '---') + '</td><td>' + fmtTime(c.checkin_time) + '</td><td><span style="color:' + (c.status === 'checked_in' ? '#1890ff' : '#52c41a') + '">' + (c.status === 'checked_in' ? '入住中' : '已退房') + '</span></td><td>' + (c.status === 'checked_in' ? '<button class="btn btn-sm btn-danger" onclick="doCheckout(' + c.id + ')">退房</button>' : '---') + '</td></tr>';
     });
   }
-  document.getElementById('todayOut').innerHTML = htmlOut;
+  document.getElementById('today-body').innerHTML = th;
+
+  var recent = checkinsData.slice(0, 10);
+  document.getElementById('recent-count').textContent = recent.length;
+  var rh = '';
+  if (!recent.length) {
+    rh = '<tr><td colspan="5" class="empty">暂无记录</td></tr>';
+  } else {
+    recent.forEach(function(c) {
+      rh += '<tr><td>' + (c.room_number || '---') + '</td><td>' + (c.guest_name || c.guest_phone || '---') + '</td><td>' + fmtTime(c.checkin_time) + '</td><td><span style="color:' + (c.status === 'checked_in' ? '#1890ff' : '#52c41a') + '">' + (c.status === 'checked_in' ? '入住中' : '已退房') + '</span></td><td>' + (c.status === 'checked_in' ? '<button class="btn btn-sm btn-danger" onclick="doCheckout(' + c.id + ')">退房</button>' : '---') + '</td></tr>';
+    });
+  }
+  document.getElementById('recent-body').innerHTML = rh;
 }
 
-// ── Logout ──
-function doLogout() {
-  _t = '';
-  window.location.href = '../login.html';
+function fmtTime(t) {
+  if (!t) return '---';
+  return t.slice(0, 16).replace('T', ' ');
 }
 
-// ── Init ──
-initDate();
-doLogin();
+async function loadAll() {
+  await loadRooms();
+  await loadCheckins();
+  renderGrid();
+}
+
+function updateClock() {
+  var now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleDateString('zh-CN', { year:'numeric', month:'2-digit', day:'2-digit', weekday:'short' }) +
+    ' ' + now.toLocaleTimeString('zh-CN', { hour:'2-digit', minute:'2-digit' });
+}
+setInterval(updateClock, 10000);
+updateClock();
+
+// Init
+(async function() {
+  try {
+    await doLogin();
+    await loadAll();
+    setInterval(loadAll, 60000);
+  } catch(e) {
+    document.getElementById('grid').innerHTML = '<div class="error-msg">初始化失败: ' + e.message + '</div>';
+  }
+})();
 </script>
 </body>
 </html>
