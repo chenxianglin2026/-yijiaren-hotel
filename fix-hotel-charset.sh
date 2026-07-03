@@ -1,57 +1,35 @@
 #!/bin/bash
-# 修复酒店首页乱码 - 适配 ubuntu 用户
-set -e
-echo "=== 修复酒店首页乱码 ==="
+echo "=== 开始修复 ==="
+echo "用户: $(whoami)"
 
-# 找到 yijiaren 代码位置
-if [ -d /home/ubuntu/yijiaren ]; then
-  YJ=/home/ubuntu/yijiaren
-elif [ -d /root/yijiaren ]; then
-  YJ=/root/yijiaren
-else
-  echo "ERROR: 找不到 yijiaren 目录"
-  exit 1
-fi
-echo "yijiaren 目录: $YJ"
+# 找目录
+for d in /home/ubuntu/yijiaren /root/yijiaren; do
+  [ -d "$d" ] && YJ="$d" && break
+done
+echo "YJ=$YJ"
+if [ -z "$YJ" ]; then echo "失败: 找不到yijiaren目录"; ls /home/ubuntu/ /root/ 2>/dev/null; exit 1; fi
 
-# 找 admin/index.html
-SRC=""
-[ -f "$YJ/code/admin/index.html" ] && SRC="$YJ/code/admin/index.html"
-[ -f "$YJ/admin/index.html" ] && SRC="$YJ/admin/index.html"
-[ -f "$YJ/backend/admin/index.html" ] && SRC="$YJ/backend/admin/index.html"
+# 找index.html
+for p in code/admin/index.html admin/index.html; do
+  [ -f "$YJ/$p" ] && SRC="$YJ/$p" && break
+done
+echo "SRC=$SRC"
+[ -z "$SRC" ] && echo "失败: 找不到index.html" && find "$YJ" -name index.html 2>/dev/null && exit 1
 
-if [ -z "$SRC" ]; then
-  echo "ERROR: 找不到 index.html"; exit 1
-fi
-echo "源文件: $SRC"
-head -2 "$SRC"
+# docker
+if docker ps >/dev/null 2>&1; then D="docker"
+elif sudo docker ps >/dev/null 2>&1; then D="sudo docker"
+else echo "失败: 无docker权限"; exit 1; fi
+echo "DOCKER=$D"
 
-# docker 权限
-DOCKER="docker"
-sudo docker ps >/dev/null 2>&1 && DOCKER="sudo docker" || true
+CN=$($D ps --format '{{.Names}}' | grep -i yij | head -1)
+echo "容器=$CN"
+[ -z "$CN" ] && echo "失败: 找不到容器" && $D ps && exit 1
 
-echo "Docker: $DOCKER"
+# 复制
+$D cp "$SRC" "$CN:/app/admin/index.html" && echo "✅ docker cp OK" || { echo "❌ docker cp失败"; exit 1; }
 
-# 找容器名
-CONTAINER=$($DOCKER ps --format '{{.Names}}' | grep -i yijiaren | head -1)
-if [ -z "$CONTAINER" ]; then
-  echo "ERROR: 找不到 yijiaren Docker 容器"
-  $DOCKER ps --format '{{.Names}}'
-  exit 1
-fi
-echo "容器: $CONTAINER"
+# 重载
+$D exec "$CN" nginx -s reload && echo "✅ nginx reload OK"
 
-# 复制文件
-$DOCKER cp "$SRC" "$CONTAINER:/app/admin/index.html" && echo "docker cp OK"
-
-# 重载 nginx
-$DOCKER exec "$CONTAINER" nginx -s reload && echo "nginx reload OK"
-
-# 验证
-sleep 1
-R=$(curl -sk --connect-timeout 3 https://127.0.0.1/ 2>/dev/null | head -1)
-if echo "$R" | grep -q "DOCTYPE"; then
-  echo "✅ 修复成功"
-else
-  echo "⚠️  请刷新浏览器: $R"
-fi
+echo "=== 完成 ==="
