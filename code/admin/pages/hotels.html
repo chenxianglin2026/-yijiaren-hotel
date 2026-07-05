@@ -98,7 +98,9 @@
 </div>
 
 <script>
-const T=localStorage.getItem('yjr_token'),H={'Authorization':'Bearer '+T};
+const T=localStorage.getItem('yjr_token');
+if(!T){window.top.location.href='pages/login.html';}
+const H={'Authorization':'Bearer '+T};
 const F=n=>'¥'+Number(n||0).toLocaleString();
 let hotels=[],rooms=[];
 

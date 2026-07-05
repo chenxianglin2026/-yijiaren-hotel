@@ -97,6 +97,7 @@
 
 <script>
 const T = localStorage.getItem('yjr_token');
+if(!T){window.top.location.href='pages/login.html';}
 const H = { 'Authorization':'Bearer '+T };
 
 function toast(msg, type) {

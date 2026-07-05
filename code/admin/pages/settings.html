@@ -239,7 +239,7 @@ function switchSetting(el, panelId) {
 // 加载企业信息（当前登录用户）
 (function loadEnterpriseInfo() {
   var token = localStorage.getItem('yjr_token');
-  if (!token) { return; }
+  if (!token) { window.top.location.href = 'pages/login.html'; return; }
 
   fetch('/api/auth/me', {
     headers: { 'Authorization': 'Bearer ' + token }
@@ -272,7 +272,7 @@ function switchSetting(el, panelId) {
 var allAccounts = [];
 (function loadAccounts() {
   var token = localStorage.getItem('yjr_token');
-  if (!token) { return; }
+  if (!token) { window.top.location.href = 'pages/login.html'; return; }
 
   fetch('/api/auth/users', {
     headers: { 'Authorization': 'Bearer ' + token }
@@ -353,7 +353,7 @@ function markConfigDirty() {
 
 function loadNotificationConfig() {
   var token = localStorage.getItem('yjr_token');
-  if (!token) { return; }
+  if (!token) { window.top.location.href = 'pages/login.html'; return; }
 
   fetch('/api/system/settings', {
     headers: { 'Authorization': 'Bearer ' + token }
@@ -380,7 +380,7 @@ function loadNotificationConfig() {
 
 function saveNotificationConfig() {
   var token = localStorage.getItem('yjr_token');
-  if (!token) { return; }
+  if (!token) { window.top.location.href = 'pages/login.html'; return; }
 
   var orderOn = document.getElementById('notify-order').checked;
   var checkinOn = document.getElementById('notify-checkin').checked;
@@ -425,7 +425,7 @@ function saveNotificationConfig() {
 // ── 数据备份 ──────────────────────────────────────────
 function loadBackupInfo() {
   var token = localStorage.getItem('yjr_token');
-  if (!token) { return; }
+  if (!token) { window.top.location.href = 'pages/login.html'; return; }
 
   document.getElementById('backup-loading').style.display = 'block';
   document.getElementById('backup-content').style.display = 'none';
@@ -463,7 +463,7 @@ function loadBackupInfo() {
 // ── 操作日志 ──────────────────────────────────────────
 function loadLogs() {
   var token = localStorage.getItem('yjr_token');
-  if (!token) { return; }
+  if (!token) { window.top.location.href = 'pages/login.html'; return; }
 
   document.getElementById('logs-loading').style.display = 'block';
   document.getElementById('logs-content').style.display = 'none';
