@@ -146,19 +146,8 @@ tr:hover td{background:#fafafa}
 var currentFilter = 'all';
 var roomsData = [];
 var checkinsData = [];
-var AUTH_TOKEN = '';
-
-// Login helper
-async function doLogin() {
-  var r = await fetch('/api/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username: 'admin', password: 'admin123' })
-  });
-  var j = await r.json();
-  AUTH_TOKEN = j.access_token || (j.data && j.data.access_token) || '';
-  if (!AUTH_TOKEN) throw new Error('登录失败，无法获取token');
-}
+var AUTH_TOKEN = localStorage.getItem('yjr_token') || '';
+if (!AUTH_TOKEN) { location.href = 'pages/login.html'; }
 
 async function api(url, opts) {
   opts = opts || {};
@@ -166,9 +155,8 @@ async function api(url, opts) {
   opts.headers['Authorization'] = 'Bearer ' + AUTH_TOKEN;
   var r = await fetch('/api' + url, opts);
   if (r.status === 401) {
-    await doLogin();
-    opts.headers['Authorization'] = 'Bearer ' + AUTH_TOKEN;
-    r = await fetch('/api' + url, opts);
+    location.href = 'pages/login.html';
+    throw new Error('登录已过期，请重新登录');
   }
   if (!r.ok) {
     var ej = await r.json().catch(function(){ return {}; });
@@ -346,7 +334,6 @@ updateClock();
 // Init
 (async function() {
   try {
-    await doLogin();
     await loadAll();
     setInterval(loadAll, 60000);
   } catch(e) {
