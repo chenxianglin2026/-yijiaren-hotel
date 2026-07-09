@@ -96,7 +96,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
         showOk('登录成功，正在跳转...');
         localStorage.setItem('yjr_token',t);
         localStorage.setItem('yjr_user',u);
-        setTimeout(function(){location.href='/';},500);
+        setTimeout(function(){location.href='dashboard.html';},500);
       }else{
         showErr('登录响应异常，请重试');
         setLoading(false);
