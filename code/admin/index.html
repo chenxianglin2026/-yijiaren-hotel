@@ -3,121 +3,197 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>伊家人 - 登录</title>
+<title>伊家人酒店 - 管理后台</title>
+<link rel="stylesheet" href="css/admin.css">
 <style>
-:root{--gold:#c8a052;--gold-dark:#9a7a32;--gold-light:#e0c882;--bg-dark:#1e1c18;--text-primary:#2c2416;--text-secondary:#6b5e4a;--text-muted:#968c7a;--border:#e5ded0;--success:#52c41a;--error:#f5222d;--radius:8px;--transition:all .25s ease}
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(135deg,var(--bg-dark) 0%,#2c2416 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-.box{background:#fff;border-radius:16px;padding:40px;width:360px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.3)}
-.box h1{text-align:center;font-size:22px;color:var(--text-primary);margin-bottom:4px}
-.box .sub{text-align:center;font-size:13px;color:var(--text-muted);margin-bottom:24px}
-.logo-text{display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;background:var(--gold);color:#fff;border-radius:14px;font-size:36px;font-weight:700;margin:0 auto 8px}
-.fg{margin-bottom:14px}
-.fg label{display:block;font-size:13px;color:var(--text-secondary);margin-bottom:4px}
-.fg input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;outline:none;transition:var(--transition)}
-.fg input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(200,160,82,.12)}
-.fg input.error{border-color:var(--error);box-shadow:0 0 0 3px rgba(245,34,45,.1)}
-.btn{width:100%;padding:12px;background:var(--gold);color:#fff;border:none;border-radius:6px;font-size:15px;cursor:pointer;margin-top:4px;transition:var(--transition);position:relative}
-.btn:hover{background:var(--gold-dark)}
-.btn:disabled{opacity:.7;cursor:not-allowed}
-.btn .spinner{display:none;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;margin-right:6px;vertical-align:middle}
-.btn.loading .spinner{display:inline-block}
-.btn.loading .btn-txt{display:none}
-@keyframes spin{to{transform:rotate(360deg)}}
-.err{color:var(--error);font-size:13px;text-align:center;margin-top:12px;display:none;padding:8px 12px;background:#fef0ef;border-radius:6px;border-left:3px solid var(--error)}
-.err.show{display:block}
-.success-msg{color:var(--success);font-size:13px;text-align:center;margin-top:12px;display:none;padding:8px 12px;background:#f0faf0;border-radius:6px;border-left:3px solid var(--success)}
-.success-msg.show{display:block}
-.beian{position:fixed;bottom:10px;width:100%;text-align:center}
-.beian a{color:rgba(255,255,255,.4);font-size:11px;text-decoration:none}
-@media(max-width:480px){.box{padding:24px}}
+  /* index-specific styles */
+  .logo-icon-img { width:40px; height:40px; }
+  .logo-text { 
+    display:inline-flex;align-items:center;justify-content:center;
+    width:40px;height:40px;background:var(--gold);color:#fff;
+    border-radius:10px;font-size:22px;font-weight:700;
+  }
 </style>
 </head>
 <body>
-<div class="box">
-  <div style="text-align:center"><div class="logo-text">伊</div></div>
-  <h1>伊家人酒店管理系统</h1>
-  <div class="sub">请登录管理后台</div>
-  <form id="f">
-    <div class="fg"><label>用户名</label><input id="u" placeholder="请输入用户名" required autocomplete="username"></div>
-    <div class="fg"><label>密码</label><input id="p" type="password" placeholder="请输入密码" required autocomplete="current-password"></div>
-    <button type="submit" class="btn" id="loginBtn"><span class="spinner"></span><span class="btn-txt">登 录</span></button>
-  </form>
-  <div class="err" id="e"></div>
-  <div class="success-msg" id="s"></div>
+<div class="layout">
+  <!-- ========== Sidebar ========== -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-icon logo-text">伊</span>
+      <div class="logo-name">伊家人酒店</div>
+      <div class="logo-sub">管理后台 v2.0</div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-page="pages/dashboard.html" data-title="仪表盘">
+        <span class="nav-icon">📊</span> 仪表盘
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-title">业务管理</div>
+        <div class="nav-item" data-page="pages/hotels.html" data-title="门店管理">
+          <span class="nav-icon">🏢</span> 门店管理
+        </div>
+        <div class="nav-item" data-page="pages/orders.html" data-title="订单管理">
+          <span class="nav-icon">📋</span> 订单管理
+        </div>
+        <div class="nav-item" data-page="pages/rooms.html" data-title="房态管理">
+          <span class="nav-icon">🚪</span> 房态管理
+        </div>
+        <div class="nav-item" data-page="pages/cleaning.html" data-title="保洁派单">
+          <span class="nav-icon">🧹</span> 保洁派单
+        </div>
+        <div class="nav-item" data-page="pages/ota.html" data-title="OTA渠道">
+          <span class="nav-icon">🔗</span> OTA渠道
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-title">通行管理</div>
+        <div class="nav-item" data-page="pages/access.html" data-title="通行管理">
+          <span class="nav-icon">🔑</span> 通行管理
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-title">财务管理</div>
+        <div class="nav-item" data-page="pages/finance.html" data-title="财务报表">
+          <span class="nav-icon">💰</span> 财务报表
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-title">系统设置</div>
+        <div class="nav-item" data-page="pages/monitor.html" data-title="监控看板">
+          <span class="nav-icon">🛡️</span> 监控看板
+        </div>
+        <div class="nav-item" data-page="pages/devices.html" data-title="设备监控">
+          <span class="nav-icon">📡</span> 设备监控
+        </div>
+        <div class="nav-item" data-page="pages/settings.html" data-title="系统设置">
+          <span class="nav-icon">⚙️</span> 系统设置
+        </div>
+        <div class="nav-item" data-page="pages/cameras.html" data-title="监控摄像头">
+          <span class="nav-icon">📷</span> 监控摄像头
+        </div>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      © 2026 伊家人酒店管理系统
+    </div>
+  </aside>
+
+  <!-- ========== Main Content ========== -->
+  <div class="main">
+    <header class="main-header">
+      <div class="breadcrumb">
+        🏠 首页 / <span id="pageBreadcrumb">仪表盘</span>
+      </div>
+      <div class="header-actions">
+        <select id="storeSelector" style="padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;margin-right:12px;background:#fff;color:var(--text-secondary);">
+          <option value="">全部门店</option>
+        </select>
+        <div class="header-time" id="headerTime">--</div>
+        <div class="header-user">
+          <div class="avatar" id="userAvatar">张</div>
+          <span id="userName">张经理</span>
+        </div>
+        <a href="#" id="logoutBtn" style="margin-left:12px;font-size:12px;color:var(--text-muted);text-decoration:none;" title="退出登录">退出</a>
+      </div>
+    </header>
+
+    <div class="main-content">
+      <iframe id="contentFrame" src="pages/dashboard.html" title="内容区"></iframe>
+    </div>
+  </div>
 </div>
-<div class="beian"><a href="https://beian.miit.gov.cn" target="_blank">粤ICP备16027093号-2</a></div>
+
 <script>
-(function(){
-  var f=document.getElementById('f'),btn=document.getElementById('loginBtn'),
-      errEl=document.getElementById('e'),okEl=document.getElementById('s'),
-      uEl=document.getElementById('u'),pEl=document.getElementById('p');
+(function() {
+  // Auth check
+  const token = localStorage.getItem('yjr_token');
+  if (!token) { location.href = 'pages/login.html'; return; }
 
-  function setLoading(v){
-    btn.disabled=v;
-    btn.classList.toggle('loading',v);
+  // Set username from localStorage
+  var savedUser = localStorage.getItem('yjr_user');
+  if (savedUser) {
+    document.getElementById('userName').textContent = savedUser;
+    document.getElementById('userAvatar').textContent = savedUser.charAt(0);
   }
-  function showErr(msg){
-    errEl.textContent=msg;errEl.classList.add('show');okEl.classList.remove('show');
-    uEl.classList.add('error');pEl.classList.add('error');
-    setTimeout(function(){uEl.classList.remove('error');pEl.classList.remove('error');},2000);
-  }
-  function showOk(msg){
-    okEl.textContent=msg;okEl.classList.add('show');errEl.classList.remove('show');
-  }
-  function hideAll(){errEl.classList.remove('show');okEl.classList.remove('show');}
 
-  f.addEventListener('submit',async function(ev){
-    ev.preventDefault();
-    var u=uEl.value.trim(),p=pEl.value;
-    if(!u){showErr('请输入用户名');uEl.focus();return;}
-    if(!p){showErr('请输入密码');pEl.focus();return;}
-    if(p.length<3){showErr('密码长度不能少于3位');pEl.focus();return;}
-
-    hideAll();setLoading(true);
-    try{
-      var r=await fetch('/api/auth/login',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({username:u,password:p})
-      });
-      var j=await r.json();
-
-      if(r.status===401||r.status===403){
-        var errMsg=j.detail||j.msg||'';
-        if(errMsg.indexOf('密码')!==-1||errMsg.indexOf('password')!==-1) showErr('密码错误，请核对后重试');
-        else if(errMsg.indexOf('不存在')!==-1||errMsg.indexOf('not found')!==-1) showErr('用户不存在，请检查用户名');
-        else if(errMsg.indexOf('禁用')!==-1||errMsg.indexOf('disabled')!==-1) showErr('账号已被禁用，请联系管理员');
-        else showErr(errMsg||'用户名或密码错误');
-        setLoading(false);return;
-      }
-      if(r.status===429){showErr('登录尝试过多，请稍后再试');setLoading(false);return;}
-      if(!r.ok){showErr('服务器异常 (HTTP '+r.status+')，请稍后再试');setLoading(false);return;}
-
-      var t=j.access_token||(j.data&&j.data.access_token);
-      if(t){
-        showOk('登录成功，正在跳转...');
-        localStorage.setItem('yjr_token',t);
-        localStorage.setItem('yijiaren_token',t);
-        localStorage.setItem('yjr_user',u);
-        setTimeout(function(){location.href='pages/dashboard.html';},500);
-      }else{
-        showErr('登录响应异常，请重试');
-        setLoading(false);
-      }
-    }catch(x){
-      if(x.name==='TypeError'&&x.message.indexOf('fetch')!==-1){
-        showErr('网络连接失败，请检查网络后重试');
-      }else{
-        showErr('网络错误: '+x.message);
-      }
-      setLoading(false);
+  // Logout with confirmation
+  document.getElementById('logoutBtn').addEventListener('click', function(e) {
+    e.preventDefault();
+    if (confirm('确定要退出登录吗？')) {
+      localStorage.removeItem('yjr_token');
+      localStorage.removeItem('yjr_user');
+      localStorage.removeItem('selectedHotelId');
+      location.href = 'pages/login.html';
     }
   });
 
-  uEl.addEventListener('keydown',function(e){if(e.key==='Enter')f.dispatchEvent(new Event('submit'));});  pEl.addEventListener('keydown',function(e){if(e.key==='Enter')f.dispatchEvent(new Event('submit'));});  uEl.addEventListener('input',hideAll);
-  pEl.addEventListener('input',hideAll);
-  uEl.focus();
+  // Original code below
+  const iframe = document.getElementById('contentFrame');
+  const breadcrumb = document.getElementById('pageBreadcrumb');
+  const timeEl = document.getElementById('headerTime');
+  const navItems = document.querySelectorAll('.sidebar .nav-item');
+  // Clock update
+  function updateTime() {
+    const now = new Date();
+    const str = now.getFullYear() + '年' +
+      (now.getMonth()+1) + '月' +
+      now.getDate() + '日 ' +
+      String(now.getHours()).padStart(2,'0') + ':' +
+      String(now.getMinutes()).padStart(2,'0') + ':' +
+      String(now.getSeconds()).padStart(2,'0');
+    timeEl.textContent = str;
+  }
+  updateTime();
+  setInterval(updateTime, 1000);
+
+  // Navigation
+  navItems.forEach(function(item) {
+    item.addEventListener('click', function() {
+      navItems.forEach(function(n) { n.classList.remove('active'); });
+      item.classList.add('active');
+      const page = item.getAttribute('data-page');
+      const title = item.getAttribute('data-title');
+      iframe.src = page;
+      breadcrumb.textContent = title;
+    });
+  });
+
+  // Store switcher
+  async function loadStores() {
+    try {
+      const res = await fetch('/api/hotels', { headers: {'Authorization':'Bearer '+token} });
+      const data = await res.json();
+      const sel = document.getElementById('storeSelector');
+      const inner = data.data || data;
+      (inner.items || inner || []).forEach(function(h) {
+        const opt = document.createElement('option');
+        opt.value = h.id;
+        opt.textContent = h.name;
+        sel.appendChild(opt);
+      });
+    } catch(e) { /* silent fail - store API may not be ready */ }
+  }
+  loadStores();
+
+  document.getElementById('storeSelector').addEventListener('change', function() {
+    const hotelId = this.value;
+    localStorage.setItem('selectedHotelId', hotelId);
+    // Reload current iframe page with hotel context
+    iframe.contentWindow.postMessage({ type: 'hotelChange', hotelId: hotelId }, '*');
+    iframe.src = iframe.src; // force refresh
+  });
+
+  // Expose selected hotel to iframe pages
+  window.getSelectedHotel = function() {
+    return localStorage.getItem('selectedHotelId') || '';
+  };
 })();
 </script>
 </body>
