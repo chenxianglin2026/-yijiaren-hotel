@@ -188,3 +188,30 @@ async def room_status(
         cleaning_total=cleaning_total,
         items=all_items,
     )
+
+
+class RoomUpdate(BaseModel):
+    name: Optional[str] = None
+    price: Optional[float] = None
+    total_count: Optional[int] = None
+    available_count: Optional[int] = None
+    is_active: Optional[bool] = None
+
+
+@router.put("/{rid}", summary="修改房型信息")
+async def update_room(
+    rid: int,
+    req: RoomUpdate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    result = await db.execute(select(Room).where(Room.id == rid))
+    room = result.scalar_one_or_none()
+    if not room:
+        raise HTTPException(status_code=404, detail="房型不存在")
+    for k, v in req.model_dump(exclude_unset=True).items():
+        if hasattr(room, k):
+            setattr(room, k, v)
+    await db.flush()
+    await db.refresh(room)
+    return {"code": 0, "msg": "修改成功", "data": RoomOut.model_validate(room)}
