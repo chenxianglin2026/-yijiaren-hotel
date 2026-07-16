@@ -35,6 +35,13 @@ class WxPayConfig:
 
 
 # ── Schemas ───────────────────────────────────────
+class CollectRequest(BaseModel):
+    booking_id: Optional[int] = None
+    order_id: Optional[int] = None
+    amount: float
+    method: str  # cash / wechat / alipay / card
+
+
 class PayRequest(BaseModel):
     order_id: int
     openid: Optional[str] = None  # 小程序用户 openid（JSAPI 必填）
@@ -67,6 +74,47 @@ def _sign(method: str, url: str, body: str = "") -> str:
 
 
 # ── 路由 ─────────────────────────────────────────
+@router.post("/collect", response_model=PayResponse, summary="收款登记")
+async def collect_payment(
+    req: CollectRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """登记收款（现金/刷卡等线下收款）"""
+    if current_user.role not in ("admin", "front_desk"):
+        raise HTTPException(status_code=403, detail="仅管理员或前台可登记收款")
+
+    target_id = req.order_id or req.booking_id
+    if not target_id:
+        raise HTTPException(status_code=400, detail="需要提供 order_id 或 booking_id")
+
+    result = await db.execute(select(Order).where(Order.id == target_id))
+    order = result.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="订单不存在")
+
+    if order.status not in (OrderStatus.PENDING,):
+        raise HTTPException(status_code=400, detail=f"订单当前状态为 {order.status}，不可收款")
+
+    order.status = OrderStatus.PAID
+    order.paid_at = datetime.utcnow()
+
+    await db.flush()
+    await db.refresh(order)
+
+    return PayResponse(
+        msg=f"收款成功：{req.method} ¥{req.amount}",
+        data={
+            "order_id": order.id,
+            "order_no": order.order_no,
+            "amount": req.amount,
+            "method": req.method,
+            "status": order.status,
+            "paid_at": order.paid_at.isoformat() if order.paid_at else None,
+        }
+    )
+
+
 @router.post("/create", response_model=PayResponse, summary="创建支付（JSAPI下单）")
 async def create_payment(
     req: PayRequest,

@@ -3,7 +3,8 @@
 入住 / 退房 / 入住列表 / 开锁记录
 """
 import json
-from datetime import datetime
+import uuid
+from datetime import datetime, date, timedelta
 from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Body
@@ -19,6 +20,14 @@ router = APIRouter(prefix="/api/checkin", tags=["入住管理"])
 
 
 # ── Schemas ──────────────────────────────────────────
+class DirectCheckinRequest(BaseModel):
+    booking_id: Optional[int] = None
+    room_id: Optional[int] = None
+    guest_name: Optional[str] = None
+    guest_phone: Optional[str] = None
+    room_number: Optional[str] = None
+
+
 class CheckinRequest(BaseModel):
     order_id: int
     room_number: str
@@ -55,6 +64,101 @@ class CheckinListResponse(BaseModel):
 
 
 # ── 路由 ─────────────────────────────────────────────
+@router.post("", response_model=CheckinOut, summary="办理入住（支持booking_id或room_id）")
+async def checkin_direct(
+    req: DirectCheckinRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """通过 booking_id 或 room_id + guest信息 办理入住"""
+    if req.booking_id:
+        order_result = await db.execute(
+            select(Order).where(Order.id == req.booking_id).options(selectinload(Order.hotel))
+        )
+        order = order_result.scalar_one_or_none()
+        if not order:
+            raise HTTPException(status_code=404, detail="预订订单不存在")
+
+        if order.status not in (OrderStatus.PAID, OrderStatus.PENDING):
+            raise HTTPException(status_code=400, detail=f"订单状态为 {order.status}，无法办理入住")
+
+        existing = await db.execute(
+            select(Checkin).where(Checkin.order_id == req.booking_id)
+        )
+        if existing.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="该订单已办理入住")
+
+        room_no = req.room_number
+        if not room_no:
+            room_result = await db.execute(select(Room).where(Room.id == order.room_id))
+            room = room_result.scalar_one_or_none()
+            room_no = room.name if room else ""
+        if not room_no or not room_no.strip():
+            raise HTTPException(status_code=400, detail="房间号不能为空")
+
+        checkin = Checkin(
+            order_id=order.id,
+            user_id=order.user_id,
+            hotel_id=order.hotel_id,
+            room_number=room_no.strip(),
+            checkin_time=datetime.utcnow(),
+            status=CheckinStatus.CHECKED_IN,
+        )
+        db.add(checkin)
+        order.status = OrderStatus.CHECKED_IN
+        await db.flush()
+        await db.refresh(checkin)
+        return _build_checkin_out(checkin, order)
+
+    elif req.room_id:
+        if not req.guest_name or not req.guest_phone or not req.room_number:
+            raise HTTPException(status_code=400, detail="Walk-in入住需要提供 guest_name, guest_phone, room_number")
+
+        room_result = await db.execute(
+            select(Room).where(Room.id == req.room_id, Room.is_active == True)
+        )
+        room = room_result.scalar_one_or_none()
+        if not room:
+            raise HTTPException(status_code=404, detail="房间不存在")
+
+        order_no = datetime.now().strftime("%Y%m%d%H%M%S") + uuid.uuid4().hex[:6].upper()
+        order = Order(
+            order_no=order_no,
+            user_id=current_user.id,
+            hotel_id=room.hotel_id,
+            room_id=req.room_id,
+            room_count=1,
+            checkin_date=date.today(),
+            checkout_date=date.today() + timedelta(days=1),
+            nights=1,
+            total_price=room.price,
+            status=OrderStatus.CHECKED_IN,
+            guest_name=req.guest_name,
+            guest_phone=req.guest_phone,
+        )
+        db.add(order)
+        room.available_count -= 1
+        await db.flush()
+        await db.refresh(order)
+
+        checkin = Checkin(
+            order_id=order.id,
+            user_id=current_user.id,
+            hotel_id=room.hotel_id,
+            room_number=req.room_number.strip(),
+            checkin_time=datetime.utcnow(),
+            status=CheckinStatus.CHECKED_IN,
+        )
+        db.add(checkin)
+        await db.flush()
+        await db.refresh(checkin)
+
+        return _build_checkin_out(checkin, order)
+
+    else:
+        raise HTTPException(status_code=400, detail="需要提供 booking_id 或 room_id")
+
+
 @router.post("/in", response_model=CheckinOut, summary="办理入住")
 async def do_checkin(
     req: CheckinRequest,
