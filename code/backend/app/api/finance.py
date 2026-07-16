@@ -442,3 +442,77 @@ async def finance_overview(
         },
         "msg": "ok",
     }
+
+
+class IncomeItem(BaseModel):
+    id: int
+    order_no: str
+    guest_name: str
+    total_price: float
+    status: str
+    paid_at: Optional[str] = None
+    created_at: str
+    hotel_name: Optional[str] = None
+
+
+class IncomeListResponse(BaseModel):
+    code: int = 0
+    data: list[IncomeItem]
+    total: int = 0
+    msg: str = "ok"
+
+
+@router.get("", response_model=IncomeListResponse, summary="收入明细列表")
+async def income_list(
+    hotel_id: Optional[int] = Query(None, description="门店ID"),
+    status: Optional[str] = Query(None, description="订单状态"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    财务管理 - 收入明细列表（支持分页和筛选）。
+    """
+    query = select(Order)
+    if hotel_id:
+        query = query.where(Order.hotel_id == hotel_id)
+    if status:
+        query = query.where(Order.status == status)
+
+    # 只显示有效收入订单
+    query = query.where(Order.status.in_([OrderStatus.PAID, OrderStatus.CHECKED_IN, OrderStatus.COMPLETED]))
+    query = query.order_by(Order.created_at.desc())
+
+    # 总数
+    count_query = select(func.count(Order.id)).select_from(query.subquery())
+    total = (await db.execute(count_query)).scalar() or 0
+
+    # 分页
+    offset = (page - 1) * page_size
+    result = await db.execute(query.offset(offset).limit(page_size))
+    orders = result.scalars().all()
+
+    # 批量查询酒店名称
+    hotel_ids = list(set(o.hotel_id for o in orders))
+    hotel_map = {}
+    if hotel_ids:
+        hotel_result = await db.execute(select(Hotel).where(Hotel.id.in_(hotel_ids)))
+        for h in hotel_result.scalars().all():
+            hotel_map[h.id] = h.name
+
+    items = [
+        IncomeItem(
+            id=o.id,
+            order_no=o.order_no,
+            guest_name=o.guest_name,
+            total_price=o.total_price,
+            status=o.status,
+            paid_at=o.paid_at.isoformat() if o.paid_at else None,
+            created_at=o.created_at.isoformat() if o.created_at else "",
+            hotel_name=hotel_map.get(o.hotel_id),
+        )
+        for o in orders
+    ]
+
+    return IncomeListResponse(data=items, total=total)

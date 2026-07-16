@@ -527,6 +527,47 @@ async def service_stats(
 
 
 # ══════════════════════════════════════════════════════
+# 快速保洁派单（P1业务缺口）
+# ══════════════════════════════════════════════════════
+
+class CleaningDispatchRequest(BaseModel):
+    room_id: int
+    type: str = "cleanup"  # cleanup / daily / turndown / deep_clean
+    notes: Optional[str] = None
+
+
+@router.post("", response_model=CleaningTaskOut, summary="保洁派单")
+async def dispatch_cleaning(
+    req: CleaningDispatchRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """根据房间ID快速创建保洁工单"""
+    if current_user.role not in ("admin", "front_desk", "cleaner"):
+        raise HTTPException(status_code=403, detail="无权限创建保洁工单")
+
+    # 查询房间信息
+    from app.db import Room
+    room_result = await db.execute(select(Room).where(Room.id == req.room_id))
+    room = room_result.scalar_one_or_none()
+    if not room:
+        raise HTTPException(status_code=404, detail="房间不存在")
+
+    task = CleaningTask(
+        hotel_id=room.hotel_id,
+        room_number=room.name or str(room.id),
+        task_type=req.type,
+        status="pending",
+        creator_id=current_user.id,
+        notes=req.notes,
+    )
+    db.add(task)
+    await db.flush()
+    await db.refresh(task)
+    return CleaningTaskOut.model_validate(task)
+
+
+# ══════════════════════════════════════════════════════
 # 保洁员信息
 # ══════════════════════════════════════════════════════
 
