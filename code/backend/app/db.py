@@ -37,6 +37,21 @@ class OrderStatus:
     REFUNDED = "refunded"      # 已退款
 
 
+class PricingRuleType:
+    WEEKEND = "weekend"
+    WEEKDAY = "weekday"
+    HOLIDAY = "holiday"
+    ADVANCE_BOOKING = "advance_booking"
+    LONG_STAY = "long_stay"
+    SEASONAL = "seasonal"
+
+
+class PricingAdjustType:
+    PERCENT = "percent"
+    FIXED = "fixed"
+    OVERRIDE = "override"
+
+
 class CheckinStatus:
     CHECKED_IN = "checked_in"
     CHECKED_OUT = "checked_out"
@@ -114,6 +129,28 @@ class Room(Base):
     # 关系
     hotel: Mapped["Hotel"] = relationship(back_populates="rooms")
     orders: Mapped[List["Order"]] = relationship(back_populates="room")
+
+
+# ── 价格策略模型 ─────────────────────────────────────
+class PricingRule(Base):
+    __tablename__ = "pricing_rules"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    hotel_id: Mapped[int] = mapped_column(ForeignKey("hotels.id", ondelete="CASCADE"), index=True)
+    room_id: Mapped[Optional[int]] = mapped_column(ForeignKey("rooms.id", ondelete="CASCADE"), index=True, nullable=True, comment="null=全部房型")
+    name: Mapped[str] = mapped_column(String(100), nullable=False, comment="规则名称")
+    rule_type: Mapped[str] = mapped_column(String(20), nullable=False, comment="weekend/weekday/holiday/advance_booking/long_stay/seasonal")
+    adjust_type: Mapped[str] = mapped_column(String(20), nullable=False, comment="percent/fixed/override")
+    adjust_value: Mapped[float] = mapped_column(Float, nullable=False, comment="百分比如-20表示8折,固定如+50表示加50元,override直接替换")
+    priority: Mapped[int] = mapped_column(Integer, default=0, comment="数字越小优先级越高")
+    start_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True, comment="生效起始日期")
+    end_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True, comment="生效结束日期")
+    weekdays: Mapped[Optional[str]] = mapped_column(String(20), nullable=True, comment="适用星期几,如0,6表示周六日")
+    min_nights: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, comment="最少住几晚适用")
+    max_advance_days: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, comment="提前几天预订适用")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 # ── 订单模型 ─────────────────────────────────────────

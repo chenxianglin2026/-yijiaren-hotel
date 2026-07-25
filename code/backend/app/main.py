@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.db import init_db
-from app.api import auth, hotels, orders, checkin, rooms, cleaning, dashboard, finance, devices, payment, lock, ota, system, cameras, access, content, bookings, reports, settings as settings_api
+from app.api import auth, hotels, orders, checkin, rooms, cleaning, dashboard, finance, devices, payment, lock, ota, system, cameras, access, content, bookings, reports, settings as settings_api, pricing
 
 
 import time as _time_module
@@ -82,6 +82,7 @@ app.include_router(content.router)
 app.include_router(bookings.router)
 app.include_router(reports.router)
 app.include_router(settings_api.router)
+app.include_router(pricing.router)
 
 # 托管管理后台静态文件（本地调试用，生产由nginx处理）
 import os

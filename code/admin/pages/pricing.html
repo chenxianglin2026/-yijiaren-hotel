@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="../css/admin.css">
+<style>
+  .badge-type { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:500; }
+  .badge-weekend { background:#fff0f6; color:#c41d7f; }
+  .badge-weekday { background:#e6f7ff; color:#096dd9; }
+  .badge-holiday { background:#fff2f0; color:#cf1322; }
+  .badge-advance { background:#f6ffed; color:#389e0d; }
+  .badge-longstay { background:#fffbe6; color:#d48806; }
+  .badge-seasonal { background:#f9f0ff; color:#531dab; }
+  .adjust-percent { color:#389e0d; }
+  .adjust-fixed { color:#096dd9; }
+  .adjust-override { color:#cf1322; font-weight:600; }
+  .scope-all { color:var(--text-muted); }
+  .scope-room { color:var(--gold-dark); }
+  .rule-name { font-weight:600; color:var(--text-primary); }
+  .rule-dates { font-size:12px; color:var(--text-muted); }
+  .op-btns { display:flex; gap:4px; }
+  .op-btns .btn-sm { padding:3px 10px; font-size:12px; }
+  .modal-wide { max-width:640px; }
+  .form-hint { font-size:12px; color:var(--text-muted); margin-top:2px; }
+  .badge-adjust { display:inline-block; padding:1px 6px; border-radius:4px; font-size:11px; background:#f0f0f0; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="page-title">价格策略</div>
+
+  <div class="stat-cards" id="statCards">
+    <div class="loading-row" style="grid-column:1/-1;">加载中...</div>
+  </div>
+
+  <div class="filter-bar">
+    <select class="form-select" id="filterHotel" onchange="loadRules()">
+      <option value="">全部门店</option>
+    </select>
+    <select class="form-select" id="filterActive" onchange="loadRules()">
+      <option value="">全部状态</option>
+      <option value="true">生效中</option>
+      <option value="false">已停用</option>
+    </select>
+    <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="openRuleModal()">+ 新建规则</button>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>规则名称</th>
+            <th>类型</th>
+            <th>适用范围</th>
+            <th>调整方式</th>
+            <th>生效日期</th>
+            <th>状态</th>
+            <th style="text-align:right;">操作</th>
+          </tr>
+        </thead>
+        <tbody id="ruleTable"></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<!-- 规则新增/编辑弹窗 -->
+<div class="modal-overlay" id="ruleModal">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <div class="modal-title" id="ruleModalTitle">新建规则</div>
+      <button class="modal-close" onclick="closeRuleModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">所属门店 <span style="color:var(--error)">*</span></label>
+          <select class="form-select" id="rHotelId">
+            <option value="">请选择门店</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">适用房型</label>
+          <select class="form-select" id="rRoomId">
+            <option value="">全部房型</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">规则名称 <span style="color:var(--error)">*</span></label>
+        <input class="form-input" id="rName" placeholder="如: 周末溢价">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">规则类型 <span style="color:var(--error)">*</span></label>
+          <select class="form-select" id="rRuleType">
+            <option value="weekend">周末 (weekend)</option>
+            <option value="weekday">工作日 (weekday)</option>
+            <option value="holiday">节假日 (holiday)</option>
+            <option value="advance_booking">提前预订 (advance_booking)</option>
+            <option value="long_stay">连住优惠 (long_stay)</option>
+            <option value="seasonal">季节性 (seasonal)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">优先级</label>
+          <input class="form-input" id="rPriority" type="number" value="0" placeholder="数字越小优先级越高">
+          <div class="form-hint">数字越小优先级越高，冲突时先应用</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">调整方式 <span style="color:var(--error)">*</span></label>
+          <select class="form-select" id="rAdjustType">
+            <option value="percent">百分比 (%)</option>
+            <option value="fixed">固定金额 (元)</option>
+            <option value="override">直接定价 (元)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">调整值 <span style="color:var(--error)">*</span></label>
+          <input class="form-input" id="rAdjustValue" type="number" step="0.01" placeholder="如 -20 表示8折, +50表示加50元">
+          <div class="form-hint" id="adjustHint">百分比: -20=8折, +20=1.2倍; 固定: +50=加50元; 定价: 直接替换价格</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">生效起始日期</label>
+          <input class="form-input" id="rStartDate" type="date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">生效结束日期</label>
+          <input class="form-input" id="rEndDate" type="date">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">适用星期几</label>
+          <input class="form-input" id="rWeekdays" placeholder="如 0,6 表示周六日 (0=周一)">
+          <div class="form-hint">0=周一, 6=周日, 留空=全部</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">最少入住晚数</label>
+          <input class="form-input" id="rMinNights" type="number" placeholder="如 3 表示住3晚以上适用">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">提前预订天数上限</label>
+        <input class="form-input" id="rMaxAdvance" type="number" placeholder="如 7 表示提前7天内预订适用">
+        <div class="form-hint">留空=不限制; 填写后仅在该提前天数内预订才生效</div>
+      </div>
+      <input type="hidden" id="rEditId">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeRuleModal()">取消</button>
+      <button class="btn btn-primary" id="ruleSaveBtn" onclick="saveRule()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const T = localStorage.getItem('yjr_token');
+if (!T) { window.top.location.href = 'login.html'; }
+const H = { 'Authorization': 'Bearer ' + T };
+
+let hotels = [];
+let rooms = [];
+let rules = [];
+let currentPage = 1;
+const pageSize = 20;
+
+const TYPE_MAP = {
+  weekend: { label: '周末', cls: 'badge-weekend' },
+  weekday: { label: '工作日', cls: 'badge-weekday' },
+  holiday: { label: '节假日', cls: 'badge-holiday' },
+  advance_booking: { label: '提前预订', cls: 'badge-advance' },
+  long_stay: { label: '连住优惠', cls: 'badge-longstay' },
+  seasonal: { label: '季节性', cls: 'badge-seasonal' },
+};
+
+function toast(msg, type) {
+  type = type || 'info';
+  var container = document.getElementById('toastContainer');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toastContainer';
+    container.className = 'toast-container';
+    document.body.appendChild(container);
+  }
+  var t = document.createElement('div');
+  t.className = 'toast toast-' + type;
+  t.textContent = msg;
+  container.appendChild(t);
+  setTimeout(function() { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(function() { t.remove(); }, 300); }, 3000);
+}
+
+async function loadHotels() {
+  try {
+    var r = await fetch('/api/hotels', { headers: H });
+    if (r.status === 401) { window.top.location.href = 'login.html'; return; }
+    var j = await r.json();
+    hotels = (j.data?.items || j.data || []);
+    var sel = document.getElementById('filterHotel');
+    var modalSel = document.getElementById('rHotelId');
+    hotels.forEach(function(h) {
+      var opt = document.createElement('option');
+      opt.value = h.id;
+      opt.textContent = h.name;
+      sel.appendChild(opt);
+      modalSel.appendChild(opt.cloneNode(true));
+    });
+  } catch(e) { /* silent */ }
+}
+
+async function loadRooms() {
+  try {
+    var r = await fetch('/api/rooms', { headers: H });
+    if (r.status === 401) { window.top.location.href = 'login.html'; return; }
+    var j = await r.json();
+    rooms = (j.items || j.data?.items || []);
+    var sel = document.getElementById('rRoomId');
+    sel.innerHTML = '<option value="">全部房型</option>';
+    rooms.forEach(function(rm) {
+      var opt = document.createElement('option');
+      opt.value = rm.id;
+      opt.textContent = (rm.hotel_name || '') + ' - ' + rm.name;
+      sel.appendChild(opt);
+    });
+  } catch(e) { /* silent */ }
+}
+
+async function loadRules(page) {
+  page = page || currentPage;
+  currentPage = page;
+  var hotelId = document.getElementById('filterHotel').value;
+  var active = document.getElementById('filterActive').value;
+  var url = '/api/pricing/rules?page=' + page + '&page_size=' + pageSize;
+  if (hotelId) url += '&hotel_id=' + hotelId;
+  if (active !== '') url += '&is_active=' + active;
+
+  try {
+    var r = await fetch(url, { headers: H });
+    if (r.status === 401) { window.top.location.href = 'login.html'; return; }
+    var j = await r.json();
+    rules = (j.items || j.data?.items || []);
+    var total = j.total || j.data?.total || rules.length;
+    renderStats();
+    renderTable(rules);
+    renderPagination(total, page);
+  } catch(e) {
+    document.getElementById('ruleTable').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--error);padding:30px;">加载失败: ' + e.message + '</td></tr>';
+  }
+}
+
+function renderStats() {
+  var activeRules = rules.filter(function(r) { return r.is_active; });
+  var today = new Date();
+  var todayStr = today.toISOString().slice(0, 10);
+  var discountedRooms = new Set();
+  var totalDiscountRate = 0;
+  var discountCount = 0;
+
+  activeRules.forEach(function(rule) {
+    var isTodayValid = true;
+    if (rule.start_date && rule.start_date > todayStr) isTodayValid = false;
+    if (rule.end_date && rule.end_date < todayStr) isTodayValid = false;
+    if (rule.weekdays) {
+      var allowed = rule.weekdays.split(',').map(function(w) { return parseInt(w.trim()); });
+      if (allowed.indexOf(today.getDay() === 0 ? 6 : today.getDay() - 1) === -1) isTodayValid = false;
+    }
+    if (isTodayValid) {
+      if (rule.room_id) {
+        discountedRooms.add(rule.room_id);
+      } else {
+        rooms.forEach(function(rm) { discountedRooms.add(rm.id); });
+      }
+      if (rule.adjust_type === 'percent') {
+        totalDiscountRate += Math.abs(rule.adjust_value);
+        discountCount++;
+      }
+    }
+  });
+
+  var avgDiscount = discountCount > 0 ? (totalDiscountRate / discountCount).toFixed(1) : 0;
+
+  document.getElementById('statCards').innerHTML = [
+    { icon: '💲', cls: 'gold', val: activeRules.length, label: '生效中规则' },
+    { icon: '🏷️', cls: 'green', val: discountedRooms.size, label: '今日折扣房型' },
+    { icon: '📉', cls: 'blue', val: avgDiscount + '%', label: '平均调整幅度' },
+    { icon: '📋', cls: 'gold', val: rules.length, label: '规则总数' }
+  ].map(function(s) {
+    return '<div class="stat-card"><div class="stat-icon ' + s.cls + '">' + s.icon + '</div><div class="stat-info"><div class="stat-value">' + s.val + '</div><div class="stat-label">' + s.label + '</div></div></div>';
+  }).join('');
+}
+
+function renderTable(items) {
+  var tbody = document.getElementById('ruleTable');
+  if (!items.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><span class="empty-icon">💲</span><div class="empty-text">暂无价格规则</div><div class="empty-hint">点击「新建规则」添加第一个策略</div></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = items.map(function(rule) {
+    var typeInfo = TYPE_MAP[rule.rule_type] || { label: rule.rule_type, cls: 'badge-info' };
+    var hotel = hotels.find(function(h) { return h.id === rule.hotel_id; });
+    var room = rule.room_id ? rooms.find(function(r) { return r.id === rule.room_id; }) : null;
+    var scope = room ? ('<span class="scope-room">' + room.name + '</span>') : '<span class="scope-all">全部房型</span>';
+    var adjustCls = 'adjust-' + rule.adjust_type;
+    var adjustLabel = rule.adjust_type === 'percent' ? (rule.adjust_value + '%') : ('¥' + rule.adjust_value);
+    var adjustTypeLabel = rule.adjust_type === 'percent' ? '百分比' : (rule.adjust_type === 'fixed' ? '固定' : '定价');
+    var dateRange = (rule.start_date || '永久') + ' ~ ' + (rule.end_date || '永久');
+    var statusBadge = rule.is_active ? '<span class="badge badge-success">生效中</span>' : '<span class="badge badge-error">已停用</span>';
+
+    return '<tr>' +
+      '<td><div class="rule-name">' + (rule.name || '--') + '</div><div class="rule-dates">' + (hotel ? hotel.name : '--') + '</div></td>' +
+      '<td><span class="badge-type ' + typeInfo.cls + '">' + typeInfo.label + '</span></td>' +
+      '<td>' + scope + '</td>' +
+      '<td><span class="' + adjustCls + '">' + adjustLabel + '</span> <span class="badge-adjust">' + adjustTypeLabel + '</span></td>' +
+      '<td><div class="rule-dates">' + dateRange + '</div>' + (rule.weekdays ? '<div class="rule-dates">周:' + rule.weekdays + '</div>' : '') + (rule.min_nights ? '<div class="rule-dates">≥' + rule.min_nights + '晚</div>' : '') + '</td>' +
+      '<td>' + statusBadge + '</td>' +
+      '<td style="text-align:right;"><div class="op-btns">' +
+        '<button class="btn btn-sm btn-outline" onclick="toggleRule(' + rule.id + ')">' + (rule.is_active ? '停用' : '启用') + '</button>' +
+        '<button class="btn btn-sm btn-outline" onclick="openRuleModal(' + rule.id + ')">编辑</button>' +
+        '<button class="btn btn-sm btn-danger" onclick="deleteRule(' + rule.id + ',\'' + (rule.name || '').replace(/'/g, "\\'") + '\')">删除</button>' +
+      '</div></td>' +
+    '</tr>';
+  }).join('');
+}
+
+function renderPagination(total, page) {
+  var totalPages = Math.ceil(total / pageSize) || 1;
+  var html = '';
+  html += '<button class="page-btn" ' + (page <= 1 ? 'disabled' : '') + ' onclick="loadRules(' + (page - 1) + ')">上一页</button>';
+  for (var i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || (i >= page - 1 && i <= page + 1)) {
+      html += '<button class="page-btn ' + (i === page ? 'active' : '') + '" onclick="loadRules(' + i + ')">' + i + '</button>';
+    } else if (i === page - 2 || i === page + 2) {
+      html += '<span style="padding:6px 4px;color:var(--text-muted);">...</span>';
+    }
+  }
+  html += '<button class="page-btn" ' + (page >= totalPages ? 'disabled' : '') + ' onclick="loadRules(' + (page + 1) + ')">下一页</button>';
+  html += '<span style="margin-left:8px;font-size:12px;color:var(--text-muted);">共 ' + total + ' 条</span>';
+  document.getElementById('pagination').innerHTML = html;
+}
+
+function openRuleModal(id) {
+  document.getElementById('ruleModalTitle').textContent = id ? '编辑规则' : '新建规则';
+  document.getElementById('rEditId').value = id || '';
+  if (id) {
+    var rule = rules.find(function(r) { return r.id === id; });
+    if (!rule) { toast('规则不存在', 'error'); return; }
+    document.getElementById('rHotelId').value = rule.hotel_id || '';
+    document.getElementById('rRoomId').value = rule.room_id || '';
+    document.getElementById('rName').value = rule.name || '';
+    document.getElementById('rRuleType').value = rule.rule_type || 'weekend';
+    document.getElementById('rAdjustType').value = rule.adjust_type || 'percent';
+    document.getElementById('rAdjustValue').value = rule.adjust_value || '';
+    document.getElementById('rPriority').value = rule.priority !== undefined ? rule.priority : 0;
+    document.getElementById('rStartDate').value = rule.start_date || '';
+    document.getElementById('rEndDate').value = rule.end_date || '';
+    document.getElementById('rWeekdays').value = rule.weekdays || '';
+    document.getElementById('rMinNights').value = rule.min_nights || '';
+    document.getElementById('rMaxAdvance').value = rule.max_advance_days || '';
+    document.getElementById('ruleSaveBtn').textContent = '更新';
+  } else {
+    document.getElementById('rHotelId').value = '';
+    document.getElementById('rRoomId').value = '';
+    document.getElementById('rName').value = '';
+    document.getElementById('rRuleType').value = 'weekend';
+    document.getElementById('rAdjustType').value = 'percent';
+    document.getElementById('rAdjustValue').value = '';
+    document.getElementById('rPriority').value = 0;
+    document.getElementById('rStartDate').value = '';
+    document.getElementById('rEndDate').value = '';
+    document.getElementById('rWeekdays').value = '';
+    document.getElementById('rMinNights').value = '';
+    document.getElementById('rMaxAdvance').value = '';
+    document.getElementById('ruleSaveBtn').textContent = '保存';
+  }
+  document.getElementById('ruleModal').classList.add('show');
+}
+
+function closeRuleModal() {
+  document.getElementById('ruleModal').classList.remove('show');
+}
+
+async function saveRule() {
+  var isEdit = !!document.getElementById('rEditId').value;
+  var hotelId = parseInt(document.getElementById('rHotelId').value);
+  var roomIdVal = document.getElementById('rRoomId').value;
+  var roomId = roomIdVal ? parseInt(roomIdVal) : null;
+  var name = document.getElementById('rName').value.trim();
+  var ruleType = document.getElementById('rRuleType').value;
+  var adjustType = document.getElementById('rAdjustType').value;
+  var adjustValue = parseFloat(document.getElementById('rAdjustValue').value);
+  var priority = parseInt(document.getElementById('rPriority').value) || 0;
+  var startDate = document.getElementById('rStartDate').value || null;
+  var endDate = document.getElementById('rEndDate').value || null;
+  var weekdays = document.getElementById('rWeekdays').value.trim() || null;
+  var minNights = document.getElementById('rMinNights').value;
+  var maxAdvance = document.getElementById('rMaxAdvance').value;
+
+  if (!hotelId) { toast('请选择所属门店', 'warning'); return; }
+  if (!name) { toast('请输入规则名称', 'warning'); return; }
+  if (isNaN(adjustValue)) { toast('请输入有效的调整值', 'warning'); return; }
+
+  var body = {
+    hotel_id: hotelId,
+    room_id: roomId,
+    name: name,
+    rule_type: ruleType,
+    adjust_type: adjustType,
+    adjust_value: adjustValue,
+    priority: priority,
+    is_active: true
+  };
+  if (startDate) body.start_date = startDate;
+  if (endDate) body.end_date = endDate;
+  if (weekdays) body.weekdays = weekdays;
+  if (minNights) body.min_nights = parseInt(minNights);
+  if (maxAdvance) body.max_advance_days = parseInt(maxAdvance);
+
+  var url = isEdit ? '/api/pricing/rules/' + document.getElementById('rEditId').value : '/api/pricing/rules';
+  var method = isEdit ? 'PUT' : 'POST';
+
+  try {
+    var r = await fetch(url, {
+      method: method,
+      headers: { 'Authorization': 'Bearer ' + T, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (r.status === 401) { window.top.location.href = 'login.html'; return; }
+    var j = await r.json();
+    if (j.code !== undefined && j.code !== 0) throw new Error(j.msg || '操作失败');
+    closeRuleModal();
+    loadRules();
+    toast(isEdit ? '更新成功' : '创建成功', 'success');
+  } catch(e) { toast('保存失败: ' + e.message, 'error'); }
+}
+
+async function toggleRule(id) {
+  try {
+    var r = await fetch('/api/pricing/rules/' + id + '/toggle', { headers: H });
+    if (r.status === 401) { window.top.location.href = 'login.html'; return; }
+    var j = await r.json();
+    if (j.code !== undefined && j.code !== 0) throw new Error(j.msg || '操作失败');
+    loadRules();
+    toast('状态已切换', 'success');
+  } catch(e) { toast('操作失败: ' + e.message, 'error'); }
+}
+
+async function deleteRule(id, name) {
+  if (!confirm('确定删除规则「' + name + '」？此操作不可恢复。')) return;
+  try {
+    var r = await fetch('/api/pricing/rules/' + id, { method: 'DELETE', headers: H });
+    if (r.status === 401) { window.top.location.href = 'login.html'; return; }
+    var j = await r.json();
+    if (j.code !== undefined && j.code !== 0) throw new Error(j.msg || '删除失败');
+    loadRules();
+    toast('已删除', 'success');
+  } catch(e) { toast('删除失败: ' + e.message, 'error'); }
+}
+
+// Adjust type hint
+var adjustTypeEl = document.getElementById('rAdjustType');
+if (adjustTypeEl) {
+  adjustTypeEl.addEventListener('change', function() {
+    var hint = document.getElementById('adjustHint');
+    if (this.value === 'percent') hint.textContent = '百分比: -20=8折, +20=1.2倍';
+    else if (this.value === 'fixed') hint.textContent = '固定金额: +50=加50元, -50=减50元';
+    else hint.textContent = '直接定价: 输入数值直接替换原价';
+  });
+}
+
+// Init
+(async function() {
+  await loadHotels();
+  await loadRooms();
+  await loadRules();
+})();
+</script>
+</body>
+</html>

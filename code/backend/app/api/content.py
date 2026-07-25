@@ -38,7 +38,7 @@ class HotelIntro(BaseModel):
     desc: str = ""
     cover: str = ""
     features: list[str] = []
-    facilities: list[str] | dict = []      # 酒店设施 — 支持list或{core/upgrade/service}三级
+    facilities: list = []      # 酒店设施 — 支持list或{core/upgrade/service}三级
     checkin_time: str = "14:00"
     checkout_time: str = "12:00"
 
@@ -76,7 +76,7 @@ class RoomGallery(BaseModel):
     video: str = ""
     vr_url: str = ""
     desc: str = ""
-    amenities: list[str] | dict = []       # 设备设施 — 支持list或{core/upgrade/service}三级
+    amenities: list = []       # 设备设施 — 支持list或{core/upgrade/service}三级
     perks: list[str] = []           # 赠品权益
 
 @router.get("/gallery")

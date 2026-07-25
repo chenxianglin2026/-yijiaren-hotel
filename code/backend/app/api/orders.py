@@ -17,6 +17,7 @@ from sqlalchemy.orm import selectinload
 
 from app.db import get_db, User, Order, Room, Hotel, OrderStatus
 from app.api.auth import get_current_user
+from app.api.pricing import calculate_room_price
 
 router = APIRouter(prefix="/api/orders", tags=["订单"])
 
@@ -112,9 +113,12 @@ async def create_order(
     if not hotel:
         raise HTTPException(status_code=404, detail="门店不存在")
 
-    # 计算天数和总价
+    # 计算天数和总价（调用价格策略）
     nights = (req.checkout_date - req.checkin_date).days
-    total_price = room.price * req.room_count * nights
+    pricing_result = await calculate_room_price(
+        db, req.room_id, req.checkin_date, req.checkout_date
+    )
+    total_price = pricing_result["total"] * req.room_count
 
     # 生成订单号
     order_no = datetime.now().strftime("%Y%m%d%H%M%S") + uuid.uuid4().hex[:6].upper()

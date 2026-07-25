@@ -16,7 +16,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.db import Base, User, Hotel, Room, Order, OrderStatus, Camera, Device, Checkin, OTAChannel, OTAOrderMapping
+from app.db import Base, User, Hotel, Room, Order, OrderStatus, Camera, Device, Checkin, OTAChannel, OTAOrderMapping, PricingRule, PricingRuleType, PricingAdjustType
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -34,8 +34,8 @@ def reset_db():
     engine = _get_engine()
     Base.metadata.create_all(engine)
     with Session(engine) as session:
-        # 按外键依赖顺序删除：checkins -> orders -> devices -> cameras -> rooms -> hotels -> users
-        tables = [Checkin, Order, Device, Camera, Room, Hotel, User, OTAChannel, OTAOrderMapping]
+        # 按外键依赖顺序删除：checkins -> orders -> pricing_rules -> devices -> cameras -> rooms -> hotels -> users
+        tables = [Checkin, Order, PricingRule, Device, Camera, Room, Hotel, User, OTAChannel, OTAOrderMapping]
         for table in tables:
             count = session.query(table).delete()
             if count > 0:
@@ -450,6 +450,45 @@ def seed(force: bool = False):
         for dd in devices_data:
             session.add(Device(**dd))
 
+        # ── 10. 创建示例价格策略规则 ──
+        pricing_rules_data = [
+            {
+                "hotel_id": hotels[0].id,
+                "room_id": None,
+                "name": "周末溢价",
+                "rule_type": PricingRuleType.WEEKEND,
+                "adjust_type": PricingAdjustType.PERCENT,
+                "adjust_value": 20.0,
+                "priority": 10,
+                "weekdays": "5,6",
+                "is_active": True,
+            },
+            {
+                "hotel_id": hotels[0].id,
+                "room_id": None,
+                "name": "提前7天预订优惠",
+                "rule_type": PricingAdjustType.ADVANCE_BOOKING,
+                "adjust_type": PricingAdjustType.PERCENT,
+                "adjust_value": -10.0,
+                "priority": 20,
+                "max_advance_days": 7,
+                "is_active": True,
+            },
+            {
+                "hotel_id": hotels[0].id,
+                "room_id": None,
+                "name": "住3晚以上优惠",
+                "rule_type": PricingAdjustType.LONG_STAY,
+                "adjust_type": PricingAdjustType.PERCENT,
+                "adjust_value": -15.0,
+                "priority": 30,
+                "min_nights": 3,
+                "is_active": True,
+            },
+        ]
+        for prd in pricing_rules_data:
+            session.add(PricingRule(**prd))
+
         session.commit()
         print("✅ 模拟数据播种完成！")
         print(f"   用户: 3 个 (admin/testuser/zhangsan)")
@@ -458,6 +497,7 @@ def seed(force: bool = False):
         print(f"   订单: 4 条")
         print(f"   摄像头: 2 个 (示例/offline)")
         print(f"   设备: 8 个 (门锁x4, 面板x1, 传感器x1, 充电桩x1, 网关x1)")
+        print(f"   价格策略: 3 条 (周末溢价+20%, 提前7天-10%, 住3晚以上-15%)")
         print(f"\n   测试账号:")
         print(f"   admin / admin123  (管理员)")
         print(f"   testuser / test123  (普通用户)")
