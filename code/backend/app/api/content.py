@@ -9,6 +9,8 @@ from pydantic import BaseModel
 from typing import Optional
 import json
 import os
+import base64
+import uuid
 
 router = APIRouter(prefix="/api/content", tags=["内容管理"])
 
@@ -30,6 +32,36 @@ def _save(d):
     os.makedirs(os.path.dirname(CONTENT_FILE), exist_ok=True)
     with open(CONTENT_FILE, "w") as f:
         json.dump(d, f, ensure_ascii=False, indent=2)
+
+
+# ======== 图片上传 ========
+class UploadReq(BaseModel):
+    image: str  # base64 图片（data:image/xxx;base64,...）
+
+
+@router.post("/upload")
+async def upload_image(req: UploadReq, user: User = Depends(get_current_user)):
+    try:
+        data = req.image
+        if "," in data:
+            data = data.split(",", 1)[1]
+        img_bytes = base64.b64decode(data)
+        ext = "png"
+        if img_bytes[:3] == b'\xff\xd8\xff':
+            ext = "jpg"
+        elif img_bytes[:8] == b'\x89PNG\r\n\x1a\n':
+            ext = "png"
+        elif img_bytes[:6] in (b'GIF87a', b'GIF89a'):
+            ext = "gif"
+        filename = f"{uuid.uuid4().hex}.{ext}"
+        upload_dir = "/home/ubuntu/projects/yijiaren/uploads"
+        os.makedirs(upload_dir, exist_ok=True)
+        with open(os.path.join(upload_dir, filename), "wb") as f:
+            f.write(img_bytes)
+        return {"ok": True, "url": "/hotel/uploads/" + filename}
+    except Exception as e:
+        raise HTTPException(400, f"上传失败: {e}")
+
 
 # ======== 酒店介绍 ========
 class HotelIntro(BaseModel):
