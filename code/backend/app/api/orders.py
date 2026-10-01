@@ -48,6 +48,7 @@ class CreateOrderRequest(BaseModel):
     guest_name: str = Field(..., min_length=1, max_length=50)
     guest_phone: str = Field(..., pattern=r"^1[3-9]\d{9}$")
     remark: Optional[str] = None
+    member_code: Optional[str] = None
 
 
 class OrderOut(BaseModel):
@@ -63,6 +64,7 @@ class OrderOut(BaseModel):
     checkout_date: date
     nights: int
     total_price: float
+    discount_amount: float = 0.0
     status: str
     guest_name: str
     guest_phone: str
@@ -123,6 +125,17 @@ async def create_order(
     # 生成订单号
     order_no = datetime.now().strftime("%Y%m%d%H%M%S") + uuid.uuid4().hex[:6].upper()
 
+    # 联盟会员码接入：验证会员 -> 9 折 -> 上报分佣
+    discount_amount = 0.0
+    if req.member_code and req.member_code.strip():
+        from app import eco
+        ok, name_or_err, discount = await eco.verify_member(req.member_code)
+        if ok:
+            original = total_price
+            total_price = round(original * discount, 2)
+            discount_amount = round(original - total_price, 2)
+            await eco.report_consume(req.member_code, original, remark=f"酒店订单{order_no}")
+
     order = Order(
         order_no=order_no,
         user_id=current_user.id,
@@ -133,6 +146,7 @@ async def create_order(
         checkout_date=req.checkout_date,
         nights=nights,
         total_price=total_price,
+        discount_amount=discount_amount,
         status=OrderStatus.PENDING,
         guest_name=req.guest_name,
         guest_phone=req.guest_phone,
@@ -158,6 +172,7 @@ async def create_order(
         checkout_date=order.checkout_date,
         nights=order.nights,
         total_price=order.total_price,
+        discount_amount=order.discount_amount,
         status=order.status,
         guest_name=order.guest_name,
         guest_phone=order.guest_phone,
