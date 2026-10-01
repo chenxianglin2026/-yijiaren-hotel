@@ -190,6 +190,12 @@
           <text class="text-light">支付方式</text>
           <text>💚 微信支付</text>
         </view>
+        <view class="pay-modal-row">
+          <view class="flex-col flex-1">
+            <text class="text-light">联盟会员码（可选，享9折）</text>
+            <input class="form-input" placeholder="输入8位会员码" value="{{memberCode}}" bindinput="onMemberCodeInput" maxlength="8" />
+          </view>
+        </view>
       </view>
       <view class="pay-modal-actions">
         <view class="btn-ghost" bindtap="closePayModal">取消</view>

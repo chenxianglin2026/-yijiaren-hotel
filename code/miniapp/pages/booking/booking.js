@@ -8,7 +8,7 @@ Page({
     calendarYear: 2024, calendarMonth: 6, calendarDays: [],
     roomCount: 1, guestName: '', guestPhone: '', remark: '',
     roomTotal: 0, serviceFee: 0, discount: 0, totalPrice: 0,
-    arrivalTime: '14:00',
+    arrivalTime: '14:00', memberCode: '',
     arrivalTimes: ['12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00','22:00'],
     showPolicy: false, submitting: false, showPayModal: false, paying: false
   },
@@ -95,6 +95,7 @@ Page({
   onNameInput(e){this.setData({guestName:e.detail.value})},
   onPhoneInput(e){this.setData({guestPhone:e.detail.value})},
   onRemarkInput(e){this.setData({remark:e.detail.value})},
+  onMemberCodeInput(e){this.setData({memberCode:e.detail.value})},
   onArrivalChange(e){this.setData({arrivalTime:this.data.arrivalTimes[e.detail.value]})},
 
   submitOrder(){
@@ -112,7 +113,7 @@ Page({
     wx.showLoading({ title: '创建订单...', mask: true })
 
     try {
-      const { roomId, checkInDate, checkOutDate, roomCount, totalPrice, guestName, guestPhone, remark } = this.data
+      const { roomId, checkInDate, checkOutDate, roomCount, totalPrice, guestName, guestPhone, remark, memberCode } = this.data
 
       // Step 1: 创建订单
       const orderRes = await app.request({
@@ -126,7 +127,8 @@ Page({
           total_price: totalPrice,
           guest_name: guestName,
           guest_phone: guestPhone,
-          remark: remark
+          remark: remark,
+          member_code: memberCode || null
         }
       })
       if (!orderRes || !orderRes.id) throw new Error('订单创建失败')
